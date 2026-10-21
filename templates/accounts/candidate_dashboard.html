@@ -1,0 +1,35 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Candidate Dashboard{% endblock %}
+
+{% block content %}
+<section class="dashboard">
+    <p class="eyebrow">Candidate dashboard</p>
+    <h1>Hello, {{ request.user.first_name|default:request.user.email }}</h1>
+    <p>Your secure candidate account is ready.</p>
+
+    <div class="dashboard-grid">
+        <article class="dashboard-card">
+            <h2>AI screening call</h2>
+            <p>
+                Your browser-based AI recruitment interview will appear here.
+            </p>
+            <button class="button button-primary" disabled>
+                No interview scheduled
+            </button>
+        </article>
+
+        <article class="dashboard-card">
+            <h2>Candidate profile</h2>
+            <p>
+                Profile creation, CV upload and skills management are coming next.
+            </p>
+        </article>
+
+        <article class="dashboard-card">
+            <h2>Interview status</h2>
+            <p>No completed interview evaluations are available yet.</p>
+        </article>
+    </div>
+</section>
+{% endblock %}

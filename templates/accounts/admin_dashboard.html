@@ -1,0 +1,31 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Administrator Dashboard{% endblock %}
+
+{% block content %}
+<section class="dashboard">
+    <p class="eyebrow">Administrator dashboard</p>
+    <h1>System administration</h1>
+    <p>Manage users, permissions and platform security.</p>
+
+    <div class="dashboard-grid">
+        <article class="dashboard-card">
+            <h2>User administration</h2>
+            <p>Create recruiter accounts and manage user roles.</p>
+            <a class="button button-primary" href="/admin/">
+                Open Django Admin
+            </a>
+        </article>
+
+        <article class="dashboard-card">
+            <h2>Audit activity</h2>
+            <p>Security events and agent activity will appear here.</p>
+        </article>
+
+        <article class="dashboard-card">
+            <h2>System status</h2>
+            <p>Database and application services are configured.</p>
+        </article>
+    </div>
+</section>
+{% endblock %}

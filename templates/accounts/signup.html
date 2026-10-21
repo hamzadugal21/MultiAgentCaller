@@ -1,0 +1,50 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Candidate Sign Up{% endblock %}
+
+{% block content %}
+<section class="auth-card">
+    <div class="auth-heading">
+        <p class="eyebrow">Candidate registration</p>
+        <h1>Create your account</h1>
+        <p>Sign up to participate in AI-assisted recruitment interviews.</p>
+    </div>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="form-errors">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">
+                    {{ field.label }}
+                </label>
+
+                {{ field }}
+
+                {% if field.help_text %}
+                    <small>{{ field.help_text|safe }}</small>
+                {% endif %}
+
+                {% for error in field.errors %}
+                    <p class="field-error">{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endfor %}
+
+        <button type="submit" class="button button-primary button-full">
+            Create candidate account
+        </button>
+    </form>
+
+    <p class="auth-footer">
+        Already registered?
+        <a href="{% url 'accounts:login' %}">Log in</a>
+    </p>
+</section>
+{% endblock %}

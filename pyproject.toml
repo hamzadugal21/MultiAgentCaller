@@ -1,0 +1,27 @@
+[tool.ruff]
+target-version = "py314"
+line-length = 88
+exclude = [
+    ".git",
+    ".venv",
+    "staticfiles",
+    "media",
+    "protected-call-recordings",
+    "model-cache",
+    "artifacts",
+    "**/migrations/*.py",
+]
+
+[tool.ruff.lint]
+select = [
+    "E4",
+    "E7",
+    "E9",
+    "F",
+    "I",
+    "B",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"config/settings_development.py" = ["F403", "F405"]
+"config/settings_production.py" = ["F403", "F405"]

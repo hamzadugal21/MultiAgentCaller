@@ -1,0 +1,12 @@
+numpy==2.5.4
+pandas==3.0.6
+scikit-learn==1.9.1
+joblib==1.6.0
+spacy==3.8.16
+torch==2.9.1
+sentence-transformers==6.2.0
+faster-whisper==1.2.1
+silero-vad==6.2.3
+soundfile==0.14.0
+av==19.0.2
+piper-plus==2.0.2
