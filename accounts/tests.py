@@ -1,5 +1,6 @@
 import pytest
 from django.contrib.auth.hashers import identify_hasher
+from django.db import IntegrityError, transaction
 from django.urls import reverse
 
 from accounts.models import User
@@ -51,6 +52,33 @@ def test_signup_password_uses_argon2(client):
 
     assert hasher.algorithm == "argon2"
     assert user.check_password("TestingOnly!9384") is True
+
+
+def test_create_user_stores_complete_email_in_lowercase():
+    user = User.objects.create_user(
+        email="Mixed.Case@EXAMPLE.COM",
+        password="TestingOnly!9384",
+    )
+
+    user.refresh_from_db()
+
+    assert user.email == "mixed.case@example.com"
+
+
+def test_database_rejects_case_variant_email_duplicate():
+    User.objects.create_user(
+        email="candidate@example.com",
+        password="TestingOnly!9384",
+    )
+
+    duplicate = User(email="CANDIDATE@EXAMPLE.COM")
+    duplicate.set_unusable_password()
+
+    with pytest.raises(IntegrityError):
+        with transaction.atomic():
+            duplicate.save(force_insert=True)
+
+    assert User.objects.count() == 1
 
 
 def test_duplicate_email_is_rejected_case_insensitively(client):

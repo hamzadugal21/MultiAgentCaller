@@ -1,6 +1,7 @@
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models.functions import Lower
 
 
 class UserManager(BaseUserManager):
@@ -12,7 +13,7 @@ class UserManager(BaseUserManager):
         if not email:
             raise ValueError("An email address is required.")
 
-        email = self.normalize_email(email)
+        email = self.normalize_email(email).lower()
         extra_fields.setdefault("role", User.Role.CANDIDATE)
 
         user = self.model(email=email, **extra_fields)
@@ -56,6 +57,16 @@ class User(AbstractUser):
     REQUIRED_FIELDS = []
 
     objects = UserManager()
+
+    class Meta:
+        verbose_name = "user"
+        verbose_name_plural = "users"
+        constraints = [
+            models.UniqueConstraint(
+                Lower("email"),
+                name="accounts_user_email_ci_unique",
+            ),
+        ]
 
     def __str__(self):
         return self.email
