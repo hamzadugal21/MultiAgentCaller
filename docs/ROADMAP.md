@@ -116,6 +116,8 @@ Implement the browser call runtime, local speech pipeline, orchestration, specia
 
 Complete human-reviewed evaluation, end-to-end integration, operational safeguards, documentation, and release readiness.
 
+Deployment planning reference: [Render deployment plan](development/RENDER_DEPLOYMENT.md). This plan records deferred Week 4 work and does not represent an active deployment.
+
 ### Tasks and deliverables
 
 - Rubric-based evidence, scoring, confidence, recommendations, and reviewer workflow.

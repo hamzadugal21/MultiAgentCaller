@@ -16,8 +16,8 @@ Last updated: 2026-10-23 (Asia/Karachi)
 ## Current Git and progress snapshot
 
 - **Current branch:** `feat/week-2-core-workflows`
-- **Current commit:** `HEAD` — the commit containing the validated Milestone 2.1A deterministic domain-audit foundation; resolve its hash with Git.
-- **Latest clean checkpoint:** `HEAD`; the preceding checkpoint is `d2b2b5f` — persistent project context.
+- **Current commit:** `988867b` — deterministic domain audit service.
+- **Latest clean checkpoint:** `988867b` — deterministic domain audit service.
 - **Week 1:** 100% complete.
 - **Current week:** Week 2, 5% complete. Only Milestone 2.1A, the deterministic domain-audit foundation, is implemented and validated.
 - **Overall project:** 26% complete.
@@ -28,6 +28,10 @@ Last updated: 2026-10-23 (Asia/Karachi)
 The pinned foundation includes Python 3.14, Django 6.1, Django Channels/Daphne, PostgreSQL through Psycopg, django-environ, WhiteNoise, django-axes, django-ratelimit, Argon2, pytest, and Ruff. Current settings configure django-axes, Argon2, PostgreSQL, and WhiteNoise. Production settings configure Redis-backed Channels and Django 6.1 `MAILERS`; development uses an in-memory channel layer and console mailer.
 
 The requirements also pin the planned local speech and ML stack: Faster Whisper for speech-to-text, Piper for text-to-speech, Silero VAD for voice activity detection, PyTorch, Sentence Transformers, scikit-learn, spaCy, NumPy, and pandas. These dependencies being present does not mean the inference or voice pipeline is implemented.
+
+`requirements/render.txt` is the lightweight dependency boundary for a future free Render demonstration. It includes only `requirements/base.txt`, excludes the local AI/ML stack, and does not configure deployment. The initial hosted demonstration is planned to label AI-call behavior as simulated; the real Whisper/Piper/PyTorch pipeline remains locally runnable.
+
+The persistent plan and deferred decisions are documented in the [Render deployment plan](development/RENDER_DEPLOYMENT.md). Deployment remains a Week 4 task.
 
 ## Repository structure
 
@@ -112,10 +116,11 @@ AI may screen, summarize, score against an approved rubric, and recommend. It mu
 - Monorepo-style frontend/backend/database/AI/ML/docs/scripts/tests/var structure with updated paths and tooling.
 - Persistent agent operating guide, handoff, roadmap, decision log, work log, architecture documentation, and ignored local prompt counter.
 - Deterministic domain-audit service with a frozen caller command, immutable Week 2 event registry, specification-owned canonical actions, required and allowed metadata rules, safe UUID normalization, bounded payload validation, and safe mandatory-failure exceptions.
+- Validated lightweight Render dependency manifest that includes only the base Django web stack and deliberately excludes heavy local AI/ML dependencies.
 
 ## Current work
 
-Milestone 2.1A is implemented, validated, and checkpointed on `feat/week-2-core-workflows`. Milestone 2.1B has not begun.
+Milestone 2.1A is implemented, validated, and checkpointed on `feat/week-2-core-workflows`. The lightweight Render dependency manifest and persistent deployment plan are complete and uncommitted pending review. Milestone 2.1B has not begun.
 
 ## Pending work
 
@@ -156,14 +161,13 @@ git status --short
 
 ## Exact next recommended task
 
-Wait for explicit approval to begin Milestone 2.1B. Its first work should define explicit transition-policy tables and the append-only `ConsentRecord` schema, including a unique idempotency key and cache-row locking. Do not begin candidate pages or resume processing before those foundations are approved.
+Review and approve the uncommitted lightweight Render dependency manifest, deployment plan, and context updates. Do not deploy or begin Milestone 2.1B.
 
 Relevant files:
 
-- `backend/auditlog/services.py`
-- `backend/auditlog/models.py`
-- `backend/auditlog/tests.py`
-- `backend/candidates/models.py`
-- `backend/recruitment/models.py`
-- `backend/interviews/models.py`
-- `backend/accounts/models.py`
+- `requirements/render.txt`
+- `requirements/base.txt`
+- `requirements/ml.txt`
+- `requirements/production.txt`
+- `docs/development/RENDER_DEPLOYMENT.md`
+- `docs/DECISIONS.md`

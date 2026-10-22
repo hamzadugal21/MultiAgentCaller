@@ -32,3 +32,7 @@ Never commit .env, credentials, candidate documents, transcripts, recordings, or
 Development: config.settings_development
 Production: config.settings_production
 
+## Deployment planning
+
+The future free public demonstration is documented in the [Render deployment plan](docs/development/RENDER_DEPLOYMENT.md). No deployment is currently configured.
+

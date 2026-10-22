@@ -169,3 +169,10 @@ Append new decisions; do not rewrite accepted historical decisions unless a late
 - **Reason:** Mutable booleans, plain digests, and long parsing transactions are insufficient evidence and operational safeguards for sensitive recruitment processing.
 - **Consequences:** These items remain planned for later Week 2 milestones. Parser validation is not malware protection, and no wall-clock parser timeout is promised without subprocess isolation.
 - **Status:** Accepted and planned; not implemented in Milestone 2.1A.
+
+## 2026-10-23 — Lightweight Render demonstration dependencies
+
+- **Decision:** Render's free demonstration build will install `requirements/render.txt`, which includes only `requirements/base.txt`. Heavy local AI/ML packages are intentionally excluded, and the hosted demonstration will initially use a clearly labelled simulated AI-call mode.
+- **Reason:** Keep the cloud demonstration small and practical without replacing the project's real local open-source speech and ML pipeline.
+- **Consequences:** The Whisper, Piper, and PyTorch pipeline remains locally runnable through the existing ML requirements. No object-storage dependency is selected until the storage provider is finalized. Render services, build commands, health endpoints, storage, and production environment configuration remain deferred to the final deployment milestone.
+- **Status:** Accepted; lightweight dependency boundary added, deployment not configured.
