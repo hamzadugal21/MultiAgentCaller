@@ -37,6 +37,8 @@ model-cache/
 !/var/static/.gitkeep
 /var/logs/*
 !/var/logs/.gitkeep
+/var/agent-state/*
+!/var/agent-state/.gitkeep
 .idea/
 test-results/
 coverage.xml
