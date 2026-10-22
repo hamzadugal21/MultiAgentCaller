@@ -2,13 +2,16 @@ from pathlib import Path
 
 import environ
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BACKEND_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = BACKEND_ROOT.parent
+FRONTEND_ROOT = PROJECT_ROOT / "frontend"
+BASE_DIR = BACKEND_ROOT
 
 env = environ.Env(
     DEBUG=(bool, True),
 )
 
-environ.Env.read_env(BASE_DIR / ".env")
+environ.Env.read_env(PROJECT_ROOT / ".env")
 
 
 SECRET_KEY = env("DJANGO_SECRET_KEY")
@@ -58,7 +61,7 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],
+        "DIRS": [FRONTEND_ROOT / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -143,10 +146,11 @@ USE_TZ = True
 
 
 STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = PROJECT_ROOT / "var" / "static"
+STATICFILES_DIRS = [FRONTEND_ROOT / "static"]
 
 MEDIA_URL = "media/"
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT = PROJECT_ROOT / "var" / "media"
 
 
 LOGIN_URL = "accounts:login"

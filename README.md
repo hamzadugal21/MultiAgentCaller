@@ -15,13 +15,13 @@ Python 3.14, Django 6.1, Django Channels, PostgreSQL, Redis, Faster Whisper, Pip
 1. Create and activate .venv
 2. Install requirements.txt
 3. Copy .env.example to .env and add private values
-4. Run python manage.py migrate
-5. Run python manage.py createsuperuser
-6. Run python manage.py runserver
+4. Run python backend\manage.py migrate
+5. Run python backend\manage.py createsuperuser
+6. Run python backend\manage.py runserver
 
 ## Tests
 
-Run: python -m pytest accounts auditlog candidates -q
+Run: python -m pytest -q
 
 ## Security
 
