@@ -38,7 +38,7 @@ Establish the secure Python/Django/PostgreSQL foundation, core domain schema, au
 - Django, dependency, migration, Ruff, and Git diff checks pass.
 - `main` contains the validated Week 1 and structure checkpoints.
 
-## Week 2 — Core recruitment workflows (0% complete)
+## Week 2 — Core recruitment workflows (5% complete)
 
 ### Objectives
 
@@ -46,14 +46,13 @@ Turn the schema foundation into secure candidate, recruiter, job, application, a
 
 ### Tasks and deliverables
 
-- Candidate profile editing and consent management.
-- Secure resume upload, replacement, metadata, and ownership controls.
-- Recruiter/company administration with verified role permissions.
-- Job creation, editing, publishing, skill requirements, questions, and FAQs.
-- Candidate application and withdrawal flow.
-- Interview scheduling, invitation, confirmation, rescheduling, and cancellation flow.
-- Frontend implementation based on supplied Figma screenshots when available.
-- Audit events for consequential data access and changes.
+- **Milestone 2.1 — policies and schema:** deterministic domain auditing, state-transition tables, append-only consent history, email-verification design, shared authorization/service conventions, and foundation tests. Milestone 2.1A domain auditing is implemented and validated; the remaining schema and policy work is not started.
+- **Milestone 2.2 — candidate workflow:** profile editing, consent history, email verification, secure resume lifecycle, basic local extraction, protected download, and candidate-focused tests.
+- **Milestone 2.3 — recruiter and jobs:** administrator provisioning, recruiter/company authorization, job management, requirements, questions, FAQs, publishing transitions, and security tests.
+- **Milestone 2.4 — applications:** authenticated candidate job browsing, application creation, verification/consent checks, resume ownership, duplicate prevention, withdrawal, and tests.
+- **Milestone 2.5 — scheduling:** recruiter invitation, hashed expiring tokens, candidate confirmation, reschedule request/approval, cancellation, and tests.
+- **Milestone 2.6 — integration and security:** cross-application, IDOR, CSRF, rate-limit, audit-privacy, and migration verification plus full context and validation review.
+- Frontend work remains semantic and minimal until supplied Figma screenshots are available.
 
 ### Required tests
 
@@ -72,7 +71,9 @@ Turn the schema foundation into secure candidate, recruiter, job, application, a
 
 - A candidate and recruiter can complete the core pre-interview workflow through tested server-rendered pages.
 - Unauthorized cross-user and cross-company access is rejected.
-- Consent and audit records are enforced.
+- Consent history and deterministic audit records are enforced.
+- Email verification is enforced before applications and interview confirmation.
+- State changes use tested transition services rather than direct status assignment.
 - No migration drift or failing validation remains.
 
 ## Week 3 — Voice calling and multi-agent system (0% complete)
@@ -85,7 +86,7 @@ Implement the browser call runtime, local speech pipeline, orchestration, specia
 
 - Channels/Redis call connection, lifecycle, reconnect, event, and metric handling.
 - Silero VAD, Faster Whisper STT, Piper TTS, and interruption/turn-taking flow.
-- Calling orchestrator and profile, interview, FAQ, scheduling, safety, escalation, evaluation, and audit agent interfaces.
+- Calling orchestrator and profile, interview, FAQ, scheduling, safety, escalation, and evaluation agent interfaces, integrated with the deterministic domain-audit service.
 - Versioned prompts, allowlisted tools, bounded context, retries, timeouts, and structured outputs.
 - Redaction, consent enforcement, recording-disabled default, and retention metadata.
 - Human escalation and action-approval workflow.
@@ -146,7 +147,7 @@ Complete human-reviewed evaluation, end-to-end integration, operational safeguar
 ## Overall status
 
 - Week 1: 100%
-- Week 2: 0%
+- Week 2: 5%
 - Week 3: 0%
 - Week 4: 0%
-- Overall: 25%
+- Overall: 26%

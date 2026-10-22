@@ -148,3 +148,24 @@ Append new decisions; do not rewrite accepted historical decisions unless a late
 - **Reason:** Prevent data exposure and keep the repository safe to share.
 - **Consequences:** `.env` is never accessed by coding agents, runtime/private data uses ignored paths, and documentation contains no private values.
 - **Status:** Accepted.
+
+## 2026-10-23 — Deterministic domain auditing
+
+- **Decision:** Mandatory domain auditing is an ordinary Python service, not a generative agent. Each registered event has a fixed category, resource type, canonical action, actor requirement, required metadata set, and metadata-key allowlist. Callers cannot supply action prose, and the registry is immutable after initialization.
+- **Reason:** Whether a consequential action must be audited and which privacy fields are permitted are security policy decisions that must be deterministic and testable.
+- **Consequences:** Views, domain services, authentication/security handlers, and future narrow agent-tool adapters use the same validated service. Mandatory domain-audit failures raise safe exceptions; existing authentication auditing may remain best-effort. The existing `AgentDefinition` value `audit` is unchanged during Week 2, but it does not authorize an LLM to make audit-policy decisions.
+- **Status:** Accepted and implemented for the Milestone 2.1A foundation. This supersedes only the generative Audit Agent portion of the 2026-10-22 multi-agent decision; the stored `audit` enum value remains unchanged for migration compatibility.
+
+## 2026-10-23 — Layered safety and narrow agent tools
+
+- **Decision:** Deterministic Python controls enforce authorization, consent, state transitions, tool allowlists, approvals, rate limits, and protected fields. A future semantic Safety Agent may detect conversational risks but may never override those controls. Future agents receive narrow typed services, never unrestricted ORM, SQL, filesystem, model-name, field-name, or recipient access.
+- **Reason:** Model output is untrusted and cannot be the authority for hard security or employment-workflow policy.
+- **Consequences:** Week 2 builds shared service boundaries; no speculative agent adapters or fake agent tests are added before operational agents exist.
+- **Status:** Accepted; deterministic audit boundary implemented, remaining controls planned.
+
+## 2026-10-23 — Consent, verification, and document-processing evidence
+
+- **Decision:** Consent history will be append-only with a unique idempotency key; consent and its audit event will share one transaction without a mandatory one-to-one relation. Effective-consent cache changes will lock the relevant profile or application row. Email verification will use signed, expiring, single-purpose tokens and keyed-HMAC email digests. Resume parsing will occur outside long database transactions, and the old resume remains active until a replacement succeeds.
+- **Reason:** Mutable booleans, plain digests, and long parsing transactions are insufficient evidence and operational safeguards for sensitive recruitment processing.
+- **Consequences:** These items remain planned for later Week 2 milestones. Parser validation is not malware protection, and no wall-clock parser timeout is promised without subprocess isolation.
+- **Status:** Accepted and planned; not implemented in Milestone 2.1A.

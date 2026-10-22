@@ -2,7 +2,7 @@
 
 This is the authoritative handoff document for another AI assistant. Read it after `AGENTS.md`, then verify its snapshot against Git and the source before changing code.
 
-Last updated: 2026-10-22 23:13 +05:00 (Asia/Karachi)
+Last updated: 2026-10-23 (Asia/Karachi)
 
 ## Project identity
 
@@ -15,13 +15,13 @@ Last updated: 2026-10-22 23:13 +05:00 (Asia/Karachi)
 
 ## Current Git and progress snapshot
 
-- **Current branch:** `main`
-- **Current commit:** `HEAD` (the commit containing this handoff; resolve with `git rev-parse --short HEAD`).
-- **Latest clean checkpoint entering this documentation task:** `614aba6` — project structure reorganization.
+- **Current branch:** `feat/week-2-core-workflows`
+- **Current commit:** `HEAD` — the commit containing the validated Milestone 2.1A deterministic domain-audit foundation; resolve its hash with Git.
+- **Latest clean checkpoint:** `HEAD`; the preceding checkpoint is `d2b2b5f` — persistent project context.
 - **Week 1:** 100% complete.
-- **Current week:** Week 2, 0% product functionality complete. The directory preparation does not count as a Week 2 feature.
-- **Overall project:** 25% complete, based on one completed week out of the four-week plan.
-- **Automated tests:** 28 passing.
+- **Current week:** Week 2, 5% complete. Only Milestone 2.1A, the deterministic domain-audit foundation, is implemented and validated.
+- **Overall project:** 26% complete.
+- **Automated tests:** 62 passing.
 
 ## Current technology stack
 
@@ -65,11 +65,10 @@ Only the accounts web flow currently has implemented views and templates. Most o
 - **Evaluation Agent:** Produce rubric-based scores, evidence, confidence, and an advisory recommendation for human review.
 - **FAQ Agent:** Answer approved job and process questions from controlled sources.
 - **Scheduling Agent:** Assist with interview availability, confirmation, and rescheduling.
-- **Safety Agent:** Detect safety, privacy, bias, prompt-injection, and policy risks and block unsafe actions.
+- **Safety Agent:** Semantically detect prompt injection, bias, coercion, privacy concerns, and unsafe conversational content. It supplements and cannot override deterministic policy enforcement.
 - **Escalation Agent:** Route candidate requests, uncertainty, safety events, and technical failures to authorized humans.
-- **Audit Agent:** Record privacy-safe agent actions, decisions, handoffs, and outcomes.
 
-These agents have database definitions but no operational orchestration implementation yet.
+These agents have database definitions but no operational orchestration implementation yet. Auditing is not a generative-agent responsibility: ordinary Python domain services decide when an event is mandatory, validate a strict event specification, sanitize its metadata, and persist the immutable event. Future agent runtimes may only submit structured events through narrow service adapters.
 
 ## PostgreSQL architecture
 
@@ -112,13 +111,15 @@ AI may screen, summarize, score against an approved rubric, and recommend. It mu
 - Django 6.1 development and production `MAILERS` configuration.
 - Monorepo-style frontend/backend/database/AI/ML/docs/scripts/tests/var structure with updated paths and tooling.
 - Persistent agent operating guide, handoff, roadmap, decision log, work log, architecture documentation, and ignored local prompt counter.
+- Deterministic domain-audit service with a frozen caller command, immutable Week 2 event registry, specification-owned canonical actions, required and allowed metadata rules, safe UUID normalization, bounded payload validation, and safe mandatory-failure exceptions.
 
 ## Current work
 
-No product feature implementation is active. The repository is ready for the first Week 2 product task.
+Milestone 2.1A is implemented, validated, and checkpointed on `feat/week-2-core-workflows`. Milestone 2.1B has not begun.
 
 ## Pending work
 
+- Milestone 2.1B policies and schema: append-only consent history, email-verification foundation, shared authorization conventions, and explicit workflow transition services.
 - Candidate profile editing and secure resume upload workflow.
 - Recruiter/company/job and application management workflows.
 - Interview scheduling, invitations, consent enforcement, and evaluation UI.
@@ -155,19 +156,14 @@ git status --short
 
 ## Exact next recommended task
 
-Implement the first Week 2 vertical slice: authenticated candidate profile editing and secure resume upload/replacement, enforcing candidate ownership, consent, existing PDF/DOCX validation, one-active-resume semantics, protected runtime storage, and audit events. Add focused model/form/view/authorization/upload tests before expanding recruiter workflows.
+Wait for explicit approval to begin Milestone 2.1B. Its first work should define explicit transition-policy tables and the append-only `ConsentRecord` schema, including a unique idempotency key and cache-row locking. Do not begin candidate pages or resume processing before those foundations are approved.
 
 Relevant files:
 
-- `backend/candidates/models.py`
-- `backend/candidates/validators.py`
-- `backend/candidates/views.py`
-- `backend/candidates/tests.py`
-- `backend/accounts/views.py`
-- `backend/accounts/urls.py`
-- `frontend/templates/accounts/candidate_dashboard.html`
-- `frontend/templates/`
-- `frontend/static/`
-- `backend/config/settings.py`
+- `backend/auditlog/services.py`
 - `backend/auditlog/models.py`
-- `SECURITY.md`
+- `backend/auditlog/tests.py`
+- `backend/candidates/models.py`
+- `backend/recruitment/models.py`
+- `backend/interviews/models.py`
+- `backend/accounts/models.py`

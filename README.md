@@ -4,7 +4,7 @@ An industry-oriented, browser-based recruitment platform where specialized AI ag
 
 ## Core agents
 
-Calling Orchestrator, Candidate Profile, Interview, Evaluation, FAQ, Scheduling, Safety, Escalation, and Audit agents.
+Calling Orchestrator, Candidate Profile, Interview, Evaluation, FAQ, Scheduling, Safety, and Escalation agents, supported by a deterministic Python domain-audit service.
 
 ## Stack
 

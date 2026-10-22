@@ -4,7 +4,7 @@ This document describes both the implemented foundation and the planned system. 
 
 ## Status summary
 
-Implemented today: Django configuration, PostgreSQL models/migrations, accounts web flow, role dashboards, resume validation, authentication audit signals, database audit protection, templates/static discovery, and runtime path separation.
+Implemented today: Django configuration, PostgreSQL models/migrations, accounts web flow, role dashboards, resume validation, authentication audit signals, deterministic domain-audit validation, database audit protection, templates/static discovery, and runtime path separation.
 
 Planned: candidate/recruiter workflow views, browser audio transport, local speech execution, multi-agent orchestration, ML inference, safety enforcement services, human review UI, retention jobs, and end-to-end operations.
 
@@ -21,7 +21,7 @@ flowchart LR
     CH -.-> ORCH[Agent orchestration<br/>Planned]
     ORCH -.-> SPEECH[Local STT, TTS, VAD<br/>Planned]
     ORCH -.-> ML[ML inference and evaluation<br/>Planned]
-    DJ --> AUDIT[Audit events<br/>Implemented foundation]
+    DJ --> AUDIT[Deterministic domain audit service<br/>Implemented foundation]
     ORCH -.-> AUDIT
     REVIEW[Authorized human reviewer<br/>Planned workflow] -. approves .-> DJ
 ```
@@ -98,11 +98,13 @@ flowchart TB
     SAFE -->|Allowed| O
     SAFE -->|Risk or uncertainty| ESC[Escalation Agent]
     ESC --> HUMAN[Authorized human]
-    O --> AUD[Audit Agent]
-    ESC --> AUD
+    O -. structured event request .-> AUD[Deterministic domain audit service]
+    ESC -. structured event request .-> AUD
 ```
 
-The safety agent must detect privacy, bias, policy, malicious-input, and unsafe-tool conditions. The escalation agent must create a reviewable record and route it to a human; it must not silently resolve high-impact cases.
+Deterministic Python policy enforcement remains authoritative for permissions, consent, transitions, tool allowlists, approvals, rate limits, and protected fields. The future semantic Safety Agent detects prompt injection, bias, coercion, privacy concerns, and unsafe conversational content but cannot override hard controls. The escalation agent must create a reviewable record and route it to a human; it must not silently resolve high-impact cases.
+
+Future agents never receive unrestricted ORM, SQL, filesystem, model-name, field-name, or recipient access. Each tool must call a narrow Python service with validated input, authorization context, consent enforcement, idempotency where required, mandatory audit recording, structured output, and safe errors.
 
 ## Speech and ML components
 
@@ -110,7 +112,9 @@ The planned local speech path uses Silero VAD to find speech boundaries, Faster 
 
 ## Audit logging
 
-`AuditEvent` records actors, categories, outcomes, severity, resource references, privacy-safe request metadata, chained fields, and a keyed integrity hash. Django blocks model-level modification/deletion and a PostgreSQL migration installs triggers that block bulk updates/deletes. Authentication signals record successful login, failed login with a hashed identifier, and logout. Future domain and agent actions must add sanitized audit coverage.
+`AuditEvent` records actors, categories, outcomes, severity, resource references, privacy-safe request metadata, chained fields, and a keyed integrity hash. Django blocks model-level modification/deletion and a PostgreSQL migration installs triggers that block bulk updates/deletes. Authentication signals record successful login, failed login with a hashed identifier, and logout.
+
+The deterministic domain audit service accepts a frozen structured command, matches it to an immutable Week 2 event registry, and derives the human-readable action only from that registered specification. Each specification declares required and allowed metadata keys. The service normalizes UUID identifiers, enforces actor/resource requirements, and accepts only bounded allowlisted scalar metadata. It rejects missing required metadata, unknown events and metadata, nested private objects, credentials, raw tokens, document/transcript contents, and filesystem paths. Mandatory audit failures raise safe exceptions and can participate in the calling domain service's transaction. An LLM never decides whether auditing is required, which mandatory fields may be omitted, whether an event may change, or whether private content belongs in metadata. Previous-event hash chaining remains unimplemented by design.
 
 ## Data and security flow
 
