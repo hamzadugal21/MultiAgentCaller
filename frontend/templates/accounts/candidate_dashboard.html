@@ -8,6 +8,23 @@
     <h1>Hello, {{ request.user.first_name|default:request.user.email }}</h1>
     <p>Your secure candidate account is ready.</p>
 
+    <section aria-labelledby="verification-heading">
+        <h2 id="verification-heading">Email verification</h2>
+        {% if request.user.email_verified %}
+            <p>Your email address is verified.</p>
+        {% else %}
+            <p>Verify your email before applying for a job.</p>
+            <form method="post" action="{% url 'accounts:email_verification_request' %}">
+                {% csrf_token %}
+                <button class="button button-primary" type="submit">Send verification email</button>
+            </form>
+            <form method="post" action="{% url 'accounts:email_verification_resend' %}">
+                {% csrf_token %}
+                <button class="button" type="submit">Resend verification email</button>
+            </form>
+        {% endif %}
+    </section>
+
     <div class="dashboard-grid">
         <article class="dashboard-card">
             <h2>AI screening call</h2>
@@ -21,9 +38,17 @@
 
         <article class="dashboard-card">
             <h2>Candidate profile</h2>
-            <p>
-                Profile creation, CV upload and skills management are coming next.
-            </p>
+            <p>Keep your profile and current resume up to date.</p>
+            <p><a href="{% url 'candidates:profile_edit' %}">Edit profile</a></p>
+            <p><a href="{% url 'candidates:resume_list' %}">Manage resumes</a></p>
+            <form method="post" action="{% url 'candidates:general_consent' %}">
+                {% csrf_token %}
+                {% if request.user.candidate_profile.ai_processing_consent %}
+                    <button type="submit" name="action" value="revoke">Revoke AI-processing consent</button>
+                {% else %}
+                    <button type="submit" name="action" value="grant">Grant AI-processing consent</button>
+                {% endif %}
+            </form>
         </article>
 
         <article class="dashboard-card">

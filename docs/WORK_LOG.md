@@ -159,3 +159,16 @@ Milestone commit: `8579159` (`feat: add secure email verification foundation`).
 - Known non-failing warnings: two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning. The initial focused run exposed duplicate candidate-profile fixtures because the existing signal already creates profiles; the fixtures were corrected and the rerun passed.
 - Week 2 is **20%** complete and overall progress is **31%**.
 - Next: commit `feat: add deterministic workflow foundations`, then implement Milestone 2.2 candidate workflow.
+
+Milestone commit: `6aab484` (`feat: add deterministic workflow foundations`).
+
+## 2026-10-26 — Milestone 2.2 candidate workflow
+
+- Added candidate-only, allowlisted profile editing and append-only general-consent grant/revoke actions. Role, ownership, protected fields, POST-only consent mutation, and deterministic audits are enforced.
+- Added generic email-verification request/resend pages and a POST confirmation flow backed by the committed signed/HMAC challenge service. Tokens remain absent from storage and audit metadata.
+- Added protected PDF/DOCX upload, randomized storage names, SHA-256 metadata, pending/inactive records, bounded pypdf/python-docx extraction outside long transactions, safe status codes, successful-only atomic activation, and owner-only downloads.
+- Parsing enforces PDF page, DOCX archive-entry/expanded-size, and extracted-character limits. Structural validation is explicitly not described as malware scanning.
+- Added ten candidate/verification view and workflow tests. Validation: 57 focused tests and 129 complete tests passed; Django check found 0 issues; migration drift is absent; pip check, Ruff, and Git diff checks passed.
+- Known warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning. No blocker remains.
+- Week 2 is **40%** complete and overall progress is **35%**.
+- Next: commit `feat: add candidate profile consent and resume workflow`, then implement Milestone 2.3 recruiter/company/job workflows.

@@ -38,7 +38,7 @@ Establish the secure Python/Django/PostgreSQL foundation, core domain schema, au
 - Django, dependency, migration, Ruff, and Git diff checks pass.
 - `main` contains the validated Week 1 and structure checkpoints.
 
-## Week 2 — Core recruitment workflows (20% complete)
+## Week 2 — Core recruitment workflows (40% complete)
 
 ### Objectives
 
@@ -46,8 +46,8 @@ Turn the schema foundation into secure candidate, recruiter, job, application, a
 
 ### Tasks and deliverables
 
-- **Milestone 2.1 — policies and schema:** deterministic domain auditing, state-transition tables, append-only consent history, email-verification design, shared authorization/service conventions, and foundation tests. Milestones 2.1A through 2.1C are committed and validated. Milestone 2.1D adds explicit immutable transition policies and transactional services for jobs, applications, interviews, resumes, and consent, plus inactive-by-default replacement resumes and reschedule-request persistence; it is validated and ready to commit.
-- **Milestone 2.2 — candidate workflow:** profile editing, consent history, email verification, secure resume lifecycle, basic local extraction, protected download, and candidate-focused tests.
+- **Milestone 2.1 — policies and schema:** deterministic domain auditing, state-transition tables, append-only consent history, email-verification design, shared authorization/service conventions, and foundation tests. Milestones 2.1A through 2.1D are committed and validated.
+- **Milestone 2.2 — candidate workflow:** candidate-only allowlisted profile editing, consent history controls, verification request/resend/confirmation pages, protected PDF/DOCX upload and download, bounded basic extraction, safe replacement, deterministic audits, and focused tests are implemented and validated.
 - **Milestone 2.3 — recruiter and jobs:** administrator provisioning, recruiter/company authorization, job management, requirements, questions, FAQs, publishing transitions, and security tests.
 - **Milestone 2.4 — applications:** authenticated candidate job browsing, application creation, verification/consent checks, resume ownership, duplicate prevention, withdrawal, and tests.
 - **Milestone 2.5 — scheduling:** recruiter invitation, hashed expiring tokens, candidate confirmation, reschedule request/approval, cancellation, and tests.
@@ -149,7 +149,7 @@ Deployment planning reference: [Render deployment plan](development/RENDER_DEPLO
 ## Overall status
 
 - Week 1: 100%
-- Week 2: 20%
+- Week 2: 40%
 - Week 3: 0%
 - Week 4: 0%
 - Overall: 29%

@@ -16,11 +16,11 @@ Last updated: 2026-10-26 (Asia/Karachi)
 ## Current Git and progress snapshot
 
 - **Current branch:** `feat/week-2-core-workflows`
-- **Current commit:** `8579159` — secure email-verification foundation.
-- **Latest clean checkpoint:** `8579159` — secure email-verification foundation.
+- **Current commit:** `6aab484` — deterministic workflow foundations.
+- **Latest clean checkpoint:** `6aab484` — deterministic workflow foundations.
 - **Week 1:** 100% complete.
-- **Current week:** Week 2, 20% complete. Milestones 2.1A through 2.1C are committed; Milestone 2.1D is implemented and validated for its focused commit.
-- **Overall project:** 31% complete.
+- **Current week:** Week 2, 40% complete. Milestones 2.1A through 2.1D are committed; Milestone 2.2 is implemented and validated for its focused commit.
+- **Overall project:** 35% complete.
 - **Automated tests:** 111 passing; the focused accounts/audit suite has 105 passing tests.
 
 ## Current technology stack
@@ -123,17 +123,17 @@ AI may screen, summarize, score against an approved rubric, and recommend. It mu
 - Append-only, policy-versioned consent evidence with deterministic grant/revoke/resolution services, mutable cache synchronization, strict actor/scope checks, idempotent replay, deterministic auditing, legacy import, and PostgreSQL immutability protection.
 - Secure email-verification challenge and service foundation with HMAC email binding, signed 24-hour tokens, resend/email-change invalidation, single-use consumption, cache-backed rate limits, and deterministic audits. User-facing pages and application/scheduling enforcement remain later Week 2 work.
 - Deterministic transition tables and transactional services for job, application, interview-schedule, resume-processing, and consent state. Resume activation preserves the prior active resume until processing succeeds; scheduling has minimal invitation-expiry and reschedule-request persistence.
+- Candidate-only profile editing and consent controls, generic verification request/resend/confirmation pages, protected resume upload/download, SHA-256 metadata, bounded PDF/DOCX extraction outside long transactions, and successful-only resume replacement.
 
 ## Current work
 
 Milestone 2.1A is implemented, validated, and checkpointed on `feat/week-2-core-workflows`. The lightweight Render dependency manifest and persistent deployment plan are committed at `eb48e50`; the approved web dependencies are installed in the local environment and the Render manifest still resolves only through `requirements/base.txt`.
 
-Milestones 2.1B and 2.1C are committed and validated at `bee8785` and `8579159`. Milestone 2.1D transition/schema foundations are implemented and validated in the current worktree: 79 focused tests and 119 complete tests pass.
+Milestones 2.1B, 2.1C, and 2.1D are committed and validated at `bee8785`, `8579159`, and `6aab484`. Milestone 2.2 candidate workflow is implemented and validated in the current worktree: 57 focused tests and 129 complete tests pass.
 
 ## Pending work
 
-- Commit the validated Milestone 2.1D transition/schema foundation.
-- Candidate profile editing and secure resume upload workflow.
+- Commit the validated Milestone 2.2 candidate workflow.
 - Recruiter/company/job and application management workflows.
 - Interview scheduling, invitations, consent enforcement, and evaluation UI.
 - Channels/Redis browser call transport and call state management.
@@ -171,7 +171,7 @@ git status --short
 
 ## Exact next recommended task
 
-Commit the validated Milestone 2.1D deterministic transition/schema foundation, then implement Milestone 2.2 candidate profile, consent, email-verification pages, and secure resume workflow.
+Commit the validated Milestone 2.2 candidate workflow, then implement Milestone 2.3 administrator provisioning and recruiter/company/job workflows.
 
 Relevant files:
 

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Your resumes{% endblock %}
+
+{% block content %}
+<section>
+    <h1>Your resumes</h1>
+    <p><a href="{% url 'candidates:resume_upload' %}">Upload a replacement resume</a></p>
+    <ul>
+        {% for resume in resumes %}
+            <li>
+                {{ resume.original_filename }} — {{ resume.get_processing_status_display }}
+                {% if resume.is_active %}(active){% endif %}
+                <a href="{% url 'candidates:resume_download' resume.id %}">Download</a>
+            </li>
+        {% empty %}
+            <li>No resume has been uploaded.</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endblock %}

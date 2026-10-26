@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Upload resume{% endblock %}
+
+{% block content %}
+<section>
+    <h1>Upload resume</h1>
+    <p>PDF and DOCX files up to 5 MB are accepted. Structural checks are not malware scanning.</p>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Upload and process</button>
+    </form>
+</section>
+{% endblock %}

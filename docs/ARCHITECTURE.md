@@ -28,7 +28,7 @@ flowchart LR
 
 ## Browser frontend
 
-The frontend uses Django-rendered HTML in `frontend/templates/` and shared assets in `frontend/static/`. The existing pages cover signup, login, and role-specific dashboard shells. Future pages should remain server-authorized and follow supplied Figma screenshots. Browser code must not receive database credentials, private environment values, unrestricted media paths, or privileged agent tools.
+The frontend uses Django-rendered HTML in `frontend/templates/` and shared assets in `frontend/static/`. Existing pages cover signup, login, role dashboards, candidate profile/consent, email verification, and resume management. Templates are deliberately semantic and minimally styled until Figma screenshots are supplied. Browser code must not receive database credentials, private environment values, unrestricted media paths, or privileged agent tools.
 
 ## Django backend
 
@@ -52,7 +52,7 @@ Creation, resend, email-change invalidation, and consumption are deterministic s
 
 ## Candidate profiles and resume handling
 
-Each candidate user receives one `CandidateProfile`. Candidate skills can be self-reported or derived from approved processing. `Resume` stores protected file metadata, processing status, extracted text, and a checksum field. New resumes default inactive. A deterministic processing service permits only pending-to-processing, processing-to-completed/failed, and failed-to-processing transitions; activation atomically replaces the prior active resume only after successful processing. Upload paths use random names; validators accept structurally plausible PDF/DOCX files up to 5 MB. Upload views, ownership enforcement, extraction, malware scanning, and retention execution remain planned.
+Each candidate user receives one `CandidateProfile`. Candidate-only forms expose an explicit profile-field allowlist and audit changed fields. General AI consent uses the append-only service. `Resume` stores protected file metadata, processing status, extracted text, and a checksum field. Uploads use random names and accept structurally plausible PDF/DOCX files up to 5 MB. Basic pypdf/python-docx extraction runs outside long database transactions with page/archive/expanded-size/text limits. New resumes remain inactive until processing succeeds, then replace the old active resume atomically; failures preserve the old resume. Downloads require ownership. These structural controls are not malware scanning; production scanning and retention execution remain deferred.
 
 ## Recruitment domain
 

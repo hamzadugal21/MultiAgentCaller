@@ -7,6 +7,9 @@ from .views import (
     admin_dashboard_view,
     candidate_dashboard_view,
     dashboard_view,
+    email_verification_confirm_view,
+    email_verification_request_view,
+    email_verification_resend_view,
     recruiter_dashboard_view,
     signup_view,
 )
@@ -26,6 +29,21 @@ urlpatterns = [
     path("signup/", signup_view, name="signup"),
     path("login/", EmailLoginView.as_view(), name="login"),
     path("logout/", SecureLogoutView.as_view(), name="logout"),
+    path(
+        "email/verify/request/",
+        email_verification_request_view,
+        name="email_verification_request",
+    ),
+    path(
+        "email/verify/resend/",
+        email_verification_resend_view,
+        name="email_verification_resend",
+    ),
+    path(
+        "email/verify/<str:token>/",
+        email_verification_confirm_view,
+        name="email_verification_confirm",
+    ),
     path("dashboard/", dashboard_view, name="dashboard"),
     path(
         "dashboard/candidate/",

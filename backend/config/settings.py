@@ -196,6 +196,11 @@ EMAIL_VERIFICATION_INVALID_ATTEMPT_WINDOW_SECONDS = env.int(
     default=3600,
 )
 
+CURRENT_AI_CONSENT_POLICY_VERSION = env(
+    "CURRENT_AI_CONSENT_POLICY_VERSION",
+    default="ai-processing-v1",
+)
+
 
 # File-upload security limits
 MAX_RESUME_UPLOAD_SIZE = 5 * 1024 * 1024
