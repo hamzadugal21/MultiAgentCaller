@@ -124,7 +124,7 @@ The deterministic domain audit service accepts a frozen structured command, matc
 
 ## Consent history
 
-The current Milestone 2.1B worktree adds `auditlog.ConsentRecord` as append-only governance evidence for general AI-processing and application-level AI-interview consent. Its exact fields are UUID `id`; protected `candidate`; consent type (`general_ai_processing` or `ai_interview`); action (`granted` or `revoked`); policy version; collection source (`profile`, `application`, `interview_confirmation`, `admin_assisted`, or `legacy_import`); optional protected application, interview schedule, and recorded-by user; timezone-aware recorded time; globally unique UUID idempotency key; and optional request/correlation UUIDs.
+The committed Week 2 architecture includes `auditlog.ConsentRecord` as append-only governance evidence for general AI-processing and application-level AI-interview consent. Its exact fields are UUID `id`; protected `candidate`; consent type (`general_ai_processing` or `ai_interview`); action (`granted` or `revoked`); policy version; collection source (`profile`, `application`, `interview_confirmation`, `admin_assisted`, or `legacy_import`); optional protected application, interview schedule, and recorded-by user; timezone-aware recorded time; globally unique UUID idempotency key; and optional request/correlation UUIDs.
 
 Named checks are `consent_general_no_context`, `consent_interview_has_app`, `consent_schedule_has_app`, and `consent_nonlegacy_has_actor`. Named indexes are `consent_candidate_type_time`, `consent_app_type_time`, `consent_schedule_time`, `consent_action_time`, `consent_request_id`, and `consent_correlation_id`. Model methods reject updates/deletes and PostgreSQL independently blocks both operations.
 

@@ -152,4 +152,4 @@ Deployment planning reference: [Render deployment plan](development/RENDER_DEPLO
 - Week 2: 100%
 - Week 3: 0%
 - Week 4: 0%
-- Overall: 29%
+- Overall: 50%

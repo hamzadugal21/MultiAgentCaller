@@ -16,8 +16,8 @@ Last updated: 2026-10-26 (Asia/Karachi)
 ## Current Git and progress snapshot
 
 - **Current branch:** `feat/week-2-core-workflows`
-- **Current commit:** `064100a` — complete Week 2 recruitment workflows.
-- **Latest clean checkpoint:** `064100a` — complete Week 2 recruitment workflows.
+- **Current commit:** `d26bf19` — Week 2 documentation checkpoint.
+- **Latest validated product checkpoint:** `064100a` — complete Week 2 recruitment workflows.
 - **Week 1:** 100% complete.
 - **Current week:** Week 2, 100% complete. Milestones 2.1A through 2.6 are committed and validated.
 - **Overall project:** 50% complete.
@@ -43,7 +43,7 @@ ai_system/     Planned orchestration, agents, prompts, safety, approvals
 ml/            Planned pipelines, training, inference, evaluation, artifacts
 docs/          Architecture, roadmap, decisions, work log, handoff
 scripts/       Development, maintenance, and validation utilities
-tests/         Future integration, system, and end-to-end tests
+tests/         Cross-application integration/security; future system/E2E tests
 var/           Ignored runtime media, static output, logs, local agent state
 ```
 

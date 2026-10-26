@@ -227,3 +227,11 @@ Milestone commit: `fd9a6e4` (`feat: add interview invitation and scheduling work
 - Week 2 is **100%** complete and overall four-week progress is **50%**.
 - Final Week 2 checkpoint: `064100a` (`feat: complete week 2 recruitment workflows`).
 - Next: begin Week 3 only after review/approval.
+
+## 2026-10-26 — Week 2 documentation synchronization
+
+- Branch: `feat/week-2-core-workflows`; previous HEAD: `d26bf19`; validated Week 2 product checkpoint: `064100a`.
+- Corrected the roadmap's overall project percentage to 50%, distinguished the documentation HEAD from the validated product checkpoint in the AI handoff, described committed `ConsentRecord` architecture instead of an uncommitted worktree, and updated the cross-application test README for the completed Week 2 integration/security coverage.
+- No application code, tests, migrations, settings, dependencies, or runtime behavior changed.
+- Week 2 remains **100%** complete and overall four-week progress remains **50%**.
+- Next remains the Week 3 deterministic call-session/runtime boundary and simulated local call lifecycle; Week 3 has not started.
