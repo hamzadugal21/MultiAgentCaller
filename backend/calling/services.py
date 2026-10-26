@@ -14,6 +14,7 @@ from auditlog.consent_services import (
 from auditlog.models import AuditEvent
 from auditlog.services import SAFE_CODE_PATTERN, AuditCommand, record_domain_event
 from calling.models import CallSession, SimulatedInterviewResponse
+from calling.realtime import queue_session_status_update
 from interviews.models import InterviewSchedule
 from recruitment.models import JobApplication, RecruiterProfile
 
@@ -341,6 +342,8 @@ def submit_simulated_answer(
                 request_id=request_id,
                 correlation_id=correlation_id,
             )
+        else:
+            queue_session_status_update(locked.pk)
         return response, locked
 
 
@@ -417,6 +420,7 @@ def create_call_session(
                 },
             )
         )
+        queue_session_status_update(session.pk)
         return session
 
 
@@ -560,4 +564,5 @@ def transition_call_session(
                 metadata=metadata,
             )
         )
+        queue_session_status_update(locked.pk)
         return locked

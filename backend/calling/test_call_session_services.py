@@ -1,6 +1,10 @@
 import uuid
 
 import pytest
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from channels.testing import WebsocketCommunicator
+from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.test import Client
 from django.urls import reverse
@@ -15,6 +19,7 @@ from auditlog.consent_services import (
 from auditlog.models import AuditEvent
 from auditlog.services import DomainAuditPersistenceError
 from calling.models import CallSession, SimulatedInterviewResponse
+from calling.realtime import session_group_name
 from calling.services import (
     CALL_SESSION_TRANSITIONS,
     CallSessionAuthorizationError,
@@ -27,6 +32,7 @@ from calling.services import (
     transition_call_session,
 )
 from candidates.models import CandidateProfile, Resume
+from config.asgi import application as asgi_application
 from interviews.models import InterviewSchedule
 from recruitment.models import (
     Company,
@@ -606,3 +612,164 @@ def test_recruiter_status_view_is_company_scoped_and_hides_answers(call_data):
     )
     client.force_login(other_recruiter)
     assert client.get(url).status_code == 404
+
+
+def _websocket_headers(user=None):
+    headers = [
+        (b"host", b"localhost"),
+        (b"origin", b"http://localhost"),
+    ]
+    if user is not None:
+        client = Client()
+        client.force_login(user)
+        session_cookie = client.cookies[settings.SESSION_COOKIE_NAME].value
+        headers.append(
+            (
+                b"cookie",
+                f"{settings.SESSION_COOKIE_NAME}={session_cookie}".encode(),
+            )
+        )
+    return headers
+
+
+@pytest.mark.django_db(transaction=True)
+def test_websocket_requires_authentication_and_exact_session_authorization(call_data):
+    _questions(call_data)
+    session = _active_session(call_data)
+    path = f"/ws/calling/sessions/{session.pk}/status/"
+    candidate_headers = _websocket_headers(call_data["candidate_user"])
+
+    async def scenario():
+        anonymous = WebsocketCommunicator(
+            asgi_application,
+            path,
+            headers=_websocket_headers(),
+        )
+        connected, close_code = await anonymous.connect()
+        assert connected is False
+        assert close_code == 4401
+
+        candidate = WebsocketCommunicator(
+            asgi_application,
+            path,
+            headers=candidate_headers,
+        )
+        connected, _ = await candidate.connect()
+        assert connected is True
+        payload = await candidate.receive_json_from()
+        assert payload == {
+            "type": "session.status",
+            "session_id": str(session.pk),
+            "status": "active",
+            "current_question_index": 0,
+            "simulated_mode": True,
+        }
+        await candidate.send_json_to({"type": "unsupported", "raw_token": "unsafe"})
+        assert await candidate.receive_json_from() == {
+            "type": "session.error",
+            "code": "unsupported_message",
+        }
+        await candidate.disconnect()
+
+    async_to_sync(scenario)()
+
+    other_candidate = User.objects.create_user(
+        email="websocket-other-candidate@example.com",
+        password="TestingOnly!9384",
+    )
+    other_company = Company.objects.create(name="WebSocket Other Company")
+    other_recruiter = User.objects.create_user(
+        email="websocket-other-recruiter@example.com",
+        password="TestingOnly!9384",
+        role=User.Role.RECRUITER,
+    )
+    RecruiterProfile.objects.create(
+        user=other_recruiter,
+        company=other_company,
+        is_verified=True,
+        can_review_candidates=True,
+    )
+    denied_headers = [
+        _websocket_headers(other_candidate),
+        _websocket_headers(other_recruiter),
+    ]
+
+    async def denied_scenario():
+        for headers in denied_headers:
+            denied = WebsocketCommunicator(
+                asgi_application,
+                path,
+                headers=headers,
+            )
+            connected, close_code = await denied.connect()
+            assert connected is False
+            assert close_code == 4403
+
+    async_to_sync(denied_scenario)()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_websocket_groups_are_isolated_and_payloads_are_server_derived(call_data):
+    _questions(call_data)
+    first = _active_session(call_data)
+    call_data["schedule"].is_current = False
+    call_data["schedule"].save(update_fields=("is_current",))
+    now = timezone.now()
+    second_schedule = InterviewSchedule.objects.create(
+        application=call_data["application"],
+        scheduled_by=call_data["recruiter_user"],
+        scheduled_start=now - timezone.timedelta(minutes=1),
+        scheduled_end=now + timezone.timedelta(hours=1),
+        status=InterviewSchedule.Status.CONFIRMED,
+        confirmed_at=now - timezone.timedelta(minutes=2),
+        invitation_expires_at=now + timezone.timedelta(minutes=30),
+    )
+    second = CallSession.objects.create(
+        schedule=second_schedule,
+        status=CallSession.Status.READY,
+        expires_at=second_schedule.scheduled_end,
+        creation_idempotency_key=uuid.uuid4(),
+    )
+    admin_headers = _websocket_headers(call_data["admin"])
+
+    async def scenario():
+        first_socket = WebsocketCommunicator(
+            asgi_application,
+            f"/ws/calling/sessions/{first.pk}/status/",
+            headers=admin_headers,
+        )
+        second_socket = WebsocketCommunicator(
+            asgi_application,
+            f"/ws/calling/sessions/{second.pk}/status/",
+            headers=admin_headers,
+        )
+        assert (await first_socket.connect())[0] is True
+        assert (await second_socket.connect())[0] is True
+        await first_socket.receive_json_from()
+        await second_socket.receive_json_from()
+
+        channel_layer = get_channel_layer()
+        await channel_layer.group_send(
+            session_group_name(first.pk),
+            {
+                "type": "session.status",
+                "payload": {
+                    "raw_token": "must-not-be-forwarded",
+                    "transcript_text": "must-not-be-forwarded",
+                },
+            },
+        )
+        payload = await first_socket.receive_json_from()
+        assert payload["session_id"] == str(first.pk)
+        assert set(payload) == {
+            "type",
+            "session_id",
+            "status",
+            "current_question_index",
+            "simulated_mode",
+        }
+        assert await second_socket.receive_nothing(timeout=0.1)
+        await first_socket.disconnect()
+        await second_socket.disconnect()
+
+    async_to_sync(scenario)()
