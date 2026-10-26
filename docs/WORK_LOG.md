@@ -276,3 +276,17 @@ Milestone commit: `fd9a6e4` (`feat: add interview invitation and scheduling work
 - Known non-failing warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning. No blocker remains.
 - Week 3 is **60%** complete; overall four-week progress is **65%**.
 - Next: implement Milestone 3.4 optional local voice adapter boundaries without persisting recordings or changing the Render dependency boundary.
+
+## 2026-10-27 — Week 3 Milestone 3.4 optional local voice adapters
+
+- Product commit: `40789e2` (`feat: add optional local voice adapters`).
+- Added typed transient mono PCM and structured VAD/STT/TTS/input/output contracts under `ai_system/voice/`.
+- Added lazy local adapters under `ml/voice/` for Silero VAD, Faster Whisper, and the pinned piper-plus package. Faster Whisper is local-files-only and Piper requires a trusted local `.onnx` model; no model was downloaded or run during validation.
+- Added deterministic unavailable/failed status codes, bounded transient audio/text, an unsupported microphone fallback, and a discarding output. Internal exception text and model paths are not returned.
+- No raw audio is audited or persisted, no recording path is used, no wall-clock timeout is claimed without process isolation, and the deterministic text simulation remains independent and usable.
+- Added eight synthetic adapter tests covering invalid PCM, lazy loading, VAD segments, STT bounds, missing TTS model, generated in-memory WAV, safe failures, and non-retention. No live microphone, voice hardware, or generative API test was added.
+- Validation: 8 focused adapter tests and 182 complete tests passed; Django check reported 0 issues; no migration drift; pip check and Ruff across `backend`, `ai_system`, and `ml` passed; Git diff check passed.
+- `requirements/render.txt`, `requirements/base.txt`, and `requirements/production.txt` were unchanged; heavy local ML dependencies remain outside the Render chain.
+- Known non-failing warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning. No blocker remains.
+- Week 3 is **75%** complete; overall four-week progress is **69%**.
+- Next: implement Milestone 3.5's narrow deterministic interview coordinator and allowlisted action boundary without selecting a generative model.

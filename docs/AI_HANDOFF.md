@@ -16,18 +16,20 @@ Last updated: 2026-10-27 (Asia/Karachi)
 ## Current Git and progress snapshot
 
 - **Current branch:** `feat/week-3-ai-interview-runtime`
-- **Current commit:** `a64e9be` — authorized call-session WebSocket status transport.
-- **Latest validated product checkpoint:** `a64e9be` — Week 3 Milestone 3.3.
+- **Current commit:** `40789e2` — optional local voice adapter boundary.
+- **Latest validated product checkpoint:** `40789e2` — Week 3 Milestone 3.4.
 - **Week 1:** 100% complete.
-- **Current week:** Week 3, 60% complete. Milestones 3.1 through 3.3 are committed and validated.
-- **Overall project:** 65% complete.
-- **Automated tests:** 174 passing, including the Week 2 pre-interview suite, deterministic simulated interview, and WebSocket authorization/isolation coverage.
+- **Current week:** Week 3, 75% complete. Milestones 3.1 through 3.4 are committed and validated.
+- **Overall project:** 69% complete.
+- **Automated tests:** 182 passing, including the Week 2 pre-interview suite, simulated interview, WebSocket security, and optional voice-adapter fallback coverage.
 
 ## Current technology stack
 
 The pinned foundation includes Python 3.14, Django 6.1, Django Channels/Daphne, PostgreSQL through Psycopg, django-environ, WhiteNoise, django-axes, django-ratelimit, Argon2, pytest, and Ruff. Current settings configure django-axes, Argon2, PostgreSQL, and WhiteNoise. Production settings configure Redis-backed Channels and Django 6.1 `MAILERS`; development uses an in-memory channel layer and console mailer.
 
 The requirements also pin the planned local speech and ML stack: Faster Whisper for speech-to-text, Piper for text-to-speech, Silero VAD for voice activity detection, PyTorch, Sentence Transformers, scikit-learn, spaCy, NumPy, and pandas. These dependencies being present does not mean the inference or voice pipeline is implemented.
+
+Typed transient-audio interfaces and optional lazy local adapters now exist for Silero VAD, Faster Whisper, and the pinned piper-plus package. They load models locally only when called and return safe structured unavailable/failure results. This is an adapter boundary, not an operational browser voice pipeline; no model was downloaded, selected, trained, or executed during validation.
 
 `requirements/render.txt` is the lightweight dependency boundary for a future free Render demonstration. It includes only `requirements/base.txt`, excludes the local AI/ML stack, and does not configure deployment. The initial hosted demonstration is planned to label AI-call behavior as simulated; the real Whisper/Piper/PyTorch pipeline remains locally runnable.
 
@@ -130,20 +132,21 @@ AI may screen, summarize, score against an approved rubric, and recommend. It mu
 - Deterministic call-session creation and lifecycle with one session per confirmed schedule, persisted idempotency, simulated mode, current-consent gates, candidate/company authorization, scheduled-window enforcement, explicit terminal states, database constraints, transactional audit rollback, and legacy-state migration.
 - Candidate-owned simulated interview pages with approved active job questions, bounded private answers, deterministic ordering and completion, idempotent submission, pause/resume/cancel controls, recruiter/admin safe progress pages, POST/CSRF enforcement, and answer-free audit metadata.
 - Authenticated Channels status WebSocket with exact candidate/company/admin authorization, per-session groups, reauthorization before delivery, server-derived allowlisted payloads, event isolation, safe disconnect handling, and optional on-commit broadcasting. Development remains in-memory; production retains the existing Redis channel layer.
+- Typed transient audio and optional local Silero VAD, Faster Whisper STT, and piper-plus TTS adapters with lazy/local-only loading, bounded text/audio handling, fixed safe failure codes, unsupported-input/output fallbacks, and no recording persistence.
 
 ## Current work
 
-Week 2 remains complete at checkpoint `064100a`. Week 3 Milestones 3.1 through 3.3 are committed at `2bd2710`, `473ea99`, and `a64e9be` on `feat/week-3-ai-interview-runtime`; the full suite passes 174 tests. The next task is Milestone 3.4: optional local voice adapter boundaries with deterministic unavailable/failure fallback.
+Week 2 remains complete at checkpoint `064100a`. Week 3 Milestones 3.1 through 3.4 are committed at `2bd2710`, `473ea99`, `a64e9be`, and `40789e2` on `feat/week-3-ai-interview-runtime`; the full suite passes 182 tests. The next task is Milestone 3.5: a narrow deterministic interview coordinator with approved questions and allowlisted tools.
 
 ## Pending work
 
-- Local STT, TTS, and VAD integration.
+- Browser audio transport and live integration of the optional STT, TTS, and VAD adapters.
 - Agent orchestration, tool allowlists, safety checks, escalation, and human approvals.
 - Operational agent/evaluation pipeline, observability, retention jobs, production hardening, and deployment execution.
 
 ## Known limitations and blockers
 
-- **Limitations:** No operational voice pipeline, audio transport, agent orchestration, ML inference, malware scanner, final human-review UI, or production deployment exists yet. The current WebSocket carries status only, and the interview remains an explicitly labelled text simulation; development Channels is in-memory. Resume checks are structural parsing controls, not malware scanning. Templates remain intentionally minimal because no Figma screenshots have been supplied.
+- **Limitations:** No operational voice pipeline, audio transport, agent orchestration, generative inference, malware scanner, final human-review UI, or production deployment exists yet. Voice adapters are optional boundaries and were tested with injected synthetic engines, not live hardware or models. The current WebSocket carries status only, and the interview remains an explicitly labelled text simulation; development Channels is in-memory. Resume checks are structural parsing controls, not malware scanning. Templates remain intentionally minimal because no Figma screenshots have been supplied.
 - **Blockers:** None recorded. External design screenshots will be needed before pixel-accurate frontend implementation.
 
 ## Known non-failing warnings
@@ -171,17 +174,18 @@ git status --short
 
 ## Exact next recommended task
 
-Implement Week 3 Milestone 3.4: optional local interfaces for VAD, Faster Whisper STT, Piper TTS, and transient audio input/output. Missing models, microphone/platform limitations, and adapter failures must return deterministic safe results while the HTTP simulation remains usable; do not persist recordings or change Render dependencies.
+Implement Week 3 Milestone 3.5: a narrow deterministic interview coordinator that selects only approved questions, advances the existing state machine through allowlisted services, asks one question at a time, returns structured actions, and escalates or stops safely. It must not make hiring decisions, send messages, use unrestricted ORM/tools, or require a generative model.
 
 Relevant files:
 
 - `backend/calling/models.py`
 - `backend/calling/services.py`
-- `backend/calling/test_call_session_services.py`
+- `ai_system/voice/interfaces.py`
 - `ai_system/README.md`
-- `ml/README.md`
-- `requirements/ml.txt`
+- `backend/calling/services.py`
 - `backend/calling/models.py`
+- `backend/agents/models.py`
+- `backend/auditlog/services.py`
 - `backend/recruitment/models.py`
 - `backend/interviews/models.py`
 - `backend/agents/models.py`

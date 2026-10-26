@@ -6,7 +6,7 @@ This document describes both the implemented foundation and the planned system. 
 
 Implemented today: Django configuration, PostgreSQL models/migrations, accounts web flow, role dashboards, resume validation, authentication audit signals, deterministic domain-audit validation, immutable audit/consent protection, append-only consent services, secure email-verification services, explicit recruitment and call-session transition policies, templates/static discovery, and runtime path separation.
 
-Implemented Week 2 product workflows: candidate profile/consent/verification/resume management, administrator/recruiter provisioning, company-scoped jobs, secure applications/withdrawal, and interview invitation/confirmation/rescheduling. Week 3 Milestones 3.1 through 3.3 add the deterministic call-session domain, server-rendered simulated interview, and authenticated status WebSocket. Planned: browser audio transport, local speech execution, multi-agent orchestration, ML inference, semantic safety agents, human review UI, retention jobs, and production deployment.
+Implemented Week 2 product workflows: candidate profile/consent/verification/resume management, administrator/recruiter provisioning, company-scoped jobs, secure applications/withdrawal, and interview invitation/confirmation/rescheduling. Week 3 Milestones 3.1 through 3.4 add the deterministic call-session domain, server-rendered simulated interview, authenticated status WebSocket, and optional local voice adapter boundaries. Planned: browser audio transport, operational local speech execution, multi-agent orchestration, ML inference, semantic safety agents, human review UI, retention jobs, and production deployment.
 
 ## Overall system architecture
 
@@ -125,7 +125,9 @@ Future agents never receive unrestricted ORM, SQL, filesystem, model-name, field
 
 ## Speech and ML components
 
-The planned local speech path uses Silero VAD to find speech boundaries, Faster Whisper to transcribe, and Piper to synthesize responses. ML code belongs in `ml/`, while orchestration and safety policy belong in `ai_system/`. Models, datasets, checkpoints, and generated artifacts are ignored by Git. Evaluation must measure quality, bias, confidence, latency, and failure behavior before production use.
+`ai_system/voice/interfaces.py` defines typed transient mono PCM input plus VAD, STT, TTS, audio-input, and audio-output contracts. `ml/voice/local_adapters.py` implements optional lazy adapters for Silero VAD, Faster Whisper, and piper-plus. Faster Whisper uses local-only model loading; Piper requires a trusted local `.onnx` model path. Missing dependencies/models, unsupported microphone input, and processing failures return fixed safe codes without exposing paths or exception text.
+
+Audio stays in memory and recording is not persisted. Adapter results do not authorize tools, advance workflow state, or enter audit metadata automatically. The deterministic text simulation remains available when any speech capability fails. These boundaries do not provide browser audio transport, subprocess isolation, a measured wall-clock timeout, model selection/training, or production readiness. Models, datasets, checkpoints, and generated artifacts remain ignored by Git; future evaluation must measure quality, bias, confidence, latency, and failure behavior.
 
 ## Audit logging
 

@@ -76,7 +76,7 @@ Turn the schema foundation into secure candidate, recruiter, job, application, a
 - State changes use tested transition services rather than direct status assignment.
 - No migration drift or failing validation remains.
 
-## Week 3 — Voice calling and multi-agent system (60% complete)
+## Week 3 — Voice calling and multi-agent system (75% complete)
 
 ### Objectives
 
@@ -87,7 +87,8 @@ Implement the browser call runtime, local speech pipeline, orchestration, specia
 - **Milestone 3.1 — call-session foundation:** committed and validated deterministic session creation, explicit lifecycle transitions, schedule/application/candidate consistency, current-consent and confirmation gates, candidate/company authorization, idempotency, safe timestamps, privacy-safe audit events, and database constraints.
 - **Milestone 3.2 — simulated interview lifecycle:** committed and validated server-rendered candidate/recruiter flow, approved deterministic question ordering, bounded private answer persistence, idempotent progression/completion, candidate exit controls, POST/CSRF protection, company isolation, safe status visibility, and privacy-safe audits.
 - **Milestone 3.3 — WebSockets and Redis:** committed and validated authenticated, session-authorized status transport, server-derived allowlisted payloads, per-session group isolation, safe disconnect/failure behavior, in-memory development channels, and the existing Redis production channel layer. The HTTP simulation remains authoritative fallback.
-- **Milestone 3.4 — voice adapter boundaries:** next; add optional local VAD, STT, TTS, and audio abstractions with deterministic unavailable/failure fallbacks and no recording persistence.
+- **Milestone 3.4 — voice adapter boundaries:** committed and validated typed transient-audio interfaces plus lazy local Silero VAD, Faster Whisper STT, and piper-plus TTS adapters with local-only model loading, safe structured failures, unsupported-microphone fallback, and no recording persistence.
+- **Milestone 3.5 — interview coordinator:** next; add a narrow deterministic coordinator that selects approved questions, exposes only allowlisted actions, and preserves a deterministic fallback without making employment decisions.
 - Channels/Redis call connection, lifecycle, reconnect, event, and metric handling.
 - Silero VAD, Faster Whisper STT, Piper TTS, and interruption/turn-taking flow.
 - Calling orchestrator and profile, interview, FAQ, scheduling, safety, escalation, and evaluation agent interfaces, integrated with the deterministic domain-audit service.
@@ -154,6 +155,6 @@ Deployment planning reference: [Render deployment plan](development/RENDER_DEPLO
 
 - Week 1: 100%
 - Week 2: 100%
-- Week 3: 60%
+- Week 3: 75%
 - Week 4: 0%
-- Overall: 65%
+- Overall: 69%

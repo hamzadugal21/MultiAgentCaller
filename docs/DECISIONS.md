@@ -218,3 +218,10 @@ Append new decisions; do not rewrite accepted historical decisions unless a late
 - **Reason:** Real-time updates must not bypass domain services or leak answer, transcript, résumé, token, prompt, or secret data across sessions or companies.
 - **Consequences:** Each connection uses Django session authentication and exact object-level authorization, joins a UUID-derived per-session group, reauthorizes before every outgoing update, ignores caller-supplied event payloads, and closes safely on authorization or channel-layer failure. HTTP remains the deterministic fallback.
 - **Status:** Accepted and implemented for Week 3 Milestone 3.3.
+
+## 2026-10-27 — Optional local voice adapters with deterministic fallback
+
+- **Decision:** Define typed transient-audio contracts separately from lazy local Silero VAD, Faster Whisper STT, and piper-plus TTS adapters. Model loading is local-only, adapter failures return fixed safe codes, and the deterministic text simulation remains the required fallback.
+- **Reason:** Voice/model availability varies by device and platform and must not control authorization, consent, call state, or basic interview availability.
+- **Consequences:** No model is selected or trained here, no raw audio is audited, no recording is persisted, no wall-clock timeout is promised without process isolation, and heavy ML dependencies remain excluded from `requirements/render.txt`.
+- **Status:** Accepted and implemented for Week 3 Milestone 3.4.
