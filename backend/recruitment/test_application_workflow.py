@@ -165,7 +165,11 @@ def test_withdrawal_is_blocked_after_call_begins(client, application_data):
         scheduled_start=timezone.now() + timezone.timedelta(days=2),
         scheduled_end=timezone.now() + timezone.timedelta(days=2, hours=1),
     )
-    CallSession.objects.create(schedule=schedule, status=CallSession.Status.IN_PROGRESS)
+    CallSession.objects.create(
+        schedule=schedule,
+        status=CallSession.Status.ACTIVE,
+        started_at=timezone.now(),
+    )
     client.force_login(application_data["candidate_user"])
     client.post(reverse("recruitment:application_withdraw", args=(application.pk,)))
     application.refresh_from_db()

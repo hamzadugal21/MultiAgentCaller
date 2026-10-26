@@ -31,7 +31,7 @@ UUID_METADATA_KEYS = frozenset(
 )
 IDENTIFIER_LIST_METADATA_KEYS = frozenset({"capabilities", "changed_fields"})
 INTEGER_METADATA_KEYS = frozenset({"extracted_character_count", "size_bytes"})
-BOOLEAN_METADATA_KEYS = frozenset({"is_verified"})
+BOOLEAN_METADATA_KEYS = frozenset({"is_verified", "simulated_mode"})
 TIMESTAMP_METADATA_KEYS = frozenset({"invitation_expires_at"})
 CODE_METADATA_KEYS = frozenset(
     {
@@ -421,6 +421,152 @@ EVENT_SPECS = MappingProxyType(
         "Interview reschedule request rejected",
         {"application_id", "request_id"},
         required_metadata={"application_id", "request_id"},
+    ),
+    # Interview call sessions
+    "call_session.created": _spec(
+        AuditEvent.Category.INTERVIEW,
+        "calling.CallSession",
+        "Interview call session created",
+        {
+            "application_id",
+            "interview_schedule_id",
+            "simulated_mode",
+            "status_to",
+        },
+        required_metadata={
+            "application_id",
+            "interview_schedule_id",
+            "simulated_mode",
+            "status_to",
+        },
+        actor_required=False,
+    ),
+    "call_session.ready": _spec(
+        AuditEvent.Category.INTERVIEW,
+        "calling.CallSession",
+        "Interview call session marked ready",
+        {"application_id", "interview_schedule_id", "status_from", "status_to"},
+        required_metadata={
+            "application_id",
+            "interview_schedule_id",
+            "status_from",
+            "status_to",
+        },
+        actor_required=False,
+    ),
+    "call_session.started": _spec(
+        AuditEvent.Category.INTERVIEW,
+        "calling.CallSession",
+        "Interview call session started",
+        {"application_id", "interview_schedule_id", "status_from", "status_to"},
+        required_metadata={
+            "application_id",
+            "interview_schedule_id",
+            "status_from",
+            "status_to",
+        },
+    ),
+    "call_session.paused": _spec(
+        AuditEvent.Category.INTERVIEW,
+        "calling.CallSession",
+        "Interview call session paused",
+        {"application_id", "interview_schedule_id", "status_from", "status_to"},
+        required_metadata={
+            "application_id",
+            "interview_schedule_id",
+            "status_from",
+            "status_to",
+        },
+    ),
+    "call_session.resumed": _spec(
+        AuditEvent.Category.INTERVIEW,
+        "calling.CallSession",
+        "Interview call session resumed",
+        {"application_id", "interview_schedule_id", "status_from", "status_to"},
+        required_metadata={
+            "application_id",
+            "interview_schedule_id",
+            "status_from",
+            "status_to",
+        },
+    ),
+    "call_session.completed": _spec(
+        AuditEvent.Category.INTERVIEW,
+        "calling.CallSession",
+        "Interview call session completed",
+        {
+            "application_id",
+            "interview_schedule_id",
+            "reason_code",
+            "status_from",
+            "status_to",
+        },
+        required_metadata={
+            "application_id",
+            "interview_schedule_id",
+            "reason_code",
+            "status_from",
+            "status_to",
+        },
+    ),
+    "call_session.cancelled": _spec(
+        AuditEvent.Category.INTERVIEW,
+        "calling.CallSession",
+        "Interview call session cancelled",
+        {
+            "application_id",
+            "interview_schedule_id",
+            "reason_code",
+            "status_from",
+            "status_to",
+        },
+        required_metadata={
+            "application_id",
+            "interview_schedule_id",
+            "reason_code",
+            "status_from",
+            "status_to",
+        },
+    ),
+    "call_session.expired": _spec(
+        AuditEvent.Category.INTERVIEW,
+        "calling.CallSession",
+        "Interview call session expired",
+        {
+            "application_id",
+            "interview_schedule_id",
+            "reason_code",
+            "status_from",
+            "status_to",
+        },
+        required_metadata={
+            "application_id",
+            "interview_schedule_id",
+            "reason_code",
+            "status_from",
+            "status_to",
+        },
+        actor_required=False,
+    ),
+    "call_session.failed": _spec(
+        AuditEvent.Category.INTERVIEW,
+        "calling.CallSession",
+        "Interview call session failed",
+        {
+            "application_id",
+            "failure_code",
+            "interview_schedule_id",
+            "status_from",
+            "status_to",
+        },
+        required_metadata={
+            "application_id",
+            "failure_code",
+            "interview_schedule_id",
+            "status_from",
+            "status_to",
+        },
+        actor_required=False,
     ),
     }
 )

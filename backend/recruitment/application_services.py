@@ -131,7 +131,8 @@ def withdraw_application(*, application, actor):
 
         if CallSession.objects.filter(
             schedule__application=locked,
-        ).exclude(status=CallSession.Status.READY).exists():
+            started_at__isnull=False,
+        ).exists():
             raise ApplicationServiceError("The application cannot be withdrawn.")
 
         schedule = (

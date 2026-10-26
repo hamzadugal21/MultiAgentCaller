@@ -9,13 +9,14 @@ from interviews.models import InterviewSchedule
 
 class CallSession(models.Model):
     class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
         READY = "ready", "Ready"
-        CONNECTING = "connecting", "Connecting"
-        IN_PROGRESS = "in_progress", "In progress"
+        ACTIVE = "active", "Active"
         PAUSED = "paused", "Paused"
         COMPLETED = "completed", "Completed"
+        CANCELLED = "cancelled", "Cancelled"
+        EXPIRED = "expired", "Expired"
         FAILED = "failed", "Failed"
-        TERMINATED = "terminated", "Terminated"
 
     id = models.UUIDField(
         primary_key=True,
@@ -28,12 +29,26 @@ class CallSession(models.Model):
         related_name="call_sessions",
     )
     attempt_number = models.PositiveSmallIntegerField(default=1)
+    creation_idempotency_key = models.UUIDField(
+        unique=True,
+        null=True,
+        blank=True,
+        editable=False,
+    )
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
-        default=Status.READY,
+        default=Status.PENDING,
         db_index=True,
     )
+    expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+    simulated_mode = models.BooleanField(default=True)
+    completion_reason = models.CharField(max_length=80, blank=True)
+    current_question_index = models.PositiveIntegerField(default=0)
     browser_access_token_hash = models.CharField(
         max_length=64,
         unique=True,
@@ -110,11 +125,15 @@ class CallSession(models.Model):
         indexes = [
             models.Index(fields=("status", "created_at")),
             models.Index(fields=("schedule", "status")),
+            models.Index(
+                fields=("status", "expires_at"),
+                name="call_status_expires",
+            ),
         ]
         constraints = [
             models.UniqueConstraint(
-                fields=("schedule", "attempt_number"),
-                name="unique_call_attempt_per_schedule",
+                fields=("schedule",),
+                name="unique_call_session_per_schedule",
             ),
             models.CheckConstraint(
                 condition=(
@@ -123,6 +142,35 @@ class CallSession(models.Model):
                     | Q(ended_at__gte=F("started_at"))
                 ),
                 name="call_end_not_before_start",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(status__in=("pending", "ready"), started_at__isnull=True)
+                    | Q(
+                        status__in=("active", "paused", "completed"),
+                        started_at__isnull=False,
+                    )
+                    | Q(status__in=("cancelled", "expired", "failed"))
+                ),
+                name="call_started_state_consistent",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(
+                        status__in=("pending", "ready", "active", "paused"),
+                        ended_at__isnull=True,
+                    )
+                    | Q(
+                        status__in=(
+                            "completed",
+                            "cancelled",
+                            "expired",
+                            "failed",
+                        ),
+                        ended_at__isnull=False,
+                    )
+                ),
+                name="call_terminal_end_consistent",
             ),
         ]
 
