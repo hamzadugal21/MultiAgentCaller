@@ -204,3 +204,10 @@ Append new decisions; do not rewrite accepted historical decisions unless a late
 - **Reason:** Authorization, consent, schedule eligibility, idempotency, failure handling, timestamps, and mandatory auditing must remain deterministic and testable independently of transport or model availability.
 - **Consequences:** Candidate access is ownership-scoped; verified recruiters are company-scoped and require candidate-review capability; administrators remain explicit trusted actors. Current email verification and general/application consent are rechecked for entry into ready/active states. Persistent audio recording remains disabled by the service, and call audits contain only allowlisted identifiers, codes, state changes, and the simulated-mode flag.
 - **Status:** Accepted and implemented for Week 3 Milestone 3.1.
+
+## 2026-10-27 — Approved-question simulated interview boundary
+
+- **Decision:** The first operational interview experience is a server-rendered text simulation that selects only active job-owned interview questions in deterministic order. Candidate answers are bounded private database records and never copied into audit metadata or recruiter operational status pages.
+- **Reason:** Prove ownership, consent, state, idempotency, question progression, cancellation, privacy, and failure behavior before introducing real-time transport or model-driven dialogue.
+- **Consequences:** Mutations are POST-only and CSRF-protected. Only the candidate may start, pause, resume, answer, or complete; authorized recruiters/administrators may see safe status and cancel but cannot impersonate the candidate. Audit records contain question identifiers and indexes, not answer text.
+- **Status:** Accepted and implemented for Week 3 Milestone 3.2.

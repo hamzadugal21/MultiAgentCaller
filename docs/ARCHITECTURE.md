@@ -6,7 +6,7 @@ This document describes both the implemented foundation and the planned system. 
 
 Implemented today: Django configuration, PostgreSQL models/migrations, accounts web flow, role dashboards, resume validation, authentication audit signals, deterministic domain-audit validation, immutable audit/consent protection, append-only consent services, secure email-verification services, explicit recruitment and call-session transition policies, templates/static discovery, and runtime path separation.
 
-Implemented Week 2 product workflows: candidate profile/consent/verification/resume management, administrator/recruiter provisioning, company-scoped jobs, secure applications/withdrawal, and interview invitation/confirmation/rescheduling. Week 3 Milestone 3.1 adds the deterministic call-session domain foundation. Planned: the simulated interview pages, browser audio transport, local speech execution, multi-agent orchestration, ML inference, semantic safety agents, human review UI, retention jobs, and production deployment.
+Implemented Week 2 product workflows: candidate profile/consent/verification/resume management, administrator/recruiter provisioning, company-scoped jobs, secure applications/withdrawal, and interview invitation/confirmation/rescheduling. Week 3 Milestones 3.1 and 3.2 add the deterministic call-session domain and server-rendered simulated interview. Planned: browser real-time/audio transport, local speech execution, multi-agent orchestration, ML inference, semantic safety agents, human review UI, retention jobs, and production deployment.
 
 ## Overall system architecture
 
@@ -28,7 +28,7 @@ flowchart LR
 
 ## Browser frontend
 
-The frontend uses Django-rendered HTML in `frontend/templates/` and shared assets in `frontend/static/`. Existing pages cover signup, login, role dashboards, candidate profile/consent, email verification, and resume management. Templates are deliberately semantic and minimally styled until Figma screenshots are supplied. Browser code must not receive database credentials, private environment values, unrestricted media paths, or privileged agent tools.
+The frontend uses Django-rendered HTML in `frontend/templates/` and shared assets in `frontend/static/`. Existing pages cover signup, login, role dashboards, candidate profile/consent, email verification, resume management, and the clearly labelled simulated interview. Templates are deliberately semantic and minimally styled until Figma screenshots are supplied. Browser code must not receive database credentials, private environment values, unrestricted media paths, or privileged agent tools.
 
 ## Django backend
 
@@ -68,7 +68,9 @@ Schedules track UTC start/end times, an IANA display timezone, state, keyed-HMAC
 
 Transactional services lock the schedule or session row, reload actors from PostgreSQL, enforce confirmed/current schedule eligibility, candidate email verification, current general and application interview consent, candidate ownership, verified recruiter capability/company scope, and scheduled start/end limits. Only the candidate can start, pause, resume, or complete an interview; candidate, authorized recruiter, or administrator can cancel; readiness, expiry, and failure are system transitions. Every successful creation or transition produces a mandatory allowlisted audit event in the same transaction, so audit failure rolls the state change back. Repeat submission of the same creation idempotency key returns the original session; a different key cannot create another session for the schedule.
 
-Persistent audio recording is not used by this runtime. Existing speech-engine, transcript, event, and metric schema remains a foundation only. The next milestone adds a deterministic HTTP simulated interview; Channels/Redis transport follows only after that flow is stable.
+`calling.SimulatedInterviewResponse` stores one bounded private answer per approved job question and session, with deterministic question indexes and UUID idempotency. The candidate pages expose one active question at a time and use POST/CSRF-protected preparation, start, pause, resume, answer, and cancellation operations. Recruiter/administrator pages expose safe operational progress without answer content. Answer audits contain only the session resource, application/schedule/question identifiers, and question index; mandatory audit failure rolls response and progress changes back.
+
+Persistent audio recording is not used by this runtime. Existing speech-engine, transcript, event, and metric schema remains a foundation only. Channels/Redis status transport is the next milestone, with the validated HTTP simulation retained as fallback.
 
 ## Recruitment call workflow
 
@@ -77,6 +79,8 @@ flowchart TD
     A[Job application<br/>Week 2 implemented] --> B[Recruiter interview invitation<br/>Week 2 implemented]
     B --> C[Candidate confirms schedule and consent<br/>Week 2 implemented]
     C --> D[Create call session<br/>Deterministic service implemented]
+    D --> S[Simulated approved questions<br/>HTTP flow implemented]
+    S --> D
     D --> E[Browser audio connection<br/>Planned]
     E --> F[VAD and STT<br/>Planned]
     F --> G[Orchestrator selects approved agent<br/>Planned]

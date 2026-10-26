@@ -248,3 +248,16 @@ Milestone commit: `fd9a6e4` (`feat: add interview invitation and scheduling work
 - Known non-failing warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning.
 - Week 3 is **15%** complete; overall four-week progress is **54%**.
 - Next: implement Milestone 3.2's deterministic server-rendered simulated interview lifecycle before WebSockets, Redis runtime state, voice adapters, or generative orchestration.
+
+## 2026-10-27 — Week 3 Milestone 3.2 simulated interview lifecycle
+
+- Product commit: `473ea99` (`feat: add simulated interview lifecycle`).
+- Added `calling.SimulatedInterviewResponse` with protected session/question relationships, deterministic question index, bounded service/form input, unique answer/idempotency constraints, and session/time indexing; migration `calling.0003_simulatedinterviewresponse` is applied with no drift.
+- Added candidate pages to prepare, start, pause, resume, answer, complete, and cancel a clearly labelled text simulation. Only active job-owned questions are selected in deterministic order, at least one approved question is required, and repeat network submissions reuse UUID idempotency.
+- Added company-scoped recruiter and administrator operational views. They expose status/progress but never candidate answer content, and they cannot perform candidate-only actions.
+- All mutations are POST-only and use Django CSRF protection. Candidate ownership, current consent, verified email, schedule eligibility, state transitions, answer bounds, and audit rollback are enforced in services rather than templates.
+- Added privacy-safe `call_session.answer_submitted` auditing with identifiers/index only. Answer text is private domain data and is not copied into audit metadata.
+- Validation: 87 focused calling/audit tests and 172 complete tests passed; Django check reported 0 issues; all migrations are applied with no drift; pip check, Ruff, and Git diff checks passed.
+- Known non-failing warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning. No blockers remain.
+- Week 3 is **40%** complete; overall four-week progress is **60%**.
+- Next: implement Milestone 3.3 authenticated, session-scoped Channels/WebSocket status transport while preserving the deterministic HTTP simulation as fallback.
