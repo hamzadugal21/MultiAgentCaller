@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block title %}Request rescheduling{% endblock %}
+
+{% block content %}
+<section>
+    <h1>Request a different interview time</h1>
+    <form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">Submit request</button></form>
+</section>
+{% endblock %}

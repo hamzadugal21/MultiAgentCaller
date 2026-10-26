@@ -67,3 +67,17 @@ class JobApplicationForm(forms.Form):
             is_active=True,
             processing_status=Resume.ProcessingStatus.COMPLETED,
         )
+
+
+class InterviewInvitationForm(forms.Form):
+    scheduled_start = forms.DateTimeField(
+        widget=forms.DateTimeInput(attrs={"type": "datetime-local"})
+    )
+    scheduled_end = forms.DateTimeField(
+        widget=forms.DateTimeInput(attrs={"type": "datetime-local"})
+    )
+    timezone = forms.CharField(max_length=64, initial="Asia/Karachi")
+
+
+class InterviewRescheduleForm(InterviewInvitationForm):
+    reason = forms.CharField(required=False, max_length=1000, widget=forms.Textarea)

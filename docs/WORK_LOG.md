@@ -198,3 +198,18 @@ Milestone commit: `44342b4` (`feat: add recruiter company and job workflows`).
 - Known warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning. No blocker remains.
 - Week 2 is **75%** complete and overall progress is **44%**.
 - Next: commit `feat: add secure candidate application workflow`, then implement Milestone 2.5 scheduling.
+
+Milestone commit: `4eb76b3` (`feat: add secure candidate application workflow`).
+
+## 2026-10-26 — Milestone 2.5 interview invitation and scheduling workflow
+
+- Added company-scoped recruiter invitation creation and notification, requiring verified candidate email plus current general and application AI consent.
+- Invitation tokens use a versioned signed payload and keyed-HMAC digest; raw tokens are never stored or audited. Expiry is the earlier of 48 hours or scheduled start. Persisted idempotency and delivery state support safe retry after mail failure.
+- Added row-locked, single-use candidate confirmation with schedule-linked consent evidence, UTC persistence, IANA timezone validation, cancellation, and system-only due expiration.
+- Added candidate reschedule requests and recruiter approval/rejection. Approval atomically retires the old schedule, activates a new pending schedule, and creates a new invitation; rejection leaves the existing schedule unchanged.
+- Created and applied `interviews.0003_interviewschedule_invitation_delivery_status_and_more`; migration drift is absent.
+- Added nine focused scheduling/security tests. Validation: 46 focused tests and 153 complete tests passed; Django check found 0 issues; pip check, Ruff, and Git diff checks passed.
+- The first focused run found a test retry with changed microseconds and a stale returned replacement object; the test now reuses identical semantics and the service refreshes the replacement before returning. No blocker remains.
+- Known warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning.
+- Week 2 is **90%** complete and overall progress is **48%**.
+- Next: commit `feat: add interview invitation and scheduling workflow`, then complete Milestone 2.6 integration/security validation.

@@ -184,6 +184,13 @@ Append new decisions; do not rewrite accepted historical decisions unless a late
 - **Consequences:** New resumes start inactive and replace the current resume only after successful processing. Interview invitations have persisted expiry, reschedule proposals have minimal review persistence, and invalid or terminal transitions fail safely. User-facing views must call these services in later milestones.
 - **Status:** Accepted and implemented as the Milestone 2.1D foundation.
 
+## 2026-10-26 — Interview invitation token and delivery boundary
+
+- **Decision:** Interview invitations use a deterministic, versioned signed payload derived from a unique caller-supplied idempotency UUID, while PostgreSQL stores only its keyed-HMAC digest, expiry, idempotency key, and safe delivery state. Confirmation is row-locked and single-use.
+- **Reason:** This permits safe network/email retry without storing raw bearer tokens and makes expiry, replay, delivery failure, and rescheduling behavior auditable.
+- **Consequences:** Invitations expire at the earlier of 48 hours or scheduled start. Candidate verification plus current general/application consent are required at invitation and confirmation. Email recipients are derived from the application, errors use safe codes, and reschedule approval issues a new pending invitation.
+- **Status:** Accepted and implemented for Milestone 2.5.
+
 ## 2026-10-23 — Lightweight Render demonstration dependencies
 
 - **Decision:** Render's free demonstration build will install `requirements/render.txt`, which includes only `requirements/base.txt`. Heavy local AI/ML packages are intentionally excluded, and the hosted demonstration will initially use a clearly labelled simulated AI-call mode.

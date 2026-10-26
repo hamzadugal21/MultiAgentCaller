@@ -17,6 +17,11 @@ class InterviewSchedule(models.Model):
         CANCELLED = "cancelled", "Cancelled"
         EXPIRED = "expired", "Expired"
 
+    class DeliveryStatus(models.TextChoices):
+        PENDING = "pending", "Pending"
+        SENT = "sent", "Sent"
+        FAILED = "failed", "Failed"
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -60,6 +65,22 @@ class InterviewSchedule(models.Model):
     invitation_expires_at = models.DateTimeField(
         null=True,
         blank=True,
+    )
+    invitation_idempotency_key = models.UUIDField(
+        unique=True,
+        null=True,
+        blank=True,
+        editable=False,
+    )
+    invitation_delivery_status = models.CharField(
+        max_length=20,
+        choices=DeliveryStatus.choices,
+        default=DeliveryStatus.PENDING,
+    )
+    invitation_last_error_code = models.CharField(
+        max_length=64,
+        blank=True,
+        editable=False,
     )
     confirmed_at = models.DateTimeField(
         null=True,

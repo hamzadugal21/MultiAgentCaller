@@ -222,6 +222,10 @@ def _accessible_application(request, application_id):
 @role_required(User.Role.CANDIDATE, User.Role.RECRUITER)
 def application_detail_view(request, application_id):
     application = _accessible_application(request, application_id)
+    schedule = application.interview_schedules.filter(is_current=True).first()
+    pending_reschedules = (
+        schedule.reschedule_requests.filter(status="pending") if schedule else ()
+    )
     history = AuditEvent.objects.filter(
         resource_type="recruitment.JobApplication",
         resource_id=str(application.pk),
@@ -234,7 +238,12 @@ def application_detail_view(request, application_id):
     return render(
         request,
         "recruitment/application_detail.html",
-        {"application": application, "history": history},
+        {
+            "application": application,
+            "history": history,
+            "schedule": schedule,
+            "pending_reschedules": pending_reschedules,
+        },
     )
 
 

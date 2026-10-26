@@ -408,6 +408,20 @@ EVENT_SPECS = MappingProxyType(
         {"application_id", "status_from", "status_to"},
         required_metadata={"application_id", "status_from", "status_to"},
     ),
+    "interview.invitation_delivery_failed": _spec(
+        AuditEvent.Category.INTERVIEW,
+        "interviews.InterviewSchedule",
+        "Interview invitation delivery failed",
+        {"application_id", "failure_code"},
+        required_metadata={"application_id", "failure_code"},
+    ),
+    "interview.reschedule_rejected": _spec(
+        AuditEvent.Category.INTERVIEW,
+        "interviews.InterviewSchedule",
+        "Interview reschedule request rejected",
+        {"application_id", "request_id"},
+        required_metadata={"application_id", "request_id"},
+    ),
     }
 )
 

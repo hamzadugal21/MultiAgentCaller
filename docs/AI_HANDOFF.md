@@ -16,11 +16,11 @@ Last updated: 2026-10-26 (Asia/Karachi)
 ## Current Git and progress snapshot
 
 - **Current branch:** `feat/week-2-core-workflows`
-- **Current commit:** `44342b4` — recruiter, company, and job workflows.
-- **Latest clean checkpoint:** `44342b4` — recruiter/company/job workflows.
+- **Current commit:** `4eb76b3` — secure candidate application workflow.
+- **Latest clean checkpoint:** `4eb76b3` — secure candidate application workflow.
 - **Week 1:** 100% complete.
-- **Current week:** Week 2, 75% complete. Milestones 2.1A through 2.3 are committed; Milestone 2.4 is implemented and validated for its focused commit.
-- **Overall project:** 44% complete.
+- **Current week:** Week 2, 90% complete. Milestones 2.1A through 2.4 are committed; Milestone 2.5 is implemented and validated for its focused commit.
+- **Overall project:** 48% complete.
 - **Automated tests:** 111 passing; the focused accounts/audit suite has 105 passing tests.
 
 ## Current technology stack
@@ -126,16 +126,17 @@ AI may screen, summarize, score against an approved rubric, and recommend. It mu
 - Candidate-only profile editing and consent controls, generic verification request/resend/confirmation pages, protected resume upload/download, SHA-256 metadata, bounded PDF/DOCX extraction outside long transactions, and successful-only resume replacement.
 - Administrator-controlled company/recruiter provisioning boundaries, recruiter verification/capabilities, company-isolated job management and publishing transitions, job skills/questions/FAQs, and authenticated-candidate-only open-job browsing.
 - Secure application creation with verified-email/open-job/deadline/active-resume checks, duplicate prevention, optional append-only AI-interview consent, scoped recruiter/candidate views, audit-derived history, and pre-call withdrawal that cancels the current schedule transactionally.
+- Secure interview invitation and scheduling with company-scoped recruiter authority, signed single-purpose tokens stored only as keyed-HMAC digests, persisted expiry/delivery/idempotency state, current-consent and verified-email confirmation, candidate reschedule requests, recruiter approval/rejection, cancellation/expiry, email notification, and deterministic audits.
 
 ## Current work
 
 Milestone 2.1A is implemented, validated, and checkpointed on `feat/week-2-core-workflows`. The lightweight Render dependency manifest and persistent deployment plan are committed at `eb48e50`; the approved web dependencies are installed in the local environment and the Render manifest still resolves only through `requirements/base.txt`.
 
-Milestones 2.1B through 2.3 are committed and validated at `bee8785`, `8579159`, `6aab484`, `57f1cb3`, and `44342b4`. Milestone 2.4 application workflow is implemented and validated in the current worktree: 14 focused tests and 144 complete tests pass.
+Milestones 2.1B through 2.4 are committed and validated at `bee8785`, `8579159`, `6aab484`, `57f1cb3`, `44342b4`, and `4eb76b3`. Milestone 2.5 scheduling is implemented and validated in the current worktree: 46 focused tests and 153 complete tests pass.
 
 ## Pending work
 
-- Commit the validated Milestone 2.4 application workflow.
+- Commit the validated Milestone 2.5 scheduling workflow.
 - Interview scheduling, invitations, consent enforcement, and evaluation UI.
 - Channels/Redis browser call transport and call state management.
 - Local STT, TTS, and VAD integration.
@@ -172,7 +173,7 @@ git status --short
 
 ## Exact next recommended task
 
-Commit the validated Milestone 2.4 application workflow, then implement Milestone 2.5 secure interview invitation, confirmation, rescheduling, cancellation, and expiry.
+Commit the validated Milestone 2.5 scheduling workflow, then complete Milestone 2.6 cross-application integration and attack-path security review.
 
 Relevant files:
 
