@@ -16,12 +16,12 @@ Last updated: 2026-10-26 (Asia/Karachi)
 ## Current Git and progress snapshot
 
 - **Current branch:** `feat/week-2-core-workflows`
-- **Current commit:** `4eb76b3` — secure candidate application workflow.
-- **Latest clean checkpoint:** `4eb76b3` — secure candidate application workflow.
+- **Current commit:** `fd9a6e4` — interview invitation and scheduling workflow; the final Week 2 integration/security checkpoint is the current validated worktree awaiting commit.
+- **Latest clean checkpoint:** `fd9a6e4` — interview invitation and scheduling workflow.
 - **Week 1:** 100% complete.
-- **Current week:** Week 2, 90% complete. Milestones 2.1A through 2.4 are committed; Milestone 2.5 is implemented and validated for its focused commit.
-- **Overall project:** 48% complete.
-- **Automated tests:** 111 passing; the focused accounts/audit suite has 105 passing tests.
+- **Current week:** Week 2, 100% complete after final checkpoint commit. Milestones 2.1A through 2.5 are committed; Milestone 2.6 is implemented and validated in the current worktree.
+- **Overall project:** 50% complete.
+- **Automated tests:** 156 passing, including the complete pre-interview integration and consolidated security suite.
 
 ## Current technology stack
 
@@ -51,15 +51,15 @@ Root files retain repository-wide configuration and documentation. Django templa
 
 ## Django applications
 
-- `accounts`: Custom email-based user model, candidate-only public signup, login/logout, three roles, role dashboards, authentication auditing, automatic candidate-profile creation, and the secure email-verification challenge/service foundation.
-- `candidates`: Candidate profiles, skills, resume metadata/storage models, safe randomized upload paths, and PDF/DOCX size and structure validation.
-- `recruitment`: Companies, recruiter profiles, job postings, skill requirements, applications, interview questions, and job FAQs.
-- `interviews`: Interview schedules, evaluation rubrics and criteria, candidate evaluations, criterion scores, and reviewer fields.
+- `accounts`: Custom email-based user model, candidate-only public signup, login/logout, three roles, role dashboards, authentication auditing, automatic candidate-profile creation, and secure email-verification services/pages.
+- `candidates`: Candidate profile/consent pages, skills, protected resume upload/download, randomized storage, PDF/DOCX validation and bounded extraction, processing transitions, and successful-only replacement.
+- `recruitment`: Administrator company/recruiter provisioning, company-scoped job management, skills/questions/FAQs, candidate browsing, secure applications, withdrawal, and audit-derived history.
+- `interviews`: Secure invitations, confirmation, rescheduling, cancellation/expiry, plus planned evaluation rubrics/criteria, candidate evaluations, scores, and reviewer fields.
 - `calling`: Call sessions, transcript segments, call events, performance metrics, consent, and optional recording metadata.
 - `agents`: Versioned agent definitions, runs, actions, handoffs, approval fields, and escalation records.
-- `auditlog`: Immutable keyed audit events, security incidents, data-retention records, and the in-review append-only consent-history implementation. PostgreSQL triggers protect audit events and consent evidence from database-level update and deletion.
+- `auditlog`: Immutable keyed audit events, security incidents, data-retention records, and append-only policy-versioned consent history. PostgreSQL triggers protect audit events and consent evidence from database-level update and deletion.
 
-Only the accounts web flow currently has implemented views and templates. Most other applications currently provide schema foundations, not finished product workflows.
+Accounts, candidates, recruitment, and interview scheduling now provide tested server-rendered Week 2 workflows. Calling, agents, and evaluation remain schema/planning foundations for later weeks.
 
 ## Planned AI agents
 
@@ -76,7 +76,7 @@ These agents have database definitions but no operational orchestration implemen
 
 ## PostgreSQL architecture
 
-PostgreSQL is the required relational database. Django migrations define UUID-centered recruitment, interview, call, agent, and audit records with foreign keys, indexes, uniqueness rules, conditional constraints, and numeric/range checks. Important database safeguards include case-insensitive user-email uniqueness and PostgreSQL protection against updating or deleting audit and consent records. Consent migrations are committed. The current Milestone 2.1D migrations make new resumes inactive by default and add invitation expiry plus minimal reschedule-request persistence. Django migrations must remain with their applications.
+PostgreSQL is the required relational database. Django migrations define UUID-centered recruitment, interview, call, agent, and audit records with foreign keys, indexes, uniqueness rules, conditional constraints, and numeric/range checks. Important safeguards include case-insensitive unique user email, immutable audit/consent evidence, inactive-by-default replacement resumes, one current schedule per application, one pending reschedule request, and unique invitation idempotency/token digests. All Week 2 migrations are applied and drift-free. Django migrations remain with their applications.
 
 `auditlog.ConsentRecord` has UUID `id`; protected candidate, optional application, optional interview schedule, and optional recorded-by relationships; `general_ai_processing`/`ai_interview` type; `granted`/`revoked` action; policy version; `profile`/`application`/`interview_confirmation`/`admin_assisted`/`legacy_import` source; timezone-aware recorded time; globally unique UUID idempotency key; and optional request/correlation UUIDs. Named checks prevent invalid general/interview context and require a non-legacy actor. Named indexes cover candidate/type/time, application/type/time, schedule/time, action/time, request ID, and correlation ID.
 
@@ -121,7 +121,7 @@ AI may screen, summarize, score against an approved rubric, and recommend. It mu
 - Deterministic domain-audit service with a frozen caller command, immutable Week 2 event registry, specification-owned canonical actions, required and allowed metadata rules, safe UUID normalization, bounded payload validation, and safe mandatory-failure exceptions.
 - Validated lightweight Render dependency manifest that includes only the base Django web stack and deliberately excludes heavy local AI/ML dependencies.
 - Append-only, policy-versioned consent evidence with deterministic grant/revoke/resolution services, mutable cache synchronization, strict actor/scope checks, idempotent replay, deterministic auditing, legacy import, and PostgreSQL immutability protection.
-- Secure email-verification challenge and service foundation with HMAC email binding, signed 24-hour tokens, resend/email-change invalidation, single-use consumption, cache-backed rate limits, and deterministic audits. User-facing pages and application/scheduling enforcement remain later Week 2 work.
+- Secure email-verification challenge, pages, and enforcement with HMAC email binding, signed 24-hour tokens, resend/email-change invalidation, single-use consumption, cache-backed rate limits, and deterministic audits.
 - Deterministic transition tables and transactional services for job, application, interview-schedule, resume-processing, and consent state. Resume activation preserves the prior active resume until processing succeeds; scheduling has minimal invitation-expiry and reschedule-request persistence.
 - Candidate-only profile editing and consent controls, generic verification request/resend/confirmation pages, protected resume upload/download, SHA-256 metadata, bounded PDF/DOCX extraction outside long transactions, and successful-only resume replacement.
 - Administrator-controlled company/recruiter provisioning boundaries, recruiter verification/capabilities, company-isolated job management and publishing transitions, job skills/questions/FAQs, and authenticated-candidate-only open-job browsing.
@@ -132,20 +132,18 @@ AI may screen, summarize, score against an approved rubric, and recommend. It mu
 
 Milestone 2.1A is implemented, validated, and checkpointed on `feat/week-2-core-workflows`. The lightweight Render dependency manifest and persistent deployment plan are committed at `eb48e50`; the approved web dependencies are installed in the local environment and the Render manifest still resolves only through `requirements/base.txt`.
 
-Milestones 2.1B through 2.4 are committed and validated at `bee8785`, `8579159`, `6aab484`, `57f1cb3`, `44342b4`, and `4eb76b3`. Milestone 2.5 scheduling is implemented and validated in the current worktree: 46 focused tests and 153 complete tests pass.
+Milestones 2.1B through 2.5 are committed and validated at `bee8785`, `8579159`, `6aab484`, `57f1cb3`, `44342b4`, `4eb76b3`, and `fd9a6e4`. Milestone 2.6 adds the complete pre-interview integration and consolidated attack-path tests. The full suite passes 156 tests.
 
 ## Pending work
 
-- Commit the validated Milestone 2.5 scheduling workflow.
-- Interview scheduling, invitations, consent enforcement, and evaluation UI.
 - Channels/Redis browser call transport and call state management.
 - Local STT, TTS, and VAD integration.
 - Agent orchestration, tool allowlists, safety checks, escalation, and human approvals.
-- Evaluation pipeline, cross-application tests, end-to-end tests, observability, retention jobs, production hardening, and deployment documentation.
+- Operational agent/evaluation pipeline, observability, retention jobs, production hardening, and deployment execution.
 
 ## Known limitations and blockers
 
-- **Limitations:** Non-account applications are primarily schema foundations. No operational voice pipeline, agent orchestration, ML inference, malware scanner, recruiter workflow, candidate resume UI, or end-to-end workflow exists yet. Development Channels is in-memory. No Figma screenshots have been supplied yet.
+- **Limitations:** No operational voice pipeline, WebSocket call runtime, agent orchestration, ML inference, malware scanner, final human-review UI, or production deployment exists yet. Development Channels is in-memory. Resume checks are structural parsing controls, not malware scanning. Templates remain intentionally minimal because no Figma screenshots have been supplied.
 - **Blockers:** None recorded. External design screenshots will be needed before pixel-accurate frontend implementation.
 
 ## Known non-failing warnings
@@ -173,15 +171,14 @@ git status --short
 
 ## Exact next recommended task
 
-Commit the validated Milestone 2.5 scheduling workflow, then complete Milestone 2.6 cross-application integration and attack-path security review.
+Begin Week 3 with the deterministic call-session/runtime boundary and a simulated local call lifecycle before adding browser WebSockets, speech engines, or generative agents.
 
 Relevant files:
 
-- `backend/recruitment/models.py`
+- `backend/calling/models.py`
+- `backend/agents/models.py`
 - `backend/interviews/models.py`
-- `backend/candidates/models.py`
-- `backend/auditlog/consent_services.py`
 - `backend/auditlog/services.py`
-- `requirements/production.txt`
-- `docs/development/RENDER_DEPLOYMENT.md`
-- `docs/DECISIONS.md`
+- `ai_system/README.md`
+- `docs/ARCHITECTURE.md`
+- `docs/ROADMAP.md`

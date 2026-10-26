@@ -38,7 +38,7 @@ Establish the secure Python/Django/PostgreSQL foundation, core domain schema, au
 - Django, dependency, migration, Ruff, and Git diff checks pass.
 - `main` contains the validated Week 1 and structure checkpoints.
 
-## Week 2 — Core recruitment workflows (90% complete)
+## Week 2 — Core recruitment workflows (100% complete)
 
 ### Objectives
 
@@ -50,8 +50,8 @@ Turn the schema foundation into secure candidate, recruiter, job, application, a
 - **Milestone 2.2 — candidate workflow:** candidate-only allowlisted profile editing, consent history controls, verification request/resend/confirmation pages, protected PDF/DOCX upload and download, bounded basic extraction, safe replacement, deterministic audits, and focused tests are committed and validated.
 - **Milestone 2.3 — recruiter and jobs:** trusted administrator provisioning services/admin, persisted recruiter verification/capabilities, company-scoped job create/edit/state management, skills/questions/FAQs, authenticated candidate browsing, deterministic audits, and security tests are committed and validated.
 - **Milestone 2.4 — applications:** verified candidate application creation, open/deadline checks, active-resume ownership, duplicate prevention, optional application consent, audit history, company/candidate isolation, and pre-call withdrawal with transactional schedule cancellation are committed and validated.
-- **Milestone 2.5 — scheduling:** company-authorized recruiter invitations, deterministic signed tokens with keyed-HMAC storage, 48-hour/start-time expiry, idempotent delivery retry, candidate confirmation, current-consent checks, reschedule request/review, cancellation, expiry, notification email, UTC/IANA handling, audits, and tests are implemented and validated.
-- **Milestone 2.6 — integration and security:** cross-application, IDOR, CSRF, rate-limit, audit-privacy, and migration verification plus full context and validation review.
+- **Milestone 2.5 — scheduling:** company-authorized recruiter invitations, deterministic signed tokens with keyed-HMAC storage, 48-hour/start-time expiry, idempotent delivery retry, candidate confirmation, current-consent checks, reschedule request/review, cancellation, expiry, notification email, UTC/IANA handling, audits, and tests are committed and validated.
+- **Milestone 2.6 — integration and security:** a complete administrator-to-confirmed-interview integration test, cross-company/cross-candidate IDOR tests, mass-assignment and POST-only tests, CSRF enforcement, token/rate-limit/upload/consent/transition coverage, template escaping, audit privacy review, migration verification, and full validation are complete.
 - Frontend work remains semantic and minimal until supplied Figma screenshots are available.
 
 ### Required tests
@@ -149,7 +149,7 @@ Deployment planning reference: [Render deployment plan](development/RENDER_DEPLO
 ## Overall status
 
 - Week 1: 100%
-- Week 2: 90%
+- Week 2: 100%
 - Week 3: 0%
 - Week 4: 0%
 - Overall: 29%

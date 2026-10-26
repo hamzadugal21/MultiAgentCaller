@@ -19,9 +19,15 @@ from auditlog.consent_services import (
 from auditlog.models import AuditEvent, ConsentRecord
 from auditlog.services import AuditCommand, record_domain_event
 from interviews.models import InterviewRescheduleRequest, InterviewSchedule
-from interviews.transition_services import transition_interview
+from interviews.transition_services import (
+    InterviewTransitionError,
+    transition_interview,
+)
 from recruitment.models import JobApplication, RecruiterProfile
-from recruitment.transition_services import transition_application
+from recruitment.transition_services import (
+    WorkflowTransitionError,
+    transition_application,
+)
 
 INVITATION_SIGNING_SALT = "interviews.invitation.token.v1"
 INVITATION_DIGEST_SALT = "interviews.invitation.digest.v1"
@@ -185,20 +191,23 @@ def create_interview_invitation(
             invitation_expires_at=expires_at,
             invitation_idempotency_key=idempotency_key,
         )
-        if application.status == JobApplication.Status.APPLIED:
-            application = transition_application(
-                application=application,
-                target_status=JobApplication.Status.SCREENING,
-                actor=recruiter.user,
-            )
-        if application.status == JobApplication.Status.SCREENING:
-            transition_application(
-                application=application,
-                target_status=JobApplication.Status.INVITED,
-                actor=recruiter.user,
-            )
-        elif application.status != JobApplication.Status.INVITED:
-            raise SchedulingServiceError("The application cannot be invited.")
+        try:
+            if application.status == JobApplication.Status.APPLIED:
+                application = transition_application(
+                    application=application,
+                    target_status=JobApplication.Status.SCREENING,
+                    actor=recruiter.user,
+                )
+            if application.status == JobApplication.Status.SCREENING:
+                transition_application(
+                    application=application,
+                    target_status=JobApplication.Status.INVITED,
+                    actor=recruiter.user,
+                )
+            elif application.status != JobApplication.Status.INVITED:
+                raise SchedulingServiceError("The application cannot be invited.")
+        except WorkflowTransitionError as error:
+            raise SchedulingServiceError("The application cannot be invited.") from error
         record_domain_event(
             AuditCommand(
                 category=AuditEvent.Category.INTERVIEW,
@@ -343,11 +352,14 @@ def confirm_interview_invitation(
             collection_source=ConsentRecord.CollectionSource.INTERVIEW_CONFIRMATION,
             interview_schedule=schedule,
         )
-        return transition_interview(
-            schedule=schedule,
-            target_status=InterviewSchedule.Status.CONFIRMED,
-            actor=actor,
-        )
+        try:
+            return transition_interview(
+                schedule=schedule,
+                target_status=InterviewSchedule.Status.CONFIRMED,
+                actor=actor,
+            )
+        except InterviewTransitionError as error:
+            raise SchedulingServiceError("The invitation is not valid.") from error
 
 
 def request_interview_reschedule(
@@ -455,12 +467,17 @@ def review_reschedule_request(
             invitation_idempotency_key=invitation_idempotency_key,
             is_current=False,
         )
-        transition_interview(
-            schedule=request.schedule,
-            target_status=InterviewSchedule.Status.RESCHEDULED,
-            actor=recruiter.user,
-            replacement_schedule=replacement,
-        )
+        try:
+            transition_interview(
+                schedule=request.schedule,
+                target_status=InterviewSchedule.Status.RESCHEDULED,
+                actor=recruiter.user,
+                replacement_schedule=replacement,
+            )
+        except InterviewTransitionError as error:
+            raise SchedulingServiceError(
+                "The reschedule request could not be approved."
+            ) from error
         request.status = InterviewRescheduleRequest.Status.APPROVED
         request.save(update_fields=("status", "reviewed_by", "reviewed_at", "updated_at"))
         replacement.refresh_from_db()
@@ -483,12 +500,15 @@ def review_reschedule_request(
 
 
 def cancel_interview(*, schedule, actor, reason_code):
-    return transition_interview(
-        schedule=schedule,
-        target_status=InterviewSchedule.Status.CANCELLED,
-        actor=actor,
-        reason_code=reason_code,
-    )
+    try:
+        return transition_interview(
+            schedule=schedule,
+            target_status=InterviewSchedule.Status.CANCELLED,
+            actor=actor,
+            reason_code=reason_code,
+        )
+    except InterviewTransitionError as error:
+        raise SchedulingServiceError("The interview could not be cancelled.") from error
 
 
 def expire_interview_invitation(*, schedule, actor):
@@ -499,8 +519,11 @@ def expire_interview_invitation(*, schedule, actor):
     _recruiter(actor, schedule.application)
     if schedule.invitation_expires_at is None or schedule.invitation_expires_at > timezone.now():
         raise SchedulingServiceError("The invitation has not expired.")
-    return transition_interview(
-        schedule=schedule,
-        target_status=InterviewSchedule.Status.EXPIRED,
-        actor=None,
-    )
+    try:
+        return transition_interview(
+            schedule=schedule,
+            target_status=InterviewSchedule.Status.EXPIRED,
+            actor=None,
+        )
+    except InterviewTransitionError as error:
+        raise SchedulingServiceError("The interview could not be expired.") from error

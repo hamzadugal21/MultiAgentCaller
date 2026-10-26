@@ -173,7 +173,15 @@ def job_faq_view(request, job_id):
 @role_required(User.Role.CANDIDATE)
 def application_create_view(request, job_id):
     candidate = get_object_or_404(CandidateProfile, user=request.user)
-    job = get_object_or_404(JobPosting, pk=job_id)
+    job = get_object_or_404(
+        JobPosting.objects.filter(
+            Q(application_deadline__isnull=True)
+            | Q(application_deadline__gt=timezone.now()),
+            status=JobPosting.Status.OPEN,
+            company__is_active=True,
+        ),
+        pk=job_id,
+    )
     form = JobApplicationForm(request.POST or None, candidate=candidate)
     if request.method == "POST" and form.is_valid():
         try:

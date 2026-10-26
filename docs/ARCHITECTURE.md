@@ -6,15 +6,15 @@ This document describes both the implemented foundation and the planned system. 
 
 Implemented today: Django configuration, PostgreSQL models/migrations, accounts web flow, role dashboards, resume validation, authentication audit signals, deterministic domain-audit validation, immutable audit/consent protection, append-only consent services, secure email-verification services, explicit workflow transition policies, templates/static discovery, and runtime path separation.
 
-Planned: candidate/recruiter workflow views, browser audio transport, local speech execution, multi-agent orchestration, ML inference, safety enforcement services, human review UI, retention jobs, and end-to-end operations.
+Implemented Week 2 product workflows: candidate profile/consent/verification/resume management, administrator/recruiter provisioning, company-scoped jobs, secure applications/withdrawal, and interview invitation/confirmation/rescheduling. Planned: browser audio transport, local speech execution, multi-agent orchestration, ML inference, semantic safety agents, human review UI, retention jobs, and production deployment.
 
 ## Overall system architecture
 
 ```mermaid
 flowchart LR
     U[Browser user] -->|HTTPS forms and pages| FE[Frontend templates and static assets<br/>Implemented foundation]
-    FE --> DJ[Django backend<br/>Accounts flow implemented]
-    DJ --> APPS[Domain applications<br/>Models implemented]
+    FE --> DJ[Django backend<br/>Pre-interview workflow implemented]
+    DJ --> APPS[Domain applications<br/>Week 2 services implemented]
     APPS --> PG[(PostgreSQL<br/>Implemented)]
     DJ --> MEDIA[Protected runtime media<br/>var/media]
     DJ -. WebSocket audio .-> CH[Channels and Redis<br/>Planned runtime]
@@ -42,13 +42,13 @@ PostgreSQL is the authoritative transactional store. Django migrations remain in
 
 ## Authentication and role permissions
 
-`accounts.User` authenticates by email and supports candidate, recruiter, and administrator roles. Public signup creates candidates only. Existing dashboard authorization is enforced in Django views. Future object-level checks must ensure candidates access only their own records and recruiters access only authorized company/job records. Administrator capability must not be inferred from request data.
+`accounts.User` authenticates by email and supports candidate, recruiter, and administrator roles. Public signup creates candidates only. Server-side role and object checks restrict candidates to their records and recruiters to verified capabilities and their company. Administrator capability is reloaded from PostgreSQL and is never inferred from request data.
 
 ## Email verification
 
 `accounts.EmailVerificationChallenge` stores a challenge UUID, user, unique keyed token digest, keyed normalized-email binding, purpose version, creation/expiry/used/invalidation timestamps, and optional request UUID. Raw tokens and URLs are never persisted. Tokens contain a cryptographically random nonce and are signed with a dedicated versioned salt; the default lifetime is 24 hours.
 
-Creation, resend, email-change invalidation, and consumption are deterministic services. Resend invalidates prior active challenges. Consumption locks the challenge row, verifies the signature, expiry, purpose, current email binding, active user, and unused/uninvalidated state, then sets `User.email_verified` in the same transaction as the mandatory audit event. Configurable request/resend/invalid-attempt limits use privacy-safe cache keys. User-facing generic-response pages and job/interview enforcement are implemented in later milestones.
+Creation, resend, email-change invalidation, and consumption are deterministic services. Resend invalidates prior active challenges. Consumption locks the challenge row, verifies the signature, expiry, purpose, current email binding, active user, and unused/uninvalidated state, then sets `User.email_verified` in the same transaction as the mandatory audit event. Configurable request/resend/invalid-attempt limits use privacy-safe cache keys. Generic-response pages are implemented, and application creation plus interview invitation/confirmation enforce verification inside their services.
 
 ## Candidate profiles and resume handling
 
@@ -70,8 +70,8 @@ The call schema records consent, lifecycle state, speech-engine identifiers, opt
 
 ```mermaid
 flowchart TD
-    A[Job application<br/>Schema implemented] --> B[Human-approved interview invitation<br/>Planned workflow]
-    B --> C[Candidate confirms schedule and consent<br/>Planned workflow]
+    A[Job application<br/>Week 2 implemented] --> B[Recruiter interview invitation<br/>Week 2 implemented]
+    B --> C[Candidate confirms schedule and consent<br/>Week 2 implemented]
     C --> D[Create call session<br/>Planned service]
     D --> E[Browser audio connection<br/>Planned]
     E --> F[VAD and STT<br/>Planned]

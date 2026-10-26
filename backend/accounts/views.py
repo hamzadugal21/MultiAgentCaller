@@ -125,7 +125,7 @@ def email_verification_request_view(request):
     try:
         issued = create_email_verification_challenge(user=request.user)
         _deliver_verification(request, issued)
-    except EmailVerificationError:
+    except (EmailVerificationError, OSError):
         pass
     messages.info(
         request,
@@ -140,7 +140,7 @@ def email_verification_resend_view(request):
     try:
         issued = resend_email_verification_challenge(user=request.user)
         _deliver_verification(request, issued)
-    except EmailVerificationError:
+    except (EmailVerificationError, OSError):
         pass
     messages.info(
         request,

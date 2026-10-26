@@ -213,3 +213,16 @@ Milestone commit: `4eb76b3` (`feat: add secure candidate application workflow`).
 - Known warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning.
 - Week 2 is **90%** complete and overall progress is **48%**.
 - Next: commit `feat: add interview invitation and scheduling workflow`, then complete Milestone 2.6 integration/security validation.
+
+Milestone commit: `fd9a6e4` (`feat: add interview invitation and scheduling workflow`).
+
+## 2026-10-26 — Milestone 2.6 integration/security and Week 2 completion
+
+- Added a complete pre-interview integration test: administrator provisioning, recruiter job publication, candidate signup/verification/profile/consent/resume, job browsing/application, company-scoped review, invitation delivery, candidate confirmation, and consequential audit verification.
+- Added CSRF enforcement with `Client(enforce_csrf_checks=True)` and template-escaping coverage. Existing focused suites cover cross-company/cross-candidate IDOR, mass assignment, GET mutation, invalid/expired/replayed tokens, upload abuse, email rate limits, unverified email, revoked consent, invalid transitions, audit privacy, and raw-token non-persistence.
+- Hardened scheduling errors at the service boundary, prevented direct access to ineligible application pages, and made verification delivery failures return the same generic response without exposing mail internals.
+- Final migration state includes accounts `0001`-`0003`, auditlog `0001`-`0005`, candidates `0001`-`0003`, interviews `0001`-`0003`, and recruitment `0001`, all applied with no drift.
+- Validation after the integration changes: 48 focused integration/security tests and 156 complete tests pass; Django check reports 0 issues; pip check reports no broken requirements. The first final run stopped at two mechanical Ruff findings, which were corrected before the required complete rerun.
+- Known non-failing warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning.
+- Week 2 is **100%** complete and overall four-week progress is **50%**.
+- Next: create the clean final Week 2 checkpoint, then begin Week 3 only after review/approval.
