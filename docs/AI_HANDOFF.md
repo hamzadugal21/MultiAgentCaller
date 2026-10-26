@@ -16,10 +16,10 @@ Last updated: 2026-10-26 (Asia/Karachi)
 ## Current Git and progress snapshot
 
 - **Current branch:** `feat/week-2-core-workflows`
-- **Current commit:** `fd9a6e4` — interview invitation and scheduling workflow; the final Week 2 integration/security checkpoint is the current validated worktree awaiting commit.
-- **Latest clean checkpoint:** `fd9a6e4` — interview invitation and scheduling workflow.
+- **Current commit:** `064100a` — complete Week 2 recruitment workflows.
+- **Latest clean checkpoint:** `064100a` — complete Week 2 recruitment workflows.
 - **Week 1:** 100% complete.
-- **Current week:** Week 2, 100% complete after final checkpoint commit. Milestones 2.1A through 2.5 are committed; Milestone 2.6 is implemented and validated in the current worktree.
+- **Current week:** Week 2, 100% complete. Milestones 2.1A through 2.6 are committed and validated.
 - **Overall project:** 50% complete.
 - **Automated tests:** 156 passing, including the complete pre-interview integration and consolidated security suite.
 
@@ -132,7 +132,7 @@ AI may screen, summarize, score against an approved rubric, and recommend. It mu
 
 Milestone 2.1A is implemented, validated, and checkpointed on `feat/week-2-core-workflows`. The lightweight Render dependency manifest and persistent deployment plan are committed at `eb48e50`; the approved web dependencies are installed in the local environment and the Render manifest still resolves only through `requirements/base.txt`.
 
-Milestones 2.1B through 2.5 are committed and validated at `bee8785`, `8579159`, `6aab484`, `57f1cb3`, `44342b4`, `4eb76b3`, and `fd9a6e4`. Milestone 2.6 adds the complete pre-interview integration and consolidated attack-path tests. The full suite passes 156 tests.
+Milestones 2.1B through 2.6 are committed and validated at `bee8785`, `8579159`, `6aab484`, `57f1cb3`, `44342b4`, `4eb76b3`, `fd9a6e4`, and `064100a`. Milestone 2.6 adds the complete pre-interview integration and consolidated attack-path tests. The full suite passes 156 tests.
 
 ## Pending work
 

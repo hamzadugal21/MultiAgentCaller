@@ -225,4 +225,5 @@ Milestone commit: `fd9a6e4` (`feat: add interview invitation and scheduling work
 - Validation after the integration changes: 48 focused integration/security tests and 156 complete tests pass; Django check reports 0 issues; pip check reports no broken requirements. The first final run stopped at two mechanical Ruff findings, which were corrected before the required complete rerun.
 - Known non-failing warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning.
 - Week 2 is **100%** complete and overall four-week progress is **50%**.
-- Next: create the clean final Week 2 checkpoint, then begin Week 3 only after review/approval.
+- Final Week 2 checkpoint: `064100a` (`feat: complete week 2 recruitment workflows`).
+- Next: begin Week 3 only after review/approval.
