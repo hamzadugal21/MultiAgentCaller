@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Applications{% endblock %}
+
+{% block content %}
+<section>
+    <h1>Applications</h1>
+    <ul>
+        {% for application in applications %}
+            <li><a href="{% url 'recruitment:application_detail' application.id %}">{{ application.job.title }}</a> — {{ application.get_status_display }}</li>
+        {% empty %}<li>No applications are available.</li>{% endfor %}
+    </ul>
+</section>
+{% endblock %}

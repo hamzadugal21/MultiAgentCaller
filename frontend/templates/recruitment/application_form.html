@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}Apply for {{ job.title }}{% endblock %}
+
+{% block content %}
+<section>
+    <h1>Apply for {{ job.title }}</h1>
+    <p>You must have a verified email address and an active processed resume.</p>
+    <form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">Submit application</button></form>
+</section>
+{% endblock %}

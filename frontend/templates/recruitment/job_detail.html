@@ -12,5 +12,6 @@
     <h2>Frequently asked questions</h2>
     {% for faq in job.faqs.all %}{% if faq.is_active %}<h3>{{ faq.question }}</h3><p>{{ faq.answer }}</p>{% endif %}{% endfor %}
     {% if request.user.role == "recruiter" %}<p><a href="{% url 'recruitment:job_edit' job.id %}">Edit job</a></p>{% endif %}
+    {% if request.user.role == "candidate" %}<p><a href="{% url 'recruitment:application_create' job.id %}">Apply for this job</a></p>{% endif %}
 </article>
 {% endblock %}

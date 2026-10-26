@@ -1,3 +1,6 @@
+import uuid
+
+from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
@@ -7,8 +10,22 @@ from django.views.decorators.http import require_POST
 
 from accounts.models import User
 from accounts.views import role_required
+from auditlog.consent_services import (
+    grant_application_ai_interview_consent,
+    revoke_application_ai_interview_consent,
+)
+from auditlog.models import AuditEvent
+from candidates.models import CandidateProfile
+from recruitment.application_services import (
+    ApplicationServiceError,
+    change_application_interview_consent,
+    create_application,
+    recruiter_applications,
+    withdraw_application,
+)
 from recruitment.forms import (
     InterviewQuestionForm,
+    JobApplicationForm,
     JobFAQForm,
     JobPostingForm,
     JobSkillRequirementForm,
@@ -22,7 +39,7 @@ from recruitment.job_services import (
     recruiter_jobs,
     update_job,
 )
-from recruitment.models import JobPosting
+from recruitment.models import JobApplication, JobPosting
 from recruitment.transition_services import WorkflowTransitionError, transition_job
 
 
@@ -151,3 +168,105 @@ def job_faq_view(request, job_id):
         add_job_faq(actor=request.user, job=job, values=form.cleaned_data)
         return redirect("recruitment:job_edit", job_id=job.pk)
     return render(request, "recruitment/job_child_form.html", {"form": form, "job": job, "kind": "FAQ"})
+
+
+@role_required(User.Role.CANDIDATE)
+def application_create_view(request, job_id):
+    candidate = get_object_or_404(CandidateProfile, user=request.user)
+    job = get_object_or_404(JobPosting, pk=job_id)
+    form = JobApplicationForm(request.POST or None, candidate=candidate)
+    if request.method == "POST" and form.is_valid():
+        try:
+            application = create_application(
+                actor=request.user,
+                job=job,
+                resume=form.cleaned_data["resume"],
+                cover_note=form.cleaned_data["cover_note"],
+                grant_interview_consent=form.cleaned_data["consent_to_ai_interview"],
+                policy_version=settings.CURRENT_AI_CONSENT_POLICY_VERSION,
+                consent_idempotency_key=uuid.uuid4(),
+            )
+        except ApplicationServiceError as error:
+            form.add_error(None, str(error))
+        else:
+            messages.success(request, "Your application was submitted.")
+            return redirect("recruitment:application_detail", application_id=application.pk)
+    return render(request, "recruitment/application_form.html", {"form": form, "job": job})
+
+
+@role_required(User.Role.CANDIDATE, User.Role.RECRUITER)
+def application_list_view(request):
+    if request.user.role == User.Role.CANDIDATE:
+        applications = JobApplication.objects.filter(candidate__user=request.user).select_related("job")
+    else:
+        try:
+            applications = recruiter_applications(request.user)
+        except ApplicationServiceError as error:
+            raise PermissionDenied from error
+    return render(request, "recruitment/application_list.html", {"applications": applications})
+
+
+def _accessible_application(request, application_id):
+    if request.user.role == User.Role.CANDIDATE:
+        return get_object_or_404(
+            JobApplication.objects.select_related("job", "candidate__user", "resume"),
+            pk=application_id,
+            candidate__user=request.user,
+        )
+    try:
+        return get_object_or_404(recruiter_applications(request.user), pk=application_id)
+    except ApplicationServiceError as error:
+        raise PermissionDenied from error
+
+
+@role_required(User.Role.CANDIDATE, User.Role.RECRUITER)
+def application_detail_view(request, application_id):
+    application = _accessible_application(request, application_id)
+    history = AuditEvent.objects.filter(
+        resource_type="recruitment.JobApplication",
+        resource_id=str(application.pk),
+        event_type__in=(
+            "application.created",
+            "application.status_changed",
+            "application.withdrawn",
+        ),
+    ).order_by("event_timestamp", "id")
+    return render(
+        request,
+        "recruitment/application_detail.html",
+        {"application": application, "history": history},
+    )
+
+
+@require_POST
+@role_required(User.Role.CANDIDATE)
+def application_consent_view(request, application_id):
+    application = _accessible_application(request, application_id)
+    operation = {
+        "grant": grant_application_ai_interview_consent,
+        "revoke": revoke_application_ai_interview_consent,
+    }.get(request.POST.get("action"))
+    if operation is None:
+        messages.error(request, "The consent action is not valid.")
+    else:
+        change_application_interview_consent(
+            application=application,
+            actor=request.user,
+            operation=operation,
+            policy_version=settings.CURRENT_AI_CONSENT_POLICY_VERSION,
+        )
+        messages.success(request, "Your interview consent preference was recorded.")
+    return redirect("recruitment:application_detail", application_id=application.pk)
+
+
+@require_POST
+@role_required(User.Role.CANDIDATE)
+def application_withdraw_view(request, application_id):
+    application = _accessible_application(request, application_id)
+    try:
+        withdraw_application(application=application, actor=request.user)
+    except ApplicationServiceError:
+        messages.error(request, "The application cannot be withdrawn.")
+    else:
+        messages.success(request, "Your application was withdrawn.")
+    return redirect("recruitment:application_detail", application_id=application.pk)

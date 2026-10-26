@@ -185,3 +185,16 @@ Milestone commit: `57f1cb3` (`feat: add candidate profile consent and resume wor
 - Known warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning. No blocker remains.
 - Week 2 is **60%** complete and overall progress is **40%**.
 - Next: commit `feat: add recruiter company and job workflows`, then implement Milestone 2.4 application workflow.
+
+Milestone commit: `44342b4` (`feat: add recruiter company and job workflows`).
+
+## 2026-10-26 — Milestone 2.4 application workflow
+
+- Added candidate-only application creation with persisted active-role and verified-email checks, open/active-company/deadline eligibility, candidate-owned completed active resume enforcement, and database-backed duplicate prevention.
+- Application forms expose only resume, cover note, and optional AI-interview consent; candidate, status, company, and other protected fields cannot be mass assigned.
+- Added optional append-only application interview consent, privacy-safe deterministic creation/status audits, candidate history views, and company-scoped recruiter review requiring `can_review_candidates`.
+- Added candidate withdrawal before call start. A current pending/confirmed schedule is cancelled through the shared interview service inside the same transaction; withdrawal is blocked after a call has begun.
+- Added eight focused application/security tests. Validation: 14 focused tests and 144 complete tests passed; Django check found 0 issues; migration drift is absent; pip check, Ruff, and Git diff checks passed.
+- Known warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning. No blocker remains.
+- Week 2 is **75%** complete and overall progress is **44%**.
+- Next: commit `feat: add secure candidate application workflow`, then implement Milestone 2.5 scheduling.

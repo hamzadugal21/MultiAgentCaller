@@ -184,3 +184,44 @@ def transition_interview(
             )
         )
         return locked
+
+
+def cancel_interview_for_application_withdrawal(*, schedule, actor):
+    with transaction.atomic():
+        try:
+            locked = (
+                InterviewSchedule.objects.select_for_update()
+                .select_related("application__candidate__user")
+                .get(pk=schedule.pk, is_current=True)
+            )
+        except (AttributeError, InterviewSchedule.DoesNotExist) as error:
+            raise InterviewTransitionError("A valid interview is required.") from error
+        persisted_actor = _authorize_candidate(actor, locked)
+        if locked.status not in {
+            InterviewSchedule.Status.PENDING,
+            InterviewSchedule.Status.CONFIRMED,
+        }:
+            raise InterviewTransitionError("The interview transition is not allowed.")
+        status_from = locked.status
+        locked.status = InterviewSchedule.Status.CANCELLED
+        locked.is_current = False
+        locked.cancellation_reason = "application_withdrawn"
+        locked.save(update_fields=("status", "is_current", "cancellation_reason", "updated_at"))
+        record_domain_event(
+            AuditCommand(
+                category=AuditEvent.Category.INTERVIEW,
+                event_type="interview.cancelled",
+                outcome=AuditEvent.Outcome.SUCCESS,
+                severity=AuditEvent.Severity.INFO,
+                resource_type="interviews.InterviewSchedule",
+                resource_id=locked.pk,
+                actor=persisted_actor,
+                metadata={
+                    "application_id": locked.application_id,
+                    "reason_code": "application_withdrawn",
+                    "status_from": status_from,
+                    "status_to": InterviewSchedule.Status.CANCELLED,
+                },
+            )
+        )
+        return locked

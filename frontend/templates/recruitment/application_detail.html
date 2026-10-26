@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Application{% endblock %}
+
+{% block content %}
+<article>
+    <h1>{{ application.job.title }}</h1>
+    <p>Status: {{ application.get_status_display }}</p>
+    {% if request.user.role == "recruiter" %}
+        <p>Candidate: {{ application.candidate.user.get_full_name|default:"Candidate" }}</p>
+    {% else %}
+        {% if application.status != "withdrawn" and application.status != "rejected" %}
+            <form method="post" action="{% url 'recruitment:application_withdraw' application.id %}">{% csrf_token %}<button type="submit">Withdraw application</button></form>
+        {% endif %}
+        <form method="post" action="{% url 'recruitment:application_consent' application.id %}">{% csrf_token %}
+            {% if application.consent_to_ai_interview %}
+                <button type="submit" name="action" value="revoke">Revoke AI-interview consent</button>
+            {% else %}
+                <button type="submit" name="action" value="grant">Grant AI-interview consent</button>
+            {% endif %}
+        </form>
+    {% endif %}
+    <h2>History</h2>
+    <ol>{% for event in history %}<li>{{ event.event_timestamp }} — {{ event.action }}</li>{% empty %}<li>No history recorded.</li>{% endfor %}</ol>
+</article>
+{% endblock %}

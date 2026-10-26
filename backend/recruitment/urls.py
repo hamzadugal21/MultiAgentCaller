@@ -17,4 +17,9 @@ urlpatterns = [
         name="job_question",
     ),
     path("jobs/<uuid:job_id>/faqs/", views.job_faq_view, name="job_faq"),
+    path("jobs/<uuid:job_id>/apply/", views.application_create_view, name="application_create"),
+    path("applications/", views.application_list_view, name="application_list"),
+    path("applications/<uuid:application_id>/", views.application_detail_view, name="application_detail"),
+    path("applications/<uuid:application_id>/consent/", views.application_consent_view, name="application_consent"),
+    path("applications/<uuid:application_id>/withdraw/", views.application_withdraw_view, name="application_withdraw"),
 ]

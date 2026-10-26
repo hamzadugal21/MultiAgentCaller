@@ -1,5 +1,6 @@
 from django import forms
 
+from candidates.models import Resume
 from recruitment.models import InterviewQuestion, JobFAQ, JobPosting
 
 
@@ -52,3 +53,17 @@ class JobFAQForm(forms.ModelForm):
     class Meta:
         model = JobFAQ
         fields = ("question", "answer", "is_active")
+
+
+class JobApplicationForm(forms.Form):
+    resume = forms.ModelChoiceField(queryset=Resume.objects.none())
+    cover_note = forms.CharField(required=False, widget=forms.Textarea)
+    consent_to_ai_interview = forms.BooleanField(required=False)
+
+    def __init__(self, *args, candidate, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["resume"].queryset = Resume.objects.filter(
+            candidate=candidate,
+            is_active=True,
+            processing_status=Resume.ProcessingStatus.COMPLETED,
+        )

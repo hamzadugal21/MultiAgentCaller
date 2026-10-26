@@ -7,6 +7,7 @@
     <p class="eyebrow">Candidate dashboard</p>
     <h1>Hello, {{ request.user.first_name|default:request.user.email }}</h1>
     <p>Your secure candidate account is ready.</p>
+    <p><a href="{% url 'recruitment:job_list' %}">Browse open jobs</a> · <a href="{% url 'recruitment:application_list' %}">Your applications</a></p>
 
     <section aria-labelledby="verification-heading">
         <h2 id="verification-heading">Email verification</h2>
