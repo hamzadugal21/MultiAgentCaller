@@ -18,6 +18,7 @@ UUID_METADATA_KEYS = frozenset(
     {
         "application_id",
         "cancelled_schedule_id",
+        "candidate_id",
         "company_id",
         "interview_schedule_id",
         "job_id",
@@ -131,32 +132,44 @@ EVENT_SPECS = MappingProxyType(
         {"changed_fields"},
         required_metadata={"changed_fields"},
     ),
-    # Consent history (the ConsentRecord model is intentionally not implemented yet)
+    # Consent history
     "consent.granted": _spec(
         AuditEvent.Category.DATA_CHANGE,
-        "candidates.CandidateProfile",
+        "auditlog.ConsentRecord",
         "AI processing consent granted",
         {
             "application_id",
+            "candidate_id",
             "collection_source",
             "consent_type",
             "interview_schedule_id",
             "policy_version",
         },
-        required_metadata={"collection_source", "consent_type", "policy_version"},
+        required_metadata={
+            "candidate_id",
+            "collection_source",
+            "consent_type",
+            "policy_version",
+        },
     ),
     "consent.revoked": _spec(
         AuditEvent.Category.DATA_CHANGE,
-        "candidates.CandidateProfile",
+        "auditlog.ConsentRecord",
         "AI processing consent revoked",
         {
             "application_id",
+            "candidate_id",
             "collection_source",
             "consent_type",
             "interview_schedule_id",
             "policy_version",
         },
-        required_metadata={"collection_source", "consent_type", "policy_version"},
+        required_metadata={
+            "candidate_id",
+            "collection_source",
+            "consent_type",
+            "policy_version",
+        },
     ),
     # Email verification
     "email_verification.requested": _spec(

@@ -108,6 +108,7 @@ def test_callers_cannot_supply_private_or_arbitrary_action_text(actor):
         {"metadata": {}},
         {
             "event_type": "consent.granted",
+            "resource_type": "auditlog.ConsentRecord",
             "metadata": {
                 "consent_type": "general_ai",
                 "policy_version": "2026-10",
@@ -319,11 +320,13 @@ def test_event_registry_has_exact_required_metadata_rules():
         "company.created": set(),
         "company.updated": {"changed_fields"},
         "consent.granted": {
+            "candidate_id",
             "collection_source",
             "consent_type",
             "policy_version",
         },
         "consent.revoked": {
+            "candidate_id",
             "collection_source",
             "consent_type",
             "policy_version",

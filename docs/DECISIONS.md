@@ -167,8 +167,8 @@ Append new decisions; do not rewrite accepted historical decisions unless a late
 
 - **Decision:** Consent history will be append-only with a unique idempotency key; consent and its audit event will share one transaction without a mandatory one-to-one relation. Effective-consent cache changes will lock the relevant profile or application row. Email verification will use signed, expiring, single-purpose tokens and keyed-HMAC email digests. Resume parsing will occur outside long database transactions, and the old resume remains active until a replacement succeeds.
 - **Reason:** Mutable booleans, plain digests, and long parsing transactions are insufficient evidence and operational safeguards for sensitive recruitment processing.
-- **Consequences:** These items remain planned for later Week 2 milestones. Parser validation is not malware protection, and no wall-clock parser timeout is promised without subprocess isolation.
-- **Status:** Accepted and planned; not implemented in Milestone 2.1A.
+- **Consequences:** Append-only consent history is implemented with profile/application locking, deterministic auditing, and legacy evidence that cannot authorize a current policy. Each new explicit action uses a new idempotency key and creates immutable history; network retries must reuse the original key. Effective consent is controlled by the latest action across policy versions. Email verification and resume processing remain planned. Parser validation is not malware protection, and no wall-clock parser timeout is promised without subprocess isolation.
+- **Status:** Accepted. Consent history is implemented and validated; the other items remain planned.
 
 ## 2026-10-23 — Lightweight Render demonstration dependencies
 

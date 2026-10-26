@@ -182,6 +182,156 @@ class AuditEvent(models.Model):
         return f"{self.event_type} — {self.outcome}"
 
 
+class ConsentRecord(models.Model):
+    class ConsentType(models.TextChoices):
+        GENERAL_AI_PROCESSING = (
+            "general_ai_processing",
+            "General AI processing",
+        )
+        AI_INTERVIEW = "ai_interview", "AI interview"
+
+    class Action(models.TextChoices):
+        GRANTED = "granted", "Granted"
+        REVOKED = "revoked", "Revoked"
+
+    class CollectionSource(models.TextChoices):
+        PROFILE = "profile", "Profile"
+        APPLICATION = "application", "Application"
+        INTERVIEW_CONFIRMATION = (
+            "interview_confirmation",
+            "Interview confirmation",
+        )
+        ADMIN_ASSISTED = "admin_assisted", "Administrator assisted"
+        LEGACY_IMPORT = "legacy_import", "Legacy import"
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+    candidate = models.ForeignKey(
+        "candidates.CandidateProfile",
+        on_delete=models.PROTECT,
+        related_name="consent_records",
+    )
+    consent_type = models.CharField(
+        max_length=40,
+        choices=ConsentType.choices,
+    )
+    action = models.CharField(
+        max_length=10,
+        choices=Action.choices,
+    )
+    policy_version = models.CharField(max_length=100)
+    collection_source = models.CharField(
+        max_length=30,
+        choices=CollectionSource.choices,
+    )
+    application = models.ForeignKey(
+        "recruitment.JobApplication",
+        on_delete=models.PROTECT,
+        related_name="consent_records",
+        null=True,
+        blank=True,
+    )
+    interview_schedule = models.ForeignKey(
+        "interviews.InterviewSchedule",
+        on_delete=models.PROTECT,
+        related_name="consent_records",
+        null=True,
+        blank=True,
+    )
+    recorded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="recorded_consents",
+        null=True,
+        blank=True,
+    )
+    recorded_at = models.DateTimeField(
+        default=timezone.now,
+        editable=False,
+    )
+    idempotency_key = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+    )
+    request_id = models.UUIDField(null=True, blank=True)
+    correlation_id = models.UUIDField(null=True, blank=True)
+
+    class Meta:
+        ordering = ("-recorded_at", "-id")
+        indexes = [
+            models.Index(
+                fields=("candidate", "consent_type", "recorded_at"),
+                name="consent_candidate_type_time",
+            ),
+            models.Index(
+                fields=("application", "consent_type", "recorded_at"),
+                name="consent_app_type_time",
+            ),
+            models.Index(
+                fields=("interview_schedule", "recorded_at"),
+                name="consent_schedule_time",
+            ),
+            models.Index(
+                fields=("action", "recorded_at"),
+                name="consent_action_time",
+            ),
+            models.Index(fields=("request_id",), name="consent_request_id"),
+            models.Index(
+                fields=("correlation_id",),
+                name="consent_correlation_id",
+            ),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    ~Q(consent_type="general_ai_processing")
+                    | (
+                        Q(application__isnull=True)
+                        & Q(interview_schedule__isnull=True)
+                    )
+                ),
+                name="consent_general_no_context",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    ~Q(consent_type="ai_interview")
+                    | Q(application__isnull=False)
+                ),
+                name="consent_interview_has_app",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(interview_schedule__isnull=True)
+                    | Q(application__isnull=False)
+                ),
+                name="consent_schedule_has_app",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(collection_source="legacy_import")
+                    | Q(recorded_by__isnull=False)
+                ),
+                name="consent_nonlegacy_has_actor",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError("Consent records are immutable and cannot be modified.")
+
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Consent records are immutable and cannot be deleted.")
+
+    def __str__(self):
+        return f"{self.consent_type}: {self.action}"
+
+
 class SecurityIncident(models.Model):
     class Category(models.TextChoices):
         AUTHENTICATION = "authentication", "Authentication attack"

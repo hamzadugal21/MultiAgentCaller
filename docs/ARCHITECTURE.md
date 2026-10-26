@@ -4,7 +4,7 @@ This document describes both the implemented foundation and the planned system. 
 
 ## Status summary
 
-Implemented today: Django configuration, PostgreSQL models/migrations, accounts web flow, role dashboards, resume validation, authentication audit signals, deterministic domain-audit validation, database audit protection, templates/static discovery, and runtime path separation.
+Implemented today: Django configuration, PostgreSQL models/migrations, accounts web flow, role dashboards, resume validation, authentication audit signals, deterministic domain-audit validation, database audit protection, templates/static discovery, and runtime path separation. The current uncommitted Milestone 2.1B worktree also contains validated append-only consent history and deterministic consent services pending review.
 
 Planned: candidate/recruiter workflow views, browser audio transport, local speech execution, multi-agent orchestration, ML inference, safety enforcement services, human review UI, retention jobs, and end-to-end operations.
 
@@ -38,7 +38,7 @@ The backend owns validation, authorization, consent checks, workflow transitions
 
 ## PostgreSQL database
 
-PostgreSQL is the authoritative transactional store. Django migrations remain inside each backend application. The schema uses foreign keys, indexes, check constraints, conditional uniqueness, and UUID identifiers. Important integrity boundaries include case-insensitive unique user emails, one active resume per candidate, one current schedule per application, bounded evaluation values, ordered call/agent events, and database-protected immutable audit events.
+PostgreSQL is the authoritative transactional store. Django migrations remain inside each backend application. The schema uses foreign keys, indexes, check constraints, conditional uniqueness, and UUID identifiers. Important integrity boundaries include case-insensitive unique user emails, one active resume per candidate, one current schedule per application, bounded evaluation values, ordered call/agent events, and database-protected immutable audit and consent records.
 
 ## Authentication and role permissions
 
@@ -115,6 +115,18 @@ The planned local speech path uses Silero VAD to find speech boundaries, Faster 
 `AuditEvent` records actors, categories, outcomes, severity, resource references, privacy-safe request metadata, chained fields, and a keyed integrity hash. Django blocks model-level modification/deletion and a PostgreSQL migration installs triggers that block bulk updates/deletes. Authentication signals record successful login, failed login with a hashed identifier, and logout.
 
 The deterministic domain audit service accepts a frozen structured command, matches it to an immutable Week 2 event registry, and derives the human-readable action only from that registered specification. Each specification declares required and allowed metadata keys. The service normalizes UUID identifiers, enforces actor/resource requirements, and accepts only bounded allowlisted scalar metadata. It rejects missing required metadata, unknown events and metadata, nested private objects, credentials, raw tokens, document/transcript contents, and filesystem paths. Mandatory audit failures raise safe exceptions and can participate in the calling domain service's transaction. An LLM never decides whether auditing is required, which mandatory fields may be omitted, whether an event may change, or whether private content belongs in metadata. Previous-event hash chaining remains unimplemented by design.
+
+## Consent history
+
+The current Milestone 2.1B worktree adds `auditlog.ConsentRecord` as append-only governance evidence for general AI-processing and application-level AI-interview consent. Its exact fields are UUID `id`; protected `candidate`; consent type (`general_ai_processing` or `ai_interview`); action (`granted` or `revoked`); policy version; collection source (`profile`, `application`, `interview_confirmation`, `admin_assisted`, or `legacy_import`); optional protected application, interview schedule, and recorded-by user; timezone-aware recorded time; globally unique UUID idempotency key; and optional request/correlation UUIDs.
+
+Named checks are `consent_general_no_context`, `consent_interview_has_app`, `consent_schedule_has_app`, and `consent_nonlegacy_has_actor`. Named indexes are `consent_candidate_type_time`, `consent_app_type_time`, `consent_schedule_time`, `consent_action_time`, `consent_request_id`, and `consent_correlation_id`. Model methods reject updates/deletes and PostgreSQL independently blocks both operations.
+
+Deterministic consent services lock the mutable `CandidateProfile` or `JobApplication` cache owner, reload actor and schedule authority from PostgreSQL, validate scope and ownership, persist consent evidence, synchronize the Boolean cache, and record the mandatory audit event in one short transaction. Candidate-originated evidence requires the persisted actor to be the active candidate user with the candidate role; administrator evidence must use the `admin_assisted` source. An identical persisted idempotency key returns its existing record and reuse with different consent semantics is rejected. A different key represents a new explicit action and creates a new record and audit event, so network retries must reuse their original key.
+
+Effective-consent checks read the latest record across all policy versions, ordered by recorded time and UUID. Consent is effective only when that latest action is granted under the requested non-legacy policy. A later revocation or different-policy action blocks the earlier grant; a later current-policy grant restores consent. Boolean caches follow every new latest action but are never the source of authority.
+
+Audit events use `resource_type = "auditlog.ConsentRecord"`, the consent UUID as `resource_id`, and only allowlisted identifiers/codes; no wording or private prose is copied. Legacy true cache values become `legacy-unversioned` historical grants with no actor or migration-time audit event, then profile/application caches are reset so legacy evidence cannot authorize future processing. False caches do not create misleading revocations. This is technical evidence handling, not a claim of legal compliance.
 
 ## Data and security flow
 

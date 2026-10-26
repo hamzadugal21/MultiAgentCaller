@@ -2,7 +2,7 @@
 
 This is the authoritative handoff document for another AI assistant. Read it after `AGENTS.md`, then verify its snapshot against Git and the source before changing code.
 
-Last updated: 2026-10-23 (Asia/Karachi)
+Last updated: 2026-10-26 (Asia/Karachi)
 
 ## Project identity
 
@@ -16,12 +16,12 @@ Last updated: 2026-10-23 (Asia/Karachi)
 ## Current Git and progress snapshot
 
 - **Current branch:** `feat/week-2-core-workflows`
-- **Current commit:** `988867b` — deterministic domain audit service.
-- **Latest clean checkpoint:** `988867b` — deterministic domain audit service.
+- **Current commit:** `eb48e50` — lightweight Render deployment plan.
+- **Latest clean checkpoint:** `eb48e50` — lightweight Render deployment plan.
 - **Week 1:** 100% complete.
-- **Current week:** Week 2, 5% complete. Only Milestone 2.1A, the deterministic domain-audit foundation, is implemented and validated.
-- **Overall project:** 26% complete.
-- **Automated tests:** 62 passing.
+- **Current week:** Week 2, 10% complete. Milestones 2.1A and 2.1B are implemented and validated; 2.1B remains uncommitted pending review.
+- **Overall project:** 28% complete.
+- **Automated tests:** 97 passing; the Milestone 2.1B focused audit/candidate/recruitment suite has 77 passing tests.
 
 ## Current technology stack
 
@@ -57,7 +57,7 @@ Root files retain repository-wide configuration and documentation. Django templa
 - `interviews`: Interview schedules, evaluation rubrics and criteria, candidate evaluations, criterion scores, and reviewer fields.
 - `calling`: Call sessions, transcript segments, call events, performance metrics, consent, and optional recording metadata.
 - `agents`: Versioned agent definitions, runs, actions, handoffs, approval fields, and escalation records.
-- `auditlog`: Immutable keyed audit events, security incidents, and data-retention records. PostgreSQL triggers protect audit events from database-level update and deletion.
+- `auditlog`: Immutable keyed audit events, security incidents, data-retention records, and the in-review append-only consent-history implementation. PostgreSQL triggers protect audit events and consent evidence from database-level update and deletion.
 
 Only the accounts web flow currently has implemented views and templates. Most other applications currently provide schema foundations, not finished product workflows.
 
@@ -76,7 +76,9 @@ These agents have database definitions but no operational orchestration implemen
 
 ## PostgreSQL architecture
 
-PostgreSQL is the required relational database. Django migrations define UUID-centered recruitment, interview, call, agent, and audit records with foreign keys, indexes, uniqueness rules, conditional constraints, and numeric/range checks. Important database safeguards include case-insensitive user-email uniqueness and PostgreSQL protection against updating or deleting audit events. Django migrations must remain with their applications.
+PostgreSQL is the required relational database. Django migrations define UUID-centered recruitment, interview, call, agent, and audit records with foreign keys, indexes, uniqueness rules, conditional constraints, and numeric/range checks. Important database safeguards include case-insensitive user-email uniqueness and PostgreSQL protection against updating or deleting audit events. The current Milestone 2.1B worktree adds append-only consent evidence and a matching PostgreSQL immutability trigger; its migrations are applied locally but remain uncommitted pending review. Django migrations must remain with their applications.
+
+`auditlog.ConsentRecord` has UUID `id`; protected candidate, optional application, optional interview schedule, and optional recorded-by relationships; `general_ai_processing`/`ai_interview` type; `granted`/`revoked` action; policy version; `profile`/`application`/`interview_confirmation`/`admin_assisted`/`legacy_import` source; timezone-aware recorded time; globally unique UUID idempotency key; and optional request/correlation UUIDs. Named checks prevent invalid general/interview context and require a non-legacy actor. Named indexes cover candidate/type/time, application/type/time, schedule/time, action/time, request ID, and correlation ID.
 
 ## Authentication and authorization
 
@@ -95,7 +97,7 @@ PostgreSQL is the required relational database. Django migrations define UUID-ce
 - Never place secrets or private candidate content in Git or context documentation.
 - Resume files are limited to PDF/DOCX, 5 MB, structurally checked, randomly renamed, and stored under runtime media rather than static assets.
 - Malware scanning is required before production document processing and is not yet implemented.
-- Candidate AI-processing and interview consent fields exist; workflows must enforce them before processing.
+- Candidate AI-processing and interview consent Boolean fields are mutable caches. The current Milestone 2.1B implementation derives effective consent from append-only, policy-versioned history and requires workflow enforcement before processing.
 - Call recording defaults to disabled and requires explicit consent before it can be enabled.
 - Agent tools must be allowlisted and sensitive actions must use approval records.
 - Authentication events are sanitized and audit events are hash-protected and immutable.
@@ -117,14 +119,18 @@ AI may screen, summarize, score against an approved rubric, and recommend. It mu
 - Persistent agent operating guide, handoff, roadmap, decision log, work log, architecture documentation, and ignored local prompt counter.
 - Deterministic domain-audit service with a frozen caller command, immutable Week 2 event registry, specification-owned canonical actions, required and allowed metadata rules, safe UUID normalization, bounded payload validation, and safe mandatory-failure exceptions.
 - Validated lightweight Render dependency manifest that includes only the base Django web stack and deliberately excludes heavy local AI/ML dependencies.
+- Append-only, policy-versioned consent evidence with deterministic grant/revoke/resolution services, mutable cache synchronization, strict actor/scope checks, idempotent replay, deterministic auditing, legacy import, and PostgreSQL immutability protection. This work is validated but remains uncommitted pending review.
 
 ## Current work
 
-Milestone 2.1A is implemented, validated, and checkpointed on `feat/week-2-core-workflows`. The lightweight Render dependency manifest and persistent deployment plan are complete and uncommitted pending review. Milestone 2.1B has not begun.
+Milestone 2.1A is implemented, validated, and checkpointed on `feat/week-2-core-workflows`. The lightweight Render dependency manifest and persistent deployment plan are committed at `eb48e50`; the approved web dependencies are installed in the local environment and the Render manifest still resolves only through `requirements/base.txt`.
+
+Milestone 2.1B is implemented, validated, and ready for its milestone commit. Migrations `auditlog.0003` through `0005` are applied locally. The focused suite passes 77 tests and the complete suite passes 97 tests. Email verification has not begun.
 
 ## Pending work
 
-- Milestone 2.1B policies and schema: append-only consent history, email-verification foundation, shared authorization conventions, and explicit workflow transition services.
+- Review and commit Milestone 2.1B append-only consent history.
+- Later Milestone 2.1 policy work: email-verification foundation, shared authorization conventions, and explicit workflow transition services.
 - Candidate profile editing and secure resume upload workflow.
 - Recruiter/company/job and application management workflows.
 - Interview scheduling, invitations, consent enforcement, and evaluation UI.
@@ -140,10 +146,12 @@ Milestone 2.1A is implemented, validated, and checkpointed on `feat/week-2-core-
 
 ## Known non-failing warnings
 
-The current pytest run emits three warnings:
+The validated pytest run emits three warnings:
 
 - Two Daphne deprecation warnings for Windows asyncio policy APIs planned for removal in Python 3.16.
 - One pytest-cache permission warning for `.pytest_cache`; it does not affect test execution.
+
+On the current low-memory Windows host, the unbounded pytest process twice failed during native-library allocation. Final focused and complete runs passed with the process-local `OPENBLAS_NUM_THREADS=1` setting; project configuration and runtime behavior were not changed.
 
 ## Validation commands
 
@@ -161,13 +169,17 @@ git status --short
 
 ## Exact next recommended task
 
-Review and approve the uncommitted lightweight Render dependency manifest, deployment plan, and context updates. Do not deploy or begin Milestone 2.1B.
+Review the validated Milestone 2.1B diff and approve a focused consent-history commit. Do not begin email verification until that approval.
 
 Relevant files:
 
-- `requirements/render.txt`
-- `requirements/base.txt`
-- `requirements/ml.txt`
+- `backend/auditlog/models.py`
+- `backend/auditlog/consent_services.py`
+- `backend/auditlog/services.py`
+- `backend/auditlog/migrations/0003_consentrecord.py`
+- `backend/auditlog/migrations/0004_backfill_legacy_consents.py`
+- `backend/auditlog/migrations/0005_protect_consent_records.py`
+- `backend/auditlog/test_consent_services.py`
 - `requirements/production.txt`
 - `docs/development/RENDER_DEPLOYMENT.md`
 - `docs/DECISIONS.md`

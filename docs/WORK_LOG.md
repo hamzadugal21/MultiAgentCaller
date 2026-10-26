@@ -98,3 +98,36 @@ Commit `614aba6` — `chore: reorganize project structure`
 - This is deployment preparation only and does not count as Week 2 product functionality. No application code, runtime behavior, settings, dependencies, or deployment service was changed.
 - Validation: all documented local paths resolve; no deferred deployment artifact exists; only the new Render manifest changed under `requirements/`; no application/runtime source path changed; Git diff check passed.
 - Next: review the uncommitted dependency manifest and deployment documentation; do not deploy or begin Milestone 2.1B.
+
+## 2026-10-26 — Automatic context checkpoint during Milestone 2.1B
+
+- Branch: `feat/week-2-core-workflows`; commit: `eb48e50`; worktree: uncommitted Milestone 2.1B changes only.
+- Completed work: Render preparation is committed at `eb48e50`; its dependencies are installed locally with every package already satisfied, the import smoke test prints `RENDER DEPENDENCIES ARE READY`, and pip reports no broken requirements. Nothing was deployed or pushed.
+- Current task: append-only consent history. Added the consent schema and service implementation, three new auditlog migrations, audit-registry integration, and PostgreSQL-backed tests. Migrations `auditlog.0003` through `0005` are applied locally.
+- Changed files at checkpoint: `backend/auditlog/models.py`, `backend/auditlog/services.py`, `backend/auditlog/consent_services.py`, migrations `0003`-`0005`, `backend/auditlog/tests.py`, `backend/auditlog/test_consent_services.py`, and `backend/auditlog/test_database_protection.py`, plus required context documents.
+- Validation so far: migration generation found one pre-migration Python scope error, corrected before any migration was created; the first focused run found one stale audit test resource type, corrected immediately. The rerun passed 65 focused tests. Migration drift and Ruff checks passed before this checkpoint. Full-suite and final validation remain.
+- Known warnings: two Daphne Python 3.16 asyncio deprecation warnings and one pytest-cache permission warning. Blockers: none.
+- Week 2 completion remains **5%** and overall completion remains **26%** until Milestone 2.1B completes full validation.
+- Next: finish full validation, update final test totals/progress, and present Milestone 2.1B for review without committing or starting email verification.
+
+## 2026-10-26 — Milestone 2.1B append-only consent history ready for review
+
+- Added `auditlog.ConsentRecord` with protected domain relationships, policy-versioned grant/revoke evidence, a global UUID idempotency key, request/correlation IDs, stable check constraints/indexes, model immutability, and PostgreSQL update/delete protection.
+- Added deterministic general and application-interview grant/revoke/resolution services. They lock the mutable profile/application cache row, reload actor and schedule authority from PostgreSQL, enforce scope/ownership, synchronize caches, deduplicate identical state, support policy reconfirmation and schedule-linked evidence, and persist mandatory privacy-safe audit events in the same transaction.
+- Added separate schema, legacy-backfill, and trigger migrations. Historical true caches become actorless `legacy-unversioned` grants without migration-time audit events; caches are reset, false values create no revocation, and current-policy re-consent is required.
+- Applied auditlog migrations `0003`, `0004`, and `0005`. Django check found 0 issues and migration drift check found no changes.
+- Validation: 26 new consent/immutability tests passed; 68 focused audit/candidate/recruitment tests passed; 88 complete tests passed; pip check, Ruff, and migration checks passed. The final pytest runs used process-local `OPENBLAS_NUM_THREADS=1` after the low-memory host rejected native allocations without it.
+- Known non-failing warnings: two Daphne Python 3.16 asyncio deprecation warnings and one pytest-cache permission warning. No code blocker remains.
+- Week 2 is **10%** complete and overall project progress is **28%**. Milestone 2.1B is uncommitted and ready for review.
+- Next: approve a focused Milestone 2.1B commit; do not begin email verification before approval.
+
+## 2026-10-26 — Milestone 2.1B consent integrity corrections
+
+- Enforced persisted candidate role and ownership for candidate-originated consent; administrator assistance requires a persisted administrator/superuser and the explicit `admin_assisted` source.
+- Corrected idempotency so only reuse of the same key replays an existing result. A different key always records a new explicit immutable action and audit event; callers must reuse a key for network retries.
+- Corrected effective-consent resolution to inspect the latest record across every policy version. Only a latest grant under the requested non-legacy policy authorizes processing; later revocation or another-policy evidence blocks an older grant.
+- Policy versions now use the exact deterministic-audit safe-code character rules before persistence.
+- Added stale-role, recruiter denial, administrator-source, new-key history, safe policy-code, and general/application cross-policy ordering tests.
+- Validation: Django check reported 0 issues; migration drift reported no changes; 77 focused tests and 97 complete tests passed; pip check, Ruff, and Git diff checks passed.
+- Known warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning. No blocker remains.
+- Next: commit Milestone 2.1B as `feat: add append-only consent history`, then begin the email-verification foundation.

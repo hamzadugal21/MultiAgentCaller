@@ -38,7 +38,7 @@ Establish the secure Python/Django/PostgreSQL foundation, core domain schema, au
 - Django, dependency, migration, Ruff, and Git diff checks pass.
 - `main` contains the validated Week 1 and structure checkpoints.
 
-## Week 2 — Core recruitment workflows (5% complete)
+## Week 2 — Core recruitment workflows (10% complete)
 
 ### Objectives
 
@@ -46,7 +46,7 @@ Turn the schema foundation into secure candidate, recruiter, job, application, a
 
 ### Tasks and deliverables
 
-- **Milestone 2.1 — policies and schema:** deterministic domain auditing, state-transition tables, append-only consent history, email-verification design, shared authorization/service conventions, and foundation tests. Milestone 2.1A domain auditing is implemented and validated; the remaining schema and policy work is not started.
+- **Milestone 2.1 — policies and schema:** deterministic domain auditing, state-transition tables, append-only consent history, email-verification design, shared authorization/service conventions, and foundation tests. Milestone 2.1A domain auditing is committed and validated. Milestone 2.1B append-only consent history is implemented and validated with migrations applied. Later Milestone 2.1 work has not started.
 - **Milestone 2.2 — candidate workflow:** profile editing, consent history, email verification, secure resume lifecycle, basic local extraction, protected download, and candidate-focused tests.
 - **Milestone 2.3 — recruiter and jobs:** administrator provisioning, recruiter/company authorization, job management, requirements, questions, FAQs, publishing transitions, and security tests.
 - **Milestone 2.4 — applications:** authenticated candidate job browsing, application creation, verification/consent checks, resume ownership, duplicate prevention, withdrawal, and tests.
@@ -149,7 +149,7 @@ Deployment planning reference: [Render deployment plan](development/RENDER_DEPLO
 ## Overall status
 
 - Week 1: 100%
-- Week 2: 5%
+- Week 2: 10%
 - Week 3: 0%
 - Week 4: 0%
-- Overall: 26%
+- Overall: 28%
