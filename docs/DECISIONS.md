@@ -225,3 +225,10 @@ Append new decisions; do not rewrite accepted historical decisions unless a late
 - **Reason:** Voice/model availability varies by device and platform and must not control authorization, consent, call state, or basic interview availability.
 - **Consequences:** No model is selected or trained here, no raw audio is audited, no recording is persisted, no wall-clock timeout is promised without process isolation, and heavy ML dependencies remain excluded from `requirements/render.txt`.
 - **Status:** Accepted and implemented for Week 3 Milestone 3.4.
+
+## 2026-10-27 — Model-free coordinator with an exact action allowlist
+
+- **Decision:** The first interview coordinator is deterministic Python with a versioned policy and exactly five commands: status, start, pause, cancel, and submit answer. Its Django adapter calls only candidate-scoped call-session services.
+- **Reason:** Question selection and workflow progression must be secure and testable before any generative behavior is considered.
+- **Consequences:** Only active job-owned questions are returned one at a time. Persisted role, ownership, consent, schedule, transition, idempotency, and audit controls remain in domain services. Unsupported, malformed, or failed commands stop with fixed safe codes. The coordinator cannot send messages, use arbitrary tools/ORM/paths, or make hiring decisions.
+- **Status:** Accepted and implemented for Week 3 Milestone 3.5.

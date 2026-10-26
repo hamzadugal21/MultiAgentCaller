@@ -16,12 +16,12 @@ Last updated: 2026-10-27 (Asia/Karachi)
 ## Current Git and progress snapshot
 
 - **Current branch:** `feat/week-3-ai-interview-runtime`
-- **Current commit:** `40789e2` — optional local voice adapter boundary.
-- **Latest validated product checkpoint:** `40789e2` — Week 3 Milestone 3.4.
+- **Current commit:** `da6cf21` — deterministic interview coordinator.
+- **Latest validated product checkpoint:** `da6cf21` — Week 3 Milestone 3.5.
 - **Week 1:** 100% complete.
-- **Current week:** Week 3, 75% complete. Milestones 3.1 through 3.4 are committed and validated.
-- **Overall project:** 69% complete.
-- **Automated tests:** 182 passing, including the Week 2 pre-interview suite, simulated interview, WebSocket security, and optional voice-adapter fallback coverage.
+- **Current week:** Week 3, 90% complete. Milestones 3.1 through 3.5 are committed and validated.
+- **Overall project:** 73% complete.
+- **Automated tests:** 186 passing, including the Week 2 pre-interview suite, simulated interview, WebSocket security, voice-adapter fallback, and deterministic coordinator coverage.
 
 ## Current technology stack
 
@@ -75,6 +75,8 @@ Accounts, candidates, recruitment, interview scheduling, and the simulated inter
 - **Escalation Agent:** Route candidate requests, uncertainty, safety events, and technical failures to authorized humans.
 
 These agents have database definitions but no operational orchestration implementation yet. Auditing is not a generative-agent responsibility: ordinary Python domain services decide when an event is mandatory, validate a strict event specification, sanitize its metadata, and persist the immutable event. Future agent runtimes may only submit structured events through narrow service adapters.
+
+Week 3 now includes a model-free `DeterministicInterviewCoordinator`, not a generative agent. It exposes only status, start, pause, cancel, and submit-answer commands through a candidate-scoped Django adapter. It selects approved job questions one at a time and returns fixed structured directives. The broader specialist-agent runtime remains planned.
 
 ## PostgreSQL architecture
 
@@ -133,14 +135,16 @@ AI may screen, summarize, score against an approved rubric, and recommend. It mu
 - Candidate-owned simulated interview pages with approved active job questions, bounded private answers, deterministic ordering and completion, idempotent submission, pause/resume/cancel controls, recruiter/admin safe progress pages, POST/CSRF enforcement, and answer-free audit metadata.
 - Authenticated Channels status WebSocket with exact candidate/company/admin authorization, per-session groups, reauthorization before delivery, server-derived allowlisted payloads, event isolation, safe disconnect handling, and optional on-commit broadcasting. Development remains in-memory; production retains the existing Redis channel layer.
 - Typed transient audio and optional local Silero VAD, Faster Whisper STT, and piper-plus TTS adapters with lazy/local-only loading, bounded text/audio handling, fixed safe failure codes, unsupported-input/output fallbacks, and no recording persistence.
+- Versioned deterministic interview coordinator with an immutable five-action allowlist, candidate-only narrow tool adapter, approved-question sequencing, structured stop/failure results, and no generative, messaging, arbitrary-data, or employment-decision authority.
 
 ## Current work
 
-Week 2 remains complete at checkpoint `064100a`. Week 3 Milestones 3.1 through 3.4 are committed at `2bd2710`, `473ea99`, `a64e9be`, and `40789e2` on `feat/week-3-ai-interview-runtime`; the full suite passes 182 tests. The next task is Milestone 3.5: a narrow deterministic interview coordinator with approved questions and allowlisted tools.
+Week 2 remains complete at checkpoint `064100a`. Week 3 Milestones 3.1 through 3.5 are committed at `2bd2710`, `473ea99`, `a64e9be`, `40789e2`, and `da6cf21` on `feat/week-3-ai-interview-runtime`; the full suite passes 186 tests. The next task is Milestone 3.6: safety, escalation, failure recovery, and complete Week 3 integration/security validation.
 
 ## Pending work
 
-- Browser audio transport and live integration of the optional STT, TTS, and VAD adapters.
+- Week 3 safety/escalation integration and complete simulated runtime security validation.
+- Browser audio transport and live integration of the optional STT, TTS, and VAD adapters remain beyond the deterministic Week 3 baseline unless safely completed after required controls.
 - Agent orchestration, tool allowlists, safety checks, escalation, and human approvals.
 - Operational agent/evaluation pipeline, observability, retention jobs, production hardening, and deployment execution.
 
@@ -174,16 +178,18 @@ git status --short
 
 ## Exact next recommended task
 
-Implement Week 3 Milestone 3.5: a narrow deterministic interview coordinator that selects only approved questions, advances the existing state machine through allowlisted services, asks one question at a time, returns structured actions, and escalates or stops safely. It must not make hiring decisions, send messages, use unrestricted ORM/tools, or require a generative model.
+Implement Week 3 Milestone 3.6: deterministic timeout/expiry and unsafe-state recovery, explicit privacy-safe human escalation flags, service-failure fallback, consent-revocation/candidate-exit coverage, and a complete confirmed-interview-to-completed-simulation integration/security test. Do not add hiring outcomes, generative models, audio recording, or deployment.
 
 Relevant files:
 
 - `backend/calling/models.py`
 - `backend/calling/services.py`
 - `ai_system/voice/interfaces.py`
+- `ai_system/interview/coordinator.py`
 - `ai_system/README.md`
 - `backend/calling/services.py`
 - `backend/calling/models.py`
+- `backend/calling/coordinator_tools.py`
 - `backend/agents/models.py`
 - `backend/auditlog/services.py`
 - `backend/recruitment/models.py`

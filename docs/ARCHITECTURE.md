@@ -6,7 +6,7 @@ This document describes both the implemented foundation and the planned system. 
 
 Implemented today: Django configuration, PostgreSQL models/migrations, accounts web flow, role dashboards, resume validation, authentication audit signals, deterministic domain-audit validation, immutable audit/consent protection, append-only consent services, secure email-verification services, explicit recruitment and call-session transition policies, templates/static discovery, and runtime path separation.
 
-Implemented Week 2 product workflows: candidate profile/consent/verification/resume management, administrator/recruiter provisioning, company-scoped jobs, secure applications/withdrawal, and interview invitation/confirmation/rescheduling. Week 3 Milestones 3.1 through 3.4 add the deterministic call-session domain, server-rendered simulated interview, authenticated status WebSocket, and optional local voice adapter boundaries. Planned: browser audio transport, operational local speech execution, multi-agent orchestration, ML inference, semantic safety agents, human review UI, retention jobs, and production deployment.
+Implemented Week 2 product workflows: candidate profile/consent/verification/resume management, administrator/recruiter provisioning, company-scoped jobs, secure applications/withdrawal, and interview invitation/confirmation/rescheduling. Week 3 Milestones 3.1 through 3.5 add the deterministic call-session domain, server-rendered simulated interview, authenticated status WebSocket, optional local voice adapter boundaries, and a model-free deterministic interview coordinator. Planned: browser audio transport, operational local speech execution, broader specialist-agent orchestration, ML inference, semantic safety agents, human review UI, retention jobs, and production deployment.
 
 ## Overall system architecture
 
@@ -122,6 +122,8 @@ flowchart TB
 Deterministic Python policy enforcement remains authoritative for permissions, consent, transitions, tool allowlists, approvals, rate limits, and protected fields. The future semantic Safety Agent detects prompt injection, bias, coercion, privacy concerns, and unsafe conversational content but cannot override hard controls. The escalation agent must create a reviewable record and route it to a human; it must not silently resolve high-impact cases.
 
 Future agents never receive unrestricted ORM, SQL, filesystem, model-name, field-name, or recipient access. Each tool must call a narrow Python service with validated input, authorization context, consent enforcement, idempotency where required, mandatory audit recording, structured output, and safe errors.
+
+The implemented `DeterministicInterviewCoordinator` is the first orchestration boundary and is deliberately not an LLM. Its immutable command surface is status, start, pause, cancel, and submit answer. A candidate-scoped Django adapter reloads authority and calls the existing transactional services; the coordinator itself receives typed snapshots and structured safe failures. It returns only a start directive, one approved question, paused/terminal state, or stopped result. It has no message delivery, arbitrary ORM, filesystem, model-selection, scoring, hiring, or final-decision tool.
 
 ## Speech and ML components
 

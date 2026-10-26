@@ -290,3 +290,15 @@ Milestone commit: `fd9a6e4` (`feat: add interview invitation and scheduling work
 - Known non-failing warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning. No blocker remains.
 - Week 3 is **75%** complete; overall four-week progress is **69%**.
 - Next: implement Milestone 3.5's narrow deterministic interview coordinator and allowlisted action boundary without selecting a generative model.
+
+## 2026-10-27 — Week 3 Milestone 3.5 deterministic interview coordinator
+
+- Product commit: `da6cf21` (`feat: add deterministic interview coordinator`).
+- Added a versioned, model-free coordinator with immutable action and state/directive maps. The exact commands are status, start, pause, cancel, and submit answer; unsupported or malformed commands stop with fixed safe codes.
+- Added a narrow Django tool adapter that reloads candidate authority and calls only existing call-session state/answer services. It cannot expose arbitrary ORM, SQL, filesystem paths, model selection, recipients, external messaging, evaluation scores, or hiring outcomes.
+- Coordinator snapshots expose one active, approved job-owned question at a time. Mutation services continue to enforce current consent, verified email, schedule window, ownership, state, idempotency, and mandatory privacy-safe audit records.
+- Added four coordinator tests covering versioned start/question/progression/completion behavior, the exact action allowlist, recruiter impersonation denial, and internal-error redaction. No generative model or fake generative-agent test was added.
+- Validation: 30 focused calling/coordinator tests and 186 complete tests passed; Django check reported 0 issues; no migration drift; pip check, Ruff across backend/AI/ML, and Git diff checks passed.
+- Known non-failing warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning. No blocker remains.
+- Week 3 is **90%** complete; overall four-week progress is **73%**.
+- Next: complete Milestone 3.6 deterministic safety/escalation controls and Week 3 integration/security validation.
