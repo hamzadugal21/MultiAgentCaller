@@ -131,3 +131,17 @@ Commit `614aba6` — `chore: reorganize project structure`
 - Validation: Django check reported 0 issues; migration drift reported no changes; 77 focused tests and 97 complete tests passed; pip check, Ruff, and Git diff checks passed.
 - Known warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning. No blocker remains.
 - Next: commit Milestone 2.1B as `feat: add append-only consent history`, then begin the email-verification foundation.
+
+Milestone commit: `bee8785` (`feat: add append-only consent history`).
+
+## 2026-10-26 — Milestone 2.1C secure email-verification foundation
+
+- Added `accounts.EmailVerificationChallenge` with UUID identity, user relationship, unique keyed token digest, keyed normalized-email binding, purpose version, expiry/used/invalidation timestamps, and optional request UUID.
+- Added versioned Django signing with a cryptographically random nonce, 24-hour configurable lifetime, row-locked single-use consumption, resend invalidation, email-change invalidation, and configurable request/resend/invalid-attempt rate limits.
+- Raw tokens, token URLs, email addresses, and plain email digests are not stored or audited. Requested, succeeded, failed, and invalidated events use deterministic allowlisted audit specifications.
+- Added migration `accounts.0003_emailverificationchallenge`; it is applied and migration drift is absent.
+- Added 14 focused model/service/security tests covering HMAC boundaries, consumption/replay, expiry, invalid tokens, resend, email changes, rate limits, audit privacy, database constraints, and audit-failure rollback.
+- Validation: Django check reported 0 issues; 105 focused accounts/audit tests and 111 complete tests passed; pip check, Ruff, migration, and Git diff checks passed.
+- Known warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning. No blocker remains.
+- Week 2 is **15%** complete and overall progress is **29%**.
+- Next: commit as `feat: add secure email verification foundation`, then implement deterministic transition/schema foundations.

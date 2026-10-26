@@ -285,6 +285,7 @@ def test_event_registry_contains_exact_expected_event_types():
         "consent.granted",
         "consent.revoked",
         "email_verification.failed",
+        "email_verification.invalidated",
         "email_verification.requested",
         "email_verification.succeeded",
         "interview.cancelled",
@@ -332,6 +333,7 @@ def test_event_registry_has_exact_required_metadata_rules():
             "policy_version",
         },
         "email_verification.failed": {"failure_code"},
+        "email_verification.invalidated": {"reason_code"},
         "email_verification.requested": {"delivery_channel"},
         "email_verification.succeeded": set(),
         "interview.cancelled": {

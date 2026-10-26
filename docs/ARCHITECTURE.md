@@ -44,6 +44,12 @@ PostgreSQL is the authoritative transactional store. Django migrations remain in
 
 `accounts.User` authenticates by email and supports candidate, recruiter, and administrator roles. Public signup creates candidates only. Existing dashboard authorization is enforced in Django views. Future object-level checks must ensure candidates access only their own records and recruiters access only authorized company/job records. Administrator capability must not be inferred from request data.
 
+## Email verification
+
+`accounts.EmailVerificationChallenge` stores a challenge UUID, user, unique keyed token digest, keyed normalized-email binding, purpose version, creation/expiry/used/invalidation timestamps, and optional request UUID. Raw tokens and URLs are never persisted. Tokens contain a cryptographically random nonce and are signed with a dedicated versioned salt; the default lifetime is 24 hours.
+
+Creation, resend, email-change invalidation, and consumption are deterministic services. Resend invalidates prior active challenges. Consumption locks the challenge row, verifies the signature, expiry, purpose, current email binding, active user, and unused/uninvalidated state, then sets `User.email_verified` in the same transaction as the mandatory audit event. Configurable request/resend/invalid-attempt limits use privacy-safe cache keys. User-facing generic-response pages and job/interview enforcement are implemented in later milestones.
+
 ## Candidate profiles and resume handling
 
 Each candidate user receives one `CandidateProfile`. Candidate skills can be self-reported or derived from approved processing. `Resume` stores protected file metadata, processing status, extracted text, and a checksum field. Upload paths use random names; validators accept structurally plausible PDF/DOCX files up to 5 MB. Upload views, ownership enforcement, extraction, malware scanning, and retention execution are planned.

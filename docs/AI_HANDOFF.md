@@ -16,12 +16,12 @@ Last updated: 2026-10-26 (Asia/Karachi)
 ## Current Git and progress snapshot
 
 - **Current branch:** `feat/week-2-core-workflows`
-- **Current commit:** `eb48e50` — lightweight Render deployment plan.
-- **Latest clean checkpoint:** `eb48e50` — lightweight Render deployment plan.
+- **Current commit:** `bee8785` — append-only consent history.
+- **Latest clean checkpoint:** `bee8785` — append-only consent history.
 - **Week 1:** 100% complete.
-- **Current week:** Week 2, 10% complete. Milestones 2.1A and 2.1B are implemented and validated; 2.1B remains uncommitted pending review.
-- **Overall project:** 28% complete.
-- **Automated tests:** 97 passing; the Milestone 2.1B focused audit/candidate/recruitment suite has 77 passing tests.
+- **Current week:** Week 2, 15% complete. Milestones 2.1A through 2.1C are implemented and validated; the 2.1C commit is pending.
+- **Overall project:** 29% complete.
+- **Automated tests:** 111 passing; the focused accounts/audit suite has 105 passing tests.
 
 ## Current technology stack
 
@@ -51,7 +51,7 @@ Root files retain repository-wide configuration and documentation. Django templa
 
 ## Django applications
 
-- `accounts`: Custom email-based user model, candidate-only public signup, login/logout, three roles, role dashboards, authentication auditing, and automatic candidate-profile creation.
+- `accounts`: Custom email-based user model, candidate-only public signup, login/logout, three roles, role dashboards, authentication auditing, automatic candidate-profile creation, and the secure email-verification challenge/service foundation.
 - `candidates`: Candidate profiles, skills, resume metadata/storage models, safe randomized upload paths, and PDF/DOCX size and structure validation.
 - `recruitment`: Companies, recruiter profiles, job postings, skill requirements, applications, interview questions, and job FAQs.
 - `interviews`: Interview schedules, evaluation rubrics and criteria, candidate evaluations, criterion scores, and reviewer fields.
@@ -90,6 +90,7 @@ PostgreSQL is the required relational database. Django migrations define UUID-ce
 - Role checks are enforced server-side for the existing dashboards.
 - Password hashing prefers Argon2, with Django password validation enabled.
 - django-axes limits repeated login failures; logout is POST-only and CSRF-protected by Django middleware.
+- Email verification uses signed expiring single-purpose tokens, keyed token/email digests, single-use row-locked consumption, resend invalidation, configurable throttles, and deterministic privacy-safe audit events. Raw tokens are returned only to the delivery caller and are never stored.
 
 ## Security rules and boundaries
 
@@ -120,17 +121,18 @@ AI may screen, summarize, score against an approved rubric, and recommend. It mu
 - Deterministic domain-audit service with a frozen caller command, immutable Week 2 event registry, specification-owned canonical actions, required and allowed metadata rules, safe UUID normalization, bounded payload validation, and safe mandatory-failure exceptions.
 - Validated lightweight Render dependency manifest that includes only the base Django web stack and deliberately excludes heavy local AI/ML dependencies.
 - Append-only, policy-versioned consent evidence with deterministic grant/revoke/resolution services, mutable cache synchronization, strict actor/scope checks, idempotent replay, deterministic auditing, legacy import, and PostgreSQL immutability protection. This work is validated but remains uncommitted pending review.
+- Secure email-verification challenge and service foundation with HMAC email binding, signed 24-hour tokens, resend/email-change invalidation, single-use consumption, cache-backed rate limits, and deterministic audits. User-facing pages and application/scheduling enforcement remain later Week 2 work.
 
 ## Current work
 
 Milestone 2.1A is implemented, validated, and checkpointed on `feat/week-2-core-workflows`. The lightweight Render dependency manifest and persistent deployment plan are committed at `eb48e50`; the approved web dependencies are installed in the local environment and the Render manifest still resolves only through `requirements/base.txt`.
 
-Milestone 2.1B is implemented, validated, and ready for its milestone commit. Migrations `auditlog.0003` through `0005` are applied locally. The focused suite passes 77 tests and the complete suite passes 97 tests. Email verification has not begun.
+Milestone 2.1B is committed and validated at `bee8785`. Milestone 2.1C email-verification foundations are implemented and validated with `accounts.0003_emailverificationchallenge` applied. The focused accounts/audit suite passes 105 tests and the complete suite passes 111 tests. Milestone 2.1D transition/schema foundations are next.
 
 ## Pending work
 
 - Review and commit Milestone 2.1B append-only consent history.
-- Later Milestone 2.1 policy work: email-verification foundation, shared authorization conventions, and explicit workflow transition services.
+- Later Milestone 2.1 policy work: shared authorization conventions and explicit workflow transition services.
 - Candidate profile editing and secure resume upload workflow.
 - Recruiter/company/job and application management workflows.
 - Interview scheduling, invitations, consent enforcement, and evaluation UI.
@@ -169,17 +171,15 @@ git status --short
 
 ## Exact next recommended task
 
-Review the validated Milestone 2.1B diff and approve a focused consent-history commit. Do not begin email verification until that approval.
+Commit the validated Milestone 2.1C email-verification foundation, then implement Milestone 2.1D deterministic transition and schema foundations.
 
 Relevant files:
 
-- `backend/auditlog/models.py`
+- `backend/recruitment/models.py`
+- `backend/interviews/models.py`
+- `backend/candidates/models.py`
 - `backend/auditlog/consent_services.py`
 - `backend/auditlog/services.py`
-- `backend/auditlog/migrations/0003_consentrecord.py`
-- `backend/auditlog/migrations/0004_backfill_legacy_consents.py`
-- `backend/auditlog/migrations/0005_protect_consent_records.py`
-- `backend/auditlog/test_consent_services.py`
 - `requirements/production.txt`
 - `docs/development/RENDER_DEPLOYMENT.md`
 - `docs/DECISIONS.md`

@@ -42,6 +42,7 @@ CODE_METADATA_KEYS = frozenset(
         "file_type",
         "parser",
         "policy_version",
+        "request_kind",
         "reason_code",
         "status_from",
         "status_to",
@@ -111,6 +112,7 @@ def _spec(
     *,
     required_metadata: set[str] | None = None,
     actor_required: bool = True,
+    resource_id_required: bool = True,
 ) -> AuditEventSpec:
     return AuditEventSpec(
         category=category,
@@ -119,6 +121,7 @@ def _spec(
         allowed_metadata_keys=frozenset(metadata or set()),
         required_metadata_keys=frozenset(required_metadata or set()),
         actor_required=actor_required,
+        resource_id_required=resource_id_required,
     )
 
 
@@ -174,25 +177,34 @@ EVENT_SPECS = MappingProxyType(
     # Email verification
     "email_verification.requested": _spec(
         AuditEvent.Category.AUTHENTICATION,
-        "accounts.User",
+        "accounts.EmailVerificationChallenge",
         "Email verification requested",
-        {"delivery_channel"},
+        {"delivery_channel", "request_kind"},
         required_metadata={"delivery_channel"},
         actor_required=False,
     ),
     "email_verification.succeeded": _spec(
         AuditEvent.Category.AUTHENTICATION,
-        "accounts.User",
+        "accounts.EmailVerificationChallenge",
         "Email verification completed",
         set(),
         actor_required=False,
     ),
     "email_verification.failed": _spec(
         AuditEvent.Category.SECURITY,
-        "accounts.User",
+        "accounts.EmailVerificationChallenge",
         "Email verification failed",
         {"failure_code"},
         required_metadata={"failure_code"},
+        actor_required=False,
+        resource_id_required=False,
+    ),
+    "email_verification.invalidated": _spec(
+        AuditEvent.Category.AUTHENTICATION,
+        "accounts.EmailVerificationChallenge",
+        "Email verification challenge invalidated",
+        {"reason_code"},
+        required_metadata={"reason_code"},
         actor_required=False,
     ),
     # Resume lifecycle
