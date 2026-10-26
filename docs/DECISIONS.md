@@ -197,3 +197,10 @@ Append new decisions; do not rewrite accepted historical decisions unless a late
 - **Reason:** Keep the cloud demonstration small and practical without replacing the project's real local open-source speech and ML pipeline.
 - **Consequences:** The Whisper, Piper, and PyTorch pipeline remains locally runnable through the existing ML requirements. No object-storage dependency is selected until the storage provider is finalized. Render services, build commands, health endpoints, storage, and production environment configuration remain deferred to the final deployment milestone.
 - **Status:** Accepted; lightweight dependency boundary added, deployment not configured.
+
+## 2026-10-27 — Deterministic call-session lifecycle before real-time transport
+
+- **Decision:** Build the interview runtime around one simulated `CallSession` per confirmed schedule, with explicit `pending`, `ready`, `active`, `paused`, and terminal states controlled by transactional Python services before adding WebSockets, Redis, speech engines, or generative orchestration.
+- **Reason:** Authorization, consent, schedule eligibility, idempotency, failure handling, timestamps, and mandatory auditing must remain deterministic and testable independently of transport or model availability.
+- **Consequences:** Candidate access is ownership-scoped; verified recruiters are company-scoped and require candidate-review capability; administrators remain explicit trusted actors. Current email verification and general/application consent are rechecked for entry into ready/active states. Persistent audio recording remains disabled by the service, and call audits contain only allowlisted identifiers, codes, state changes, and the simulated-mode flag.
+- **Status:** Accepted and implemented for Week 3 Milestone 3.1.

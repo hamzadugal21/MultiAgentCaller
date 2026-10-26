@@ -76,7 +76,7 @@ Turn the schema foundation into secure candidate, recruiter, job, application, a
 - State changes use tested transition services rather than direct status assignment.
 - No migration drift or failing validation remains.
 
-## Week 3 — Voice calling and multi-agent system (0% complete)
+## Week 3 — Voice calling and multi-agent system (15% complete)
 
 ### Objectives
 
@@ -84,6 +84,8 @@ Implement the browser call runtime, local speech pipeline, orchestration, specia
 
 ### Tasks and deliverables
 
+- **Milestone 3.1 — call-session foundation:** committed and validated deterministic session creation, explicit lifecycle transitions, schedule/application/candidate consistency, current-consent and confirmation gates, candidate/company authorization, idempotency, safe timestamps, privacy-safe audit events, and database constraints.
+- **Milestone 3.2 — simulated interview lifecycle:** next; add the server-rendered candidate/recruiter flow with deterministic approved questions and safe answer progression before real-time transport.
 - Channels/Redis call connection, lifecycle, reconnect, event, and metric handling.
 - Silero VAD, Faster Whisper STT, Piper TTS, and interruption/turn-taking flow.
 - Calling orchestrator and profile, interview, FAQ, scheduling, safety, escalation, and evaluation agent interfaces, integrated with the deterministic domain-audit service.
@@ -150,6 +152,6 @@ Deployment planning reference: [Render deployment plan](development/RENDER_DEPLO
 
 - Week 1: 100%
 - Week 2: 100%
-- Week 3: 0%
+- Week 3: 15%
 - Week 4: 0%
-- Overall: 50%
+- Overall: 54%

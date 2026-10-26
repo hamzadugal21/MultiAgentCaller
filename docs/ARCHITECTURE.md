@@ -4,9 +4,9 @@ This document describes both the implemented foundation and the planned system. 
 
 ## Status summary
 
-Implemented today: Django configuration, PostgreSQL models/migrations, accounts web flow, role dashboards, resume validation, authentication audit signals, deterministic domain-audit validation, immutable audit/consent protection, append-only consent services, secure email-verification services, explicit workflow transition policies, templates/static discovery, and runtime path separation.
+Implemented today: Django configuration, PostgreSQL models/migrations, accounts web flow, role dashboards, resume validation, authentication audit signals, deterministic domain-audit validation, immutable audit/consent protection, append-only consent services, secure email-verification services, explicit recruitment and call-session transition policies, templates/static discovery, and runtime path separation.
 
-Implemented Week 2 product workflows: candidate profile/consent/verification/resume management, administrator/recruiter provisioning, company-scoped jobs, secure applications/withdrawal, and interview invitation/confirmation/rescheduling. Planned: browser audio transport, local speech execution, multi-agent orchestration, ML inference, semantic safety agents, human review UI, retention jobs, and production deployment.
+Implemented Week 2 product workflows: candidate profile/consent/verification/resume management, administrator/recruiter provisioning, company-scoped jobs, secure applications/withdrawal, and interview invitation/confirmation/rescheduling. Week 3 Milestone 3.1 adds the deterministic call-session domain foundation. Planned: the simulated interview pages, browser audio transport, local speech execution, multi-agent orchestration, ML inference, semantic safety agents, human review UI, retention jobs, and production deployment.
 
 ## Overall system architecture
 
@@ -64,7 +64,11 @@ Schedules track UTC start/end times, an IANA display timezone, state, keyed-HMAC
 
 ## Calling sessions
 
-The call schema records consent, lifecycle state, speech-engine identifiers, optional recording metadata, transcript segments, events, and metrics. Recording defaults to disabled. The planned runtime uses Channels with Redis in production for browser communication and must handle reconnects, timeouts, interruption, and clean termination without losing auditability.
+`calling.CallSession` now has a UUID identity, one-session-per-schedule integrity, caller-supplied creation idempotency, explicit `pending`, `ready`, `active`, `paused`, `completed`, `cancelled`, `expired`, and `failed` states, expiry, simulated-mode, safe completion/failure codes, question position, and lifecycle timestamps. Candidate, application, job, recruiter, and company ownership are derived from the protected interview-schedule relationships rather than duplicated.
+
+Transactional services lock the schedule or session row, reload actors from PostgreSQL, enforce confirmed/current schedule eligibility, candidate email verification, current general and application interview consent, candidate ownership, verified recruiter capability/company scope, and scheduled start/end limits. Only the candidate can start, pause, resume, or complete an interview; candidate, authorized recruiter, or administrator can cancel; readiness, expiry, and failure are system transitions. Every successful creation or transition produces a mandatory allowlisted audit event in the same transaction, so audit failure rolls the state change back. Repeat submission of the same creation idempotency key returns the original session; a different key cannot create another session for the schedule.
+
+Persistent audio recording is not used by this runtime. Existing speech-engine, transcript, event, and metric schema remains a foundation only. The next milestone adds a deterministic HTTP simulated interview; Channels/Redis transport follows only after that flow is stable.
 
 ## Recruitment call workflow
 
@@ -72,7 +76,7 @@ The call schema records consent, lifecycle state, speech-engine identifiers, opt
 flowchart TD
     A[Job application<br/>Week 2 implemented] --> B[Recruiter interview invitation<br/>Week 2 implemented]
     B --> C[Candidate confirms schedule and consent<br/>Week 2 implemented]
-    C --> D[Create call session<br/>Planned service]
+    C --> D[Create call session<br/>Deterministic service implemented]
     D --> E[Browser audio connection<br/>Planned]
     E --> F[VAD and STT<br/>Planned]
     F --> G[Orchestrator selects approved agent<br/>Planned]

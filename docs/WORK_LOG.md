@@ -235,3 +235,16 @@ Milestone commit: `fd9a6e4` (`feat: add interview invitation and scheduling work
 - No application code, tests, migrations, settings, dependencies, or runtime behavior changed.
 - Week 2 remains **100%** complete and overall four-week progress remains **50%**.
 - Next remains the Week 3 deterministic call-session/runtime boundary and simulated local call lifecycle; Week 3 has not started.
+
+## 2026-10-27 — Week 3 Milestone 3.1 deterministic call-session foundation
+
+- Created branch `feat/week-3-ai-interview-runtime` from Week 2 documentation checkpoint `40881db`; product commit: `2bd2710` (`feat: add deterministic call-session foundation`).
+- Added one simulated call session per confirmed interview schedule, UUID creation idempotency, explicit lifecycle states, expiry/question/timestamp fields, stable database constraints/indexing, and a forward-only migration that safely maps legacy lifecycle values.
+- Added transactional creation, actor-scoped reads, and transition services. They reload actors from PostgreSQL; enforce candidate ownership, recruiter capability/company isolation, administrator boundaries, confirmed/current schedules, verified email, current general/application consent, scheduled start limits, and system-only readiness/expiry/failure.
+- Added nine canonical, allowlisted call-session audit specifications. Audit persistence is mandatory in the state-change transaction, and metadata excludes private candidate content, tokens, transcripts, resume text, and filesystem paths.
+- Updated application withdrawal protection to use the authoritative `started_at` boundary after the lifecycle rename.
+- Added nine PostgreSQL-backed service/security tests. Focused runs passed 80 calling/audit tests and 98 calling/audit/recruitment tests. Final validation passed 165 tests; Django check reported 0 issues; migrations applied with no drift; pip check, Ruff, and Git diff checks passed.
+- The first migration-generation attempt found a Python nested-`Meta` scope error before creating a migration; it was corrected to use stable stored values. The first complete test run then found one Week 2 test using the retired `IN_PROGRESS` name; the withdrawal guard and test were updated, and the complete rerun passed.
+- Known non-failing warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning.
+- Week 3 is **15%** complete; overall four-week progress is **54%**.
+- Next: implement Milestone 3.2's deterministic server-rendered simulated interview lifecycle before WebSockets, Redis runtime state, voice adapters, or generative orchestration.
