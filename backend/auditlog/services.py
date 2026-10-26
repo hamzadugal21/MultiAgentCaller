@@ -401,6 +401,13 @@ EVENT_SPECS = MappingProxyType(
         required_metadata={"application_id", "status_from", "status_to"},
         actor_required=False,
     ),
+    "interview.completed": _spec(
+        AuditEvent.Category.INTERVIEW,
+        "interviews.InterviewSchedule",
+        "Interview completed",
+        {"application_id", "status_from", "status_to"},
+        required_metadata={"application_id", "status_from", "status_to"},
+    ),
     }
 )
 

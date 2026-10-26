@@ -145,3 +145,17 @@ Milestone commit: `bee8785` (`feat: add append-only consent history`).
 - Known warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning. No blocker remains.
 - Week 2 is **15%** complete and overall progress is **29%**.
 - Next: commit as `feat: add secure email verification foundation`, then implement deterministic transition/schema foundations.
+
+Milestone commit: `8579159` (`feat: add secure email verification foundation`).
+
+## 2026-10-26 — Milestone 2.1D deterministic workflow foundations
+
+- Added immutable transition tables and transactional, audited services for job postings, job applications, interview schedules, resume processing/activation, and consent actions.
+- Enforced persisted actor roles, recruiter verification/capabilities, company/candidate ownership, explicit allowed state edges, system-only expiry, terminal states, and safe failure codes.
+- New resumes default inactive; the old active resume remains active through replacement processing and is atomically replaced only after successful completion.
+- Added `InterviewSchedule.invitation_expires_at` and minimal `InterviewRescheduleRequest` persistence with schedule/status indexes, valid-time constraint, and one-pending-request constraint.
+- Created and applied `candidates.0003_alter_resume_is_active` and `interviews.0002_interviewschedule_invitation_expires_at_and_more`; migration drift is absent.
+- Added eight focused transition tests. Validation: 79 focused tests and 119 complete tests passed; Django check found 0 issues; pip check, Ruff, and Git diff checks passed.
+- Known non-failing warnings: two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning. The initial focused run exposed duplicate candidate-profile fixtures because the existing signal already creates profiles; the fixtures were corrected and the rerun passed.
+- Week 2 is **20%** complete and overall progress is **31%**.
+- Next: commit `feat: add deterministic workflow foundations`, then implement Milestone 2.2 candidate workflow.

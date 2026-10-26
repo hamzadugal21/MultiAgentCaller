@@ -4,7 +4,7 @@ This document describes both the implemented foundation and the planned system. 
 
 ## Status summary
 
-Implemented today: Django configuration, PostgreSQL models/migrations, accounts web flow, role dashboards, resume validation, authentication audit signals, deterministic domain-audit validation, database audit protection, templates/static discovery, and runtime path separation. The current uncommitted Milestone 2.1B worktree also contains validated append-only consent history and deterministic consent services pending review.
+Implemented today: Django configuration, PostgreSQL models/migrations, accounts web flow, role dashboards, resume validation, authentication audit signals, deterministic domain-audit validation, immutable audit/consent protection, append-only consent services, secure email-verification services, explicit workflow transition policies, templates/static discovery, and runtime path separation.
 
 Planned: candidate/recruiter workflow views, browser audio transport, local speech execution, multi-agent orchestration, ML inference, safety enforcement services, human review UI, retention jobs, and end-to-end operations.
 
@@ -52,15 +52,15 @@ Creation, resend, email-change invalidation, and consumption are deterministic s
 
 ## Candidate profiles and resume handling
 
-Each candidate user receives one `CandidateProfile`. Candidate skills can be self-reported or derived from approved processing. `Resume` stores protected file metadata, processing status, extracted text, and a checksum field. Upload paths use random names; validators accept structurally plausible PDF/DOCX files up to 5 MB. Upload views, ownership enforcement, extraction, malware scanning, and retention execution are planned.
+Each candidate user receives one `CandidateProfile`. Candidate skills can be self-reported or derived from approved processing. `Resume` stores protected file metadata, processing status, extracted text, and a checksum field. New resumes default inactive. A deterministic processing service permits only pending-to-processing, processing-to-completed/failed, and failed-to-processing transitions; activation atomically replaces the prior active resume only after successful processing. Upload paths use random names; validators accept structurally plausible PDF/DOCX files up to 5 MB. Upload views, ownership enforcement, extraction, malware scanning, and retention execution remain planned.
 
 ## Recruitment domain
 
-The recruitment schema connects companies and recruiter profiles to job postings, weighted skill requirements, applications, interview questions, and FAQs. Applications link a candidate and optional resume to one job and include consent for AI interviewing. User-facing management workflows are planned for Week 2.
+The recruitment schema connects companies and recruiter profiles to job postings, weighted skill requirements, applications, interview questions, and FAQs. Applications link a candidate and optional resume to one job and include consent for AI interviewing. Immutable transition maps and transactional services enforce job and application state changes, persisted role/capability checks, company isolation, and mandatory audits. User-facing management workflows remain planned for Week 2.
 
 ## Interview scheduling and evaluation
 
-Schedules track start/end times, timezone, state, access-token hashes, invitation state, and rescheduling. Rubrics contain weighted criteria; evaluations capture evidence, confidence, scores, advisory recommendations, model/prompt versions, and human-review fields. The operational scheduler and review interface are planned. Setting an evaluation as final must be restricted to an authorized human workflow.
+Schedules track start/end times, timezone, state, access-token hashes, invitation expiry, and rescheduling. `InterviewRescheduleRequest` stores a candidate proposal and its pending/approved/rejected/cancelled review state. A deterministic transition service enforces candidate confirmation, recruiter/company authority, system-only expiry, terminal states, atomic replacement activation, and mandatory audits. Rubrics contain weighted criteria; evaluations capture evidence, confidence, scores, advisory recommendations, model/prompt versions, and human-review fields. The operational scheduler and review interface are planned. Setting an evaluation as final must be restricted to an authorized human workflow.
 
 ## Calling sessions
 

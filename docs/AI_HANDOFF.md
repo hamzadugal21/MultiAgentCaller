@@ -16,11 +16,11 @@ Last updated: 2026-10-26 (Asia/Karachi)
 ## Current Git and progress snapshot
 
 - **Current branch:** `feat/week-2-core-workflows`
-- **Current commit:** `bee8785` — append-only consent history.
-- **Latest clean checkpoint:** `bee8785` — append-only consent history.
+- **Current commit:** `8579159` — secure email-verification foundation.
+- **Latest clean checkpoint:** `8579159` — secure email-verification foundation.
 - **Week 1:** 100% complete.
-- **Current week:** Week 2, 15% complete. Milestones 2.1A through 2.1C are implemented and validated; the 2.1C commit is pending.
-- **Overall project:** 29% complete.
+- **Current week:** Week 2, 20% complete. Milestones 2.1A through 2.1C are committed; Milestone 2.1D is implemented and validated for its focused commit.
+- **Overall project:** 31% complete.
 - **Automated tests:** 111 passing; the focused accounts/audit suite has 105 passing tests.
 
 ## Current technology stack
@@ -76,7 +76,7 @@ These agents have database definitions but no operational orchestration implemen
 
 ## PostgreSQL architecture
 
-PostgreSQL is the required relational database. Django migrations define UUID-centered recruitment, interview, call, agent, and audit records with foreign keys, indexes, uniqueness rules, conditional constraints, and numeric/range checks. Important database safeguards include case-insensitive user-email uniqueness and PostgreSQL protection against updating or deleting audit events. The current Milestone 2.1B worktree adds append-only consent evidence and a matching PostgreSQL immutability trigger; its migrations are applied locally but remain uncommitted pending review. Django migrations must remain with their applications.
+PostgreSQL is the required relational database. Django migrations define UUID-centered recruitment, interview, call, agent, and audit records with foreign keys, indexes, uniqueness rules, conditional constraints, and numeric/range checks. Important database safeguards include case-insensitive user-email uniqueness and PostgreSQL protection against updating or deleting audit and consent records. Consent migrations are committed. The current Milestone 2.1D migrations make new resumes inactive by default and add invitation expiry plus minimal reschedule-request persistence. Django migrations must remain with their applications.
 
 `auditlog.ConsentRecord` has UUID `id`; protected candidate, optional application, optional interview schedule, and optional recorded-by relationships; `general_ai_processing`/`ai_interview` type; `granted`/`revoked` action; policy version; `profile`/`application`/`interview_confirmation`/`admin_assisted`/`legacy_import` source; timezone-aware recorded time; globally unique UUID idempotency key; and optional request/correlation UUIDs. Named checks prevent invalid general/interview context and require a non-legacy actor. Named indexes cover candidate/type/time, application/type/time, schedule/time, action/time, request ID, and correlation ID.
 
@@ -120,19 +120,19 @@ AI may screen, summarize, score against an approved rubric, and recommend. It mu
 - Persistent agent operating guide, handoff, roadmap, decision log, work log, architecture documentation, and ignored local prompt counter.
 - Deterministic domain-audit service with a frozen caller command, immutable Week 2 event registry, specification-owned canonical actions, required and allowed metadata rules, safe UUID normalization, bounded payload validation, and safe mandatory-failure exceptions.
 - Validated lightweight Render dependency manifest that includes only the base Django web stack and deliberately excludes heavy local AI/ML dependencies.
-- Append-only, policy-versioned consent evidence with deterministic grant/revoke/resolution services, mutable cache synchronization, strict actor/scope checks, idempotent replay, deterministic auditing, legacy import, and PostgreSQL immutability protection. This work is validated but remains uncommitted pending review.
+- Append-only, policy-versioned consent evidence with deterministic grant/revoke/resolution services, mutable cache synchronization, strict actor/scope checks, idempotent replay, deterministic auditing, legacy import, and PostgreSQL immutability protection.
 - Secure email-verification challenge and service foundation with HMAC email binding, signed 24-hour tokens, resend/email-change invalidation, single-use consumption, cache-backed rate limits, and deterministic audits. User-facing pages and application/scheduling enforcement remain later Week 2 work.
+- Deterministic transition tables and transactional services for job, application, interview-schedule, resume-processing, and consent state. Resume activation preserves the prior active resume until processing succeeds; scheduling has minimal invitation-expiry and reschedule-request persistence.
 
 ## Current work
 
 Milestone 2.1A is implemented, validated, and checkpointed on `feat/week-2-core-workflows`. The lightweight Render dependency manifest and persistent deployment plan are committed at `eb48e50`; the approved web dependencies are installed in the local environment and the Render manifest still resolves only through `requirements/base.txt`.
 
-Milestone 2.1B is committed and validated at `bee8785`. Milestone 2.1C email-verification foundations are implemented and validated with `accounts.0003_emailverificationchallenge` applied. The focused accounts/audit suite passes 105 tests and the complete suite passes 111 tests. Milestone 2.1D transition/schema foundations are next.
+Milestones 2.1B and 2.1C are committed and validated at `bee8785` and `8579159`. Milestone 2.1D transition/schema foundations are implemented and validated in the current worktree: 79 focused tests and 119 complete tests pass.
 
 ## Pending work
 
-- Review and commit Milestone 2.1B append-only consent history.
-- Later Milestone 2.1 policy work: shared authorization conventions and explicit workflow transition services.
+- Commit the validated Milestone 2.1D transition/schema foundation.
 - Candidate profile editing and secure resume upload workflow.
 - Recruiter/company/job and application management workflows.
 - Interview scheduling, invitations, consent enforcement, and evaluation UI.
@@ -171,7 +171,7 @@ git status --short
 
 ## Exact next recommended task
 
-Commit the validated Milestone 2.1C email-verification foundation, then implement Milestone 2.1D deterministic transition and schema foundations.
+Commit the validated Milestone 2.1D deterministic transition/schema foundation, then implement Milestone 2.2 candidate profile, consent, email-verification pages, and secure resume workflow.
 
 Relevant files:
 

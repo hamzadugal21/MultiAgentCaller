@@ -177,6 +177,13 @@ Append new decisions; do not rewrite accepted historical decisions unless a late
 - **Consequences:** The database stores no raw token or raw URL. Audit metadata contains only safe reason/delivery codes and challenge UUIDs. Public request pages must return generic responses, and application/interview services must enforce `email_verified` later.
 - **Status:** Accepted and implemented as the Milestone 2.1C foundation; delivery pages and domain enforcement remain Week 2 work.
 
+## 2026-10-26 — Shared deterministic workflow transitions
+
+- **Decision:** Job, application, interview-schedule, resume-processing, and consent states use immutable transition tables and narrow transactional Python services. Callers do not assign status fields directly.
+- **Reason:** A single policy boundary makes role, ownership, prerequisite, side-effect, and audit behavior consistent for views, admin actions, and future narrow tools.
+- **Consequences:** New resumes start inactive and replace the current resume only after successful processing. Interview invitations have persisted expiry, reschedule proposals have minimal review persistence, and invalid or terminal transitions fail safely. User-facing views must call these services in later milestones.
+- **Status:** Accepted and implemented as the Milestone 2.1D foundation.
+
 ## 2026-10-23 — Lightweight Render demonstration dependencies
 
 - **Decision:** Render's free demonstration build will install `requirements/render.txt`, which includes only `requirements/base.txt`. Heavy local AI/ML packages are intentionally excluded, and the hosted demonstration will initially use a clearly labelled simulated AI-call mode.

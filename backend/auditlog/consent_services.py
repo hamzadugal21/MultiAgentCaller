@@ -1,4 +1,5 @@
 import uuid
+from types import MappingProxyType
 
 from django.db import transaction
 
@@ -11,6 +12,20 @@ from recruitment.models import JobApplication
 
 LEGACY_POLICY_VERSION = "legacy-unversioned"
 MAX_POLICY_VERSION_LENGTH = ConsentRecord._meta.get_field("policy_version").max_length
+
+CONSENT_TRANSITIONS = MappingProxyType(
+    {
+        None: frozenset(
+            {ConsentRecord.Action.GRANTED, ConsentRecord.Action.REVOKED}
+        ),
+        ConsentRecord.Action.GRANTED: frozenset(
+            {ConsentRecord.Action.GRANTED, ConsentRecord.Action.REVOKED}
+        ),
+        ConsentRecord.Action.REVOKED: frozenset(
+            {ConsentRecord.Action.GRANTED, ConsentRecord.Action.REVOKED}
+        ),
+    }
+)
 
 
 class ConsentServiceError(Exception):
@@ -146,6 +161,12 @@ def _latest_record(*, candidate_id, consent_type, application_id):
     return records.order_by("-recorded_at", "-id").first()
 
 
+def _validate_consent_transition(*, latest, target_action):
+    current_action = latest.action if latest is not None else None
+    if target_action not in CONSENT_TRANSITIONS[current_action]:
+        raise ConsentValidationError("The consent transition is not allowed.")
+
+
 def _audit_consent_record(record):
     metadata = {
         "candidate_id": record.candidate_id,
@@ -231,6 +252,15 @@ def _change_general_consent(
         )
         if existing is not None:
             return existing
+
+        _validate_consent_transition(
+            latest=_latest_record(
+                candidate_id=locked_candidate.pk,
+                consent_type=ConsentRecord.ConsentType.GENERAL_AI_PROCESSING,
+                application_id=None,
+            ),
+            target_action=action,
+        )
 
         record = ConsentRecord.objects.create(
             candidate=locked_candidate,
@@ -382,6 +412,15 @@ def _change_interview_consent(
         )
         if existing is not None:
             return existing
+
+        _validate_consent_transition(
+            latest=_latest_record(
+                candidate_id=locked_candidate.pk,
+                consent_type=ConsentRecord.ConsentType.AI_INTERVIEW,
+                application_id=locked_application.pk,
+            ),
+            target_action=action,
+        )
 
         record = ConsentRecord.objects.create(
             candidate=locked_candidate,

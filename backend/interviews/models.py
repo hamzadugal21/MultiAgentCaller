@@ -57,6 +57,10 @@ class InterviewSchedule(models.Model):
         null=True,
         blank=True,
     )
+    invitation_expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
     confirmed_at = models.DateTimeField(
         null=True,
         blank=True,
@@ -88,6 +92,77 @@ class InterviewSchedule(models.Model):
 
     def __str__(self):
         return f"{self.application.candidate.user.email} — {self.scheduled_start}"
+
+
+class InterviewRescheduleRequest(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+        CANCELLED = "cancelled", "Cancelled"
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+    schedule = models.ForeignKey(
+        InterviewSchedule,
+        on_delete=models.PROTECT,
+        related_name="reschedule_requests",
+    )
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="interview_reschedule_requests",
+    )
+    proposed_start = models.DateTimeField()
+    proposed_end = models.DateTimeField()
+    timezone = models.CharField(max_length=64)
+    reason = models.TextField(blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="reviewed_interview_reschedule_requests",
+        null=True,
+        blank=True,
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+        indexes = [
+            models.Index(
+                fields=("schedule", "status"),
+                name="reschedule_schedule_status",
+            ),
+            models.Index(
+                fields=("status", "created_at"),
+                name="reschedule_status_created",
+            ),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(proposed_end__gt=F("proposed_start")),
+                name="reschedule_end_after_start",
+            ),
+            models.UniqueConstraint(
+                fields=("schedule",),
+                condition=Q(status="pending"),
+                name="one_pending_reschedule_request",
+            ),
+        ]
+
+    def __str__(self):
+        return f"Reschedule request {self.id}: {self.status}"
 
 
 class EvaluationRubric(models.Model):

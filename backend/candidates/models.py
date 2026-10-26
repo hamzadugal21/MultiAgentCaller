@@ -233,7 +233,7 @@ class Resume(models.Model):
         default=ProcessingStatus.PENDING,
     )
     processing_error = models.TextField(blank=True)
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=False)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     processed_at = models.DateTimeField(
         null=True,
