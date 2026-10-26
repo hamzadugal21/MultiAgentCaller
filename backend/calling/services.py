@@ -1,4 +1,5 @@
 import uuid
+from dataclasses import dataclass
 from types import MappingProxyType
 
 from django.conf import settings
@@ -12,9 +13,11 @@ from auditlog.consent_services import (
 )
 from auditlog.models import AuditEvent
 from auditlog.services import SAFE_CODE_PATTERN, AuditCommand, record_domain_event
-from calling.models import CallSession
+from calling.models import CallSession, SimulatedInterviewResponse
 from interviews.models import InterviewSchedule
 from recruitment.models import JobApplication, RecruiterProfile
+
+MAX_SIMULATED_ANSWER_CHARACTERS = 4000
 
 
 class CallSessionServiceError(Exception):
@@ -80,6 +83,14 @@ TERMINAL_STATUSES = frozenset(
         CallSession.Status.FAILED,
     }
 )
+
+
+@dataclass(frozen=True, slots=True)
+class SimulatedInterviewState:
+    session: CallSession
+    current_question: object | None
+    total_questions: int
+    answered_questions: int
 
 
 def _required_uuid(value, name):
@@ -166,6 +177,171 @@ def get_call_session_for_actor(*, session, actor):
         raise CallSessionServiceError("The call session is not available.") from error
     _authorize_actor(actor, application=persisted.schedule.application)
     return persisted
+
+
+def _approved_questions(session):
+    return session.schedule.application.job.interview_questions.filter(
+        is_active=True
+    ).order_by("order", "id")
+
+
+def get_simulated_interview_state(*, session, actor):
+    session = get_call_session_for_actor(session=session, actor=actor)
+    questions = list(_approved_questions(session))
+    current_question = (
+        questions[session.current_question_index]
+        if session.current_question_index < len(questions)
+        else None
+    )
+    return SimulatedInterviewState(
+        session=session,
+        current_question=current_question,
+        total_questions=len(questions),
+        answered_questions=session.current_question_index,
+    )
+
+
+def prepare_simulated_call_session(
+    *,
+    schedule,
+    actor,
+    idempotency_key,
+    policy_version=None,
+    request_id=None,
+    correlation_id=None,
+):
+    with transaction.atomic():
+        session = create_call_session(
+            schedule=schedule,
+            actor=actor,
+            idempotency_key=idempotency_key,
+            policy_version=policy_version,
+            simulated_mode=True,
+            request_id=request_id,
+            correlation_id=correlation_id,
+        )
+        if not _approved_questions(session).exists():
+            raise CallSessionServiceError(
+                "No approved interview questions are available."
+            )
+        if session.status == CallSession.Status.PENDING:
+            session = transition_call_session(
+                session=session,
+                target_status=CallSession.Status.READY,
+                policy_version=policy_version,
+                request_id=request_id,
+                correlation_id=correlation_id,
+            )
+        return session
+
+
+def _validated_answer(value):
+    if not isinstance(value, str):
+        raise CallSessionServiceError("A valid answer is required.")
+    value = value.strip()
+    if not value or len(value) > MAX_SIMULATED_ANSWER_CHARACTERS:
+        raise CallSessionServiceError("A valid answer is required.")
+    if any(ord(character) < 32 and character not in "\n\r\t" for character in value):
+        raise CallSessionServiceError("A valid answer is required.")
+    return value
+
+
+def submit_simulated_answer(
+    *,
+    session,
+    actor,
+    answer_text,
+    idempotency_key,
+    policy_version=None,
+    request_id=None,
+    correlation_id=None,
+):
+    idempotency_key = _required_uuid(idempotency_key, "idempotency key")
+    answer_text = _validated_answer(answer_text)
+    policy_version = policy_version or settings.CURRENT_AI_CONSENT_POLICY_VERSION
+    with transaction.atomic():
+        try:
+            locked = _session_queryset().select_for_update().get(pk=session.pk)
+        except (AttributeError, CallSession.DoesNotExist) as error:
+            raise CallSessionServiceError("The call session is not available.") from error
+        persisted_actor = _authorize_actor(
+            actor,
+            application=locked.schedule.application,
+            candidate_only=True,
+        )
+        existing = SimulatedInterviewResponse.objects.filter(
+            idempotency_key=idempotency_key
+        ).first()
+        if existing is not None:
+            if (
+                existing.call_session_id != locked.pk
+                or existing.answer_text != answer_text
+            ):
+                raise CallSessionServiceError(
+                    "The idempotency key was used for another answer."
+                )
+            return existing, locked
+        if locked.status != CallSession.Status.ACTIVE:
+            raise CallSessionTransitionError("The call session is not active.")
+        _eligible_schedule(
+            locked.schedule,
+            policy_version=policy_version,
+            now=timezone.now(),
+        )
+
+        questions = list(_approved_questions(locked))
+        if not questions or locked.current_question_index >= len(questions):
+            raise CallSessionTransitionError("No interview question is available.")
+        question = questions[locked.current_question_index]
+
+        if SimulatedInterviewResponse.objects.filter(
+            call_session=locked,
+            question=question,
+        ).exists():
+            raise CallSessionServiceError("This question already has an answer.")
+
+        response = SimulatedInterviewResponse.objects.create(
+            call_session=locked,
+            question=question,
+            question_index=locked.current_question_index,
+            answer_text=answer_text,
+            idempotency_key=idempotency_key,
+        )
+        locked.current_question_index += 1
+        locked.last_activity_at = timezone.now()
+        locked.save(
+            update_fields=("current_question_index", "last_activity_at", "updated_at")
+        )
+        record_domain_event(
+            AuditCommand(
+                category=AuditEvent.Category.INTERVIEW,
+                event_type="call_session.answer_submitted",
+                outcome=AuditEvent.Outcome.SUCCESS,
+                severity=AuditEvent.Severity.INFO,
+                resource_type="calling.CallSession",
+                resource_id=locked.pk,
+                actor=persisted_actor,
+                request_id=request_id,
+                correlation_id=correlation_id,
+                metadata={
+                    "application_id": locked.schedule.application_id,
+                    "interview_schedule_id": locked.schedule_id,
+                    "question_id": question.pk,
+                    "question_index": response.question_index,
+                },
+            )
+        )
+        if locked.current_question_index == len(questions):
+            locked = transition_call_session(
+                session=locked,
+                target_status=CallSession.Status.COMPLETED,
+                actor=persisted_actor,
+                reason_code="questions_completed",
+                policy_version=policy_version,
+                request_id=request_id,
+                correlation_id=correlation_id,
+            )
+        return response, locked
 
 
 def create_call_session(

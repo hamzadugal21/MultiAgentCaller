@@ -280,6 +280,7 @@ def test_event_registry_contains_exact_expected_event_types():
         "application.created",
         "application.status_changed",
         "application.withdrawn",
+        "call_session.answer_submitted",
         "call_session.cancelled",
         "call_session.completed",
         "call_session.created",
@@ -330,6 +331,12 @@ def test_event_registry_has_exact_required_metadata_rules():
         "application.created": {"job_id", "resume_id"},
         "application.status_changed": {"status_from", "status_to"},
         "application.withdrawn": {"status_from", "status_to"},
+        "call_session.answer_submitted": {
+            "application_id",
+            "interview_schedule_id",
+            "question_id",
+            "question_index",
+        },
         "call_session.cancelled": {
             "application_id",
             "interview_schedule_id",

@@ -2,6 +2,8 @@ import uuid
 
 import pytest
 from django.db import IntegrityError, transaction
+from django.test import Client
+from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import User
@@ -12,7 +14,7 @@ from auditlog.consent_services import (
 )
 from auditlog.models import AuditEvent
 from auditlog.services import DomainAuditPersistenceError
-from calling.models import CallSession
+from calling.models import CallSession, SimulatedInterviewResponse
 from calling.services import (
     CALL_SESSION_TRANSITIONS,
     CallSessionAuthorizationError,
@@ -20,11 +22,19 @@ from calling.services import (
     CallSessionTransitionError,
     create_call_session,
     get_call_session_for_actor,
+    prepare_simulated_call_session,
+    submit_simulated_answer,
     transition_call_session,
 )
 from candidates.models import CandidateProfile, Resume
 from interviews.models import InterviewSchedule
-from recruitment.models import Company, JobApplication, JobPosting, RecruiterProfile
+from recruitment.models import (
+    Company,
+    InterviewQuestion,
+    JobApplication,
+    JobPosting,
+    RecruiterProfile,
+)
 
 pytestmark = pytest.mark.django_db
 POLICY_VERSION = "ai-processing-v1"
@@ -353,3 +363,246 @@ def test_transition_registry_is_immutable_and_complete():
     assert set(CALL_SESSION_TRANSITIONS) == set(CallSession.Status.values)
     with pytest.raises(TypeError):
         CALL_SESSION_TRANSITIONS[CallSession.Status.COMPLETED] = frozenset()
+
+
+def _questions(data):
+    return [
+        InterviewQuestion.objects.create(
+            job=data["application"].job,
+            question_text="Describe a synthetic project example.",
+            question_type=InterviewQuestion.QuestionType.EXPERIENCE,
+            order=1,
+        ),
+        InterviewQuestion.objects.create(
+            job=data["application"].job,
+            question_text="How would you handle a synthetic incident?",
+            question_type=InterviewQuestion.QuestionType.BEHAVIORAL,
+            order=2,
+        ),
+    ]
+
+
+def _active_session(data):
+    session = prepare_simulated_call_session(
+        schedule=data["schedule"],
+        actor=data["candidate_user"],
+        idempotency_key=uuid.uuid4(),
+        policy_version=POLICY_VERSION,
+    )
+    return transition_call_session(
+        session=session,
+        target_status=CallSession.Status.ACTIVE,
+        actor=data["candidate_user"],
+        policy_version=POLICY_VERSION,
+    )
+
+
+def test_simulated_answer_progression_completion_and_idempotency(call_data):
+    questions = _questions(call_data)
+    session = _active_session(call_data)
+    first_key = uuid.uuid4()
+    first, session = submit_simulated_answer(
+        session=session,
+        actor=call_data["candidate_user"],
+        answer_text="A bounded synthetic answer.",
+        idempotency_key=first_key,
+        policy_version=POLICY_VERSION,
+    )
+    replay, replayed_session = submit_simulated_answer(
+        session=session,
+        actor=call_data["candidate_user"],
+        answer_text="A bounded synthetic answer.",
+        idempotency_key=first_key,
+        policy_version=POLICY_VERSION,
+    )
+    assert replay.pk == first.pk
+    assert replayed_session.current_question_index == 1
+
+    second, completed = submit_simulated_answer(
+        session=session,
+        actor=call_data["candidate_user"],
+        answer_text="A second bounded synthetic answer.",
+        idempotency_key=uuid.uuid4(),
+        policy_version=POLICY_VERSION,
+    )
+    assert first.question == questions[0]
+    assert second.question == questions[1]
+    assert completed.status == CallSession.Status.COMPLETED
+    assert completed.current_question_index == 2
+    assert SimulatedInterviewResponse.objects.filter(call_session=session).count() == 2
+
+    events = AuditEvent.objects.filter(event_type="call_session.answer_submitted")
+    assert events.count() == 2
+    assert set(events.first().metadata) == {
+        "application_id",
+        "interview_schedule_id",
+        "question_id",
+        "question_index",
+    }
+    assert "bounded synthetic answer" not in str(list(events.values("metadata")))
+
+
+def test_simulated_answer_conflict_validation_and_audit_rollback(
+    monkeypatch, call_data
+):
+    _questions(call_data)
+    session = _active_session(call_data)
+    key = uuid.uuid4()
+    submit_simulated_answer(
+        session=session,
+        actor=call_data["candidate_user"],
+        answer_text="Original synthetic answer.",
+        idempotency_key=key,
+        policy_version=POLICY_VERSION,
+    )
+    with pytest.raises(CallSessionServiceError, match="idempotency"):
+        submit_simulated_answer(
+            session=session,
+            actor=call_data["candidate_user"],
+            answer_text="Changed synthetic answer.",
+            idempotency_key=key,
+            policy_version=POLICY_VERSION,
+        )
+
+    def fail_audit(command):
+        raise DomainAuditPersistenceError("Audit event could not be recorded.")
+
+    monkeypatch.setattr("calling.services.record_domain_event", fail_audit)
+    with pytest.raises(DomainAuditPersistenceError):
+        submit_simulated_answer(
+            session=session,
+            actor=call_data["candidate_user"],
+            answer_text="This answer must roll back.",
+            idempotency_key=uuid.uuid4(),
+            policy_version=POLICY_VERSION,
+        )
+    session.refresh_from_db()
+    assert session.current_question_index == 1
+    assert SimulatedInterviewResponse.objects.filter(call_session=session).count() == 1
+
+
+def test_revoked_consent_blocks_simulated_answer(call_data):
+    _questions(call_data)
+    session = _active_session(call_data)
+    revoke_general_ai_processing_consent(
+        candidate=call_data["candidate"],
+        actor=call_data["candidate_user"],
+        policy_version=POLICY_VERSION,
+        idempotency_key=uuid.uuid4(),
+    )
+    with pytest.raises(CallSessionServiceError, match="consent"):
+        submit_simulated_answer(
+            session=session,
+            actor=call_data["candidate_user"],
+            answer_text="This answer must not be stored.",
+            idempotency_key=uuid.uuid4(),
+            policy_version=POLICY_VERSION,
+        )
+    assert not SimulatedInterviewResponse.objects.exists()
+
+
+def test_simulated_preparation_requires_an_approved_question(call_data):
+    with pytest.raises(CallSessionServiceError, match="approved interview questions"):
+        prepare_simulated_call_session(
+            schedule=call_data["schedule"],
+            actor=call_data["candidate_user"],
+            idempotency_key=uuid.uuid4(),
+            policy_version=POLICY_VERSION,
+        )
+    assert not CallSession.objects.exists()
+
+
+def test_candidate_http_simulated_lifecycle_is_post_only_and_owned(call_data):
+    _questions(call_data)
+    client = Client()
+    client.force_login(call_data["candidate_user"])
+    prepare_url = reverse(
+        "calling:prepare_session", args=(call_data["schedule"].pk,)
+    )
+    assert client.get(prepare_url).status_code == 405
+    response = client.post(prepare_url, {"idempotency_key": uuid.uuid4()})
+    session = CallSession.objects.get()
+    assert response.status_code == 302
+    assert session.status == CallSession.Status.READY
+
+    detail_url = reverse("calling:candidate_session_detail", args=(session.pk,))
+    assert client.get(detail_url).status_code == 200
+    start_url = reverse("calling:start_or_resume_session", args=(session.pk,))
+    assert client.get(start_url).status_code == 405
+    assert client.post(start_url).status_code == 302
+    session.refresh_from_db()
+    assert session.status == CallSession.Status.ACTIVE
+
+    answer_url = reverse("calling:submit_answer", args=(session.pk,))
+    answer = client.post(
+        answer_url,
+        {
+            "answer_text": "A view-submitted synthetic answer.",
+            "idempotency_key": uuid.uuid4(),
+        },
+    )
+    assert answer.status_code == 302
+    session.refresh_from_db()
+    assert session.current_question_index == 1
+
+    other_candidate = User.objects.create_user(
+        email="view-other-candidate@example.com",
+        password="TestingOnly!9384",
+    )
+    client.force_login(other_candidate)
+    assert client.get(detail_url).status_code == 404
+    assert client.post(answer_url, {}).status_code == 404
+
+
+def test_candidate_simulated_mutations_enforce_csrf(call_data):
+    _questions(call_data)
+    session = prepare_simulated_call_session(
+        schedule=call_data["schedule"],
+        actor=call_data["candidate_user"],
+        idempotency_key=uuid.uuid4(),
+        policy_version=POLICY_VERSION,
+    )
+    client = Client(enforce_csrf_checks=True)
+    client.force_login(call_data["candidate_user"])
+    start_url = reverse("calling:start_or_resume_session", args=(session.pk,))
+    assert client.post(start_url).status_code == 403
+    detail = client.get(
+        reverse("calling:candidate_session_detail", args=(session.pk,))
+    )
+    assert detail.status_code == 200
+    csrf_token = client.cookies["csrftoken"].value
+    assert client.post(start_url, {"csrfmiddlewaretoken": csrf_token}).status_code == 302
+
+
+def test_recruiter_status_view_is_company_scoped_and_hides_answers(call_data):
+    _questions(call_data)
+    session = _active_session(call_data)
+    private_answer = "Private synthetic answer not for the status page."
+    submit_simulated_answer(
+        session=session,
+        actor=call_data["candidate_user"],
+        answer_text=private_answer,
+        idempotency_key=uuid.uuid4(),
+        policy_version=POLICY_VERSION,
+    )
+    url = reverse("calling:recruiter_session_detail", args=(session.pk,))
+    client = Client()
+    client.force_login(call_data["recruiter_user"])
+    response = client.get(url)
+    assert response.status_code == 200
+    assert private_answer.encode() not in response.content
+
+    other_company = Company.objects.create(name="View Other Company")
+    other_recruiter = User.objects.create_user(
+        email="view-other-recruiter@example.com",
+        password="TestingOnly!9384",
+        role=User.Role.RECRUITER,
+    )
+    RecruiterProfile.objects.create(
+        user=other_recruiter,
+        company=other_company,
+        is_verified=True,
+        can_review_candidates=True,
+    )
+    client.force_login(other_recruiter)
+    assert client.get(url).status_code == 404

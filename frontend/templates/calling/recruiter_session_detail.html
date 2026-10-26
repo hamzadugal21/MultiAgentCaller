@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Interview session progress{% endblock %}
+
+{% block content %}
+<section>
+    <h1>Interview session progress</h1>
+    <dl>
+        <dt>Job</dt>
+        <dd>{{ state.session.schedule.application.job.title }}</dd>
+        <dt>Candidate</dt>
+        <dd>{{ state.session.schedule.application.candidate.user.email }}</dd>
+        <dt>Status</dt>
+        <dd>{{ state.session.get_status_display }}</dd>
+        <dt>Progress</dt>
+        <dd>{{ state.answered_questions }} of {{ state.total_questions }} answered</dd>
+    </dl>
+    <p>Candidate answer content is not displayed on this operational status page.</p>
+    {% if state.session.status == "pending" or state.session.status == "ready" or state.session.status == "active" or state.session.status == "paused" %}
+        <form method="post" action="{% url 'calling:cancel_review_session' state.session.id %}">
+            {% csrf_token %}
+            <button type="submit">Cancel session</button>
+        </form>
+    {% endif %}
+</section>
+{% endblock %}

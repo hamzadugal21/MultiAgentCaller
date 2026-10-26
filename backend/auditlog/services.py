@@ -22,6 +22,7 @@ UUID_METADATA_KEYS = frozenset(
         "company_id",
         "interview_schedule_id",
         "job_id",
+        "question_id",
         "replaced_resume_id",
         "replacement_schedule_id",
         "replaces_resume_id",
@@ -30,7 +31,9 @@ UUID_METADATA_KEYS = frozenset(
     }
 )
 IDENTIFIER_LIST_METADATA_KEYS = frozenset({"capabilities", "changed_fields"})
-INTEGER_METADATA_KEYS = frozenset({"extracted_character_count", "size_bytes"})
+INTEGER_METADATA_KEYS = frozenset(
+    {"extracted_character_count", "question_index", "size_bytes"}
+)
 BOOLEAN_METADATA_KEYS = frozenset({"is_verified", "simulated_mode"})
 TIMESTAMP_METADATA_KEYS = frozenset({"invitation_expires_at"})
 CODE_METADATA_KEYS = frozenset(
@@ -567,6 +570,23 @@ EVENT_SPECS = MappingProxyType(
             "status_to",
         },
         actor_required=False,
+    ),
+    "call_session.answer_submitted": _spec(
+        AuditEvent.Category.INTERVIEW,
+        "calling.CallSession",
+        "Simulated interview answer submitted",
+        {
+            "application_id",
+            "interview_schedule_id",
+            "question_id",
+            "question_index",
+        },
+        required_metadata={
+            "application_id",
+            "interview_schedule_id",
+            "question_id",
+            "question_index",
+        },
     ),
     }
 )

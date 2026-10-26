@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Simulated interview{% endblock %}
+
+{% block content %}
+<section>
+    <h1>Simulated interview</h1>
+    <p>This is a deterministic text simulation. It does not place a live call or record audio.</p>
+    <dl>
+        <dt>Job</dt>
+        <dd>{{ state.session.schedule.application.job.title }}</dd>
+        <dt>Status</dt>
+        <dd>{{ state.session.get_status_display }}</dd>
+        <dt>Progress</dt>
+        <dd>{{ state.answered_questions }} of {{ state.total_questions }} answered</dd>
+    </dl>
+
+    {% if state.session.status == "ready" %}
+        <form method="post" action="{% url 'calling:start_or_resume_session' state.session.id %}">
+            {% csrf_token %}
+            <button type="submit">Start simulated interview</button>
+        </form>
+    {% elif state.session.status == "active" and state.current_question %}
+        <h2>Question {{ state.answered_questions|add:1 }} of {{ state.total_questions }}</h2>
+        <p>{{ state.current_question.question_text }}</p>
+        <form method="post" action="{% url 'calling:submit_answer' state.session.id %}">
+            {% csrf_token %}
+            {{ answer_form.as_p }}
+            <button type="submit">Submit answer</button>
+        </form>
+        <form method="post" action="{% url 'calling:pause_session' state.session.id %}">
+            {% csrf_token %}
+            <button type="submit">Pause interview</button>
+        </form>
+    {% elif state.session.status == "paused" %}
+        <form method="post" action="{% url 'calling:start_or_resume_session' state.session.id %}">
+            {% csrf_token %}
+            <button type="submit">Resume interview</button>
+        </form>
+    {% elif state.session.status == "completed" %}
+        <p>The simulated interview is complete. An authorized human will control any later employment decision.</p>
+    {% else %}
+        <p>This interview is not available for further answers.</p>
+    {% endif %}
+
+    {% if state.session.status == "ready" or state.session.status == "active" or state.session.status == "paused" %}
+        <form method="post" action="{% url 'calling:cancel_candidate_session' state.session.id %}">
+            {% csrf_token %}
+            <button type="submit">Leave and cancel interview</button>
+        </form>
+    {% endif %}
+</section>
+{% endblock %}

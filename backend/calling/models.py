@@ -248,6 +248,50 @@ class TranscriptSegment(models.Model):
         return f"{self.call_session_id} #{self.sequence_number} — {self.speaker}"
 
 
+class SimulatedInterviewResponse(models.Model):
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+    call_session = models.ForeignKey(
+        CallSession,
+        on_delete=models.PROTECT,
+        related_name="simulated_responses",
+    )
+    question = models.ForeignKey(
+        "recruitment.InterviewQuestion",
+        on_delete=models.PROTECT,
+        related_name="simulated_responses",
+    )
+    question_index = models.PositiveIntegerField()
+    answer_text = models.TextField()
+    idempotency_key = models.UUIDField(unique=True, editable=False)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("call_session", "question_index")
+        indexes = [
+            models.Index(
+                fields=("call_session", "submitted_at"),
+                name="sim_response_session_time",
+            ),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=("call_session", "question"),
+                name="unique_sim_response_question",
+            ),
+            models.UniqueConstraint(
+                fields=("call_session", "question_index"),
+                name="unique_sim_response_index",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.call_session_id} response {self.question_index}"
+
+
 class CallEvent(models.Model):
     class EventType(models.TextChoices):
         SESSION_CREATED = "session_created", "Session created"

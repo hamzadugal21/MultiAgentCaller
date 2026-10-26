@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Interview sessions{% endblock %}
+
+{% block content %}
+<section>
+    <h1>Interview sessions</h1>
+    <ul>
+        {% for session in sessions %}
+            <li>
+                <a href="{% url 'calling:recruiter_session_detail' session.id %}">
+                    {{ session.schedule.application.job.title }} — {{ session.get_status_display }}
+                </a>
+            </li>
+        {% empty %}
+            <li>No interview sessions are available.</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endblock %}

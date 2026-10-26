@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}My interviews{% endblock %}
+
+{% block content %}
+<section>
+    <h1>My interviews</h1>
+    <p>Week 3 uses a clearly labelled simulated interview. No audio is recorded.</p>
+    <ul>
+        {% for entry in schedule_entries %}
+            <li>
+                <strong>{{ entry.schedule.application.job.title }}</strong>
+                <span>{{ entry.schedule.scheduled_start }}</span>
+                {% with session=entry.schedule.call_sessions.first %}
+                    {% if session %}
+                        <a href="{% url 'calling:candidate_session_detail' session.id %}">
+                            Open simulated interview
+                        </a>
+                    {% else %}
+                        <form method="post" action="{% url 'calling:prepare_session' entry.schedule.id %}">
+                            {% csrf_token %}
+                            {{ entry.form.idempotency_key }}
+                            <button type="submit">Prepare simulated interview</button>
+                        </form>
+                    {% endif %}
+                {% endwith %}
+            </li>
+        {% empty %}
+            <li>No confirmed interviews are available.</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endblock %}
