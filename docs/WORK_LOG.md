@@ -172,3 +172,16 @@ Milestone commit: `6aab484` (`feat: add deterministic workflow foundations`).
 - Known warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning. No blocker remains.
 - Week 2 is **40%** complete and overall progress is **35%**.
 - Next: commit `feat: add candidate profile consent and resume workflow`, then implement Milestone 2.3 recruiter/company/job workflows.
+
+Milestone commit: `57f1cb3` (`feat: add candidate profile consent and resume workflow`).
+
+## 2026-10-26 — Milestone 2.3 recruiter, company, and job workflow
+
+- Added deterministic administrator-only company creation and recruiter provisioning with safe audit metadata; Django admin exposes trusted company/recruiter management and enforces recruiter-role selection.
+- Added persisted recruiter authorization requiring active recruiter role, verified profile, active own company, and `can_manage_jobs` capability.
+- Added company-scoped job create/edit/list/detail services and templates. Client-supplied company, creator, and status values are excluded; all jobs begin as drafts and publishing uses the transition service.
+- Added job skill requirements, interview questions, FAQs, and authenticated-candidate-only browsing of open, unexpired jobs from active companies.
+- Added seven focused security/workflow tests plus the transition suite. Validation: 10 focused tests and 136 complete tests passed; Django check found 0 issues; migration drift is absent; pip check, Ruff, and Git diff checks passed.
+- Known warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning. No blocker remains.
+- Week 2 is **60%** complete and overall progress is **40%**.
+- Next: commit `feat: add recruiter company and job workflows`, then implement Milestone 2.4 application workflow.

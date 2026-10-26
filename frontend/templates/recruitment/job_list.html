@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Jobs{% endblock %}
+
+{% block content %}
+<section>
+    <h1>Jobs</h1>
+    {% if request.user.role == "recruiter" %}<p><a href="{% url 'recruitment:job_create' %}">Create job</a></p>{% endif %}
+    <ul>
+        {% for job in jobs %}
+            <li><a href="{% url 'recruitment:job_detail' job.id %}">{{ job.title }}</a> — {{ job.company.name }} — {{ job.get_status_display }}</li>
+        {% empty %}<li>No jobs are currently available.</li>{% endfor %}
+    </ul>
+</section>
+{% endblock %}

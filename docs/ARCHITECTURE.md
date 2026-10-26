@@ -56,7 +56,7 @@ Each candidate user receives one `CandidateProfile`. Candidate-only forms expose
 
 ## Recruitment domain
 
-The recruitment schema connects companies and recruiter profiles to job postings, weighted skill requirements, applications, interview questions, and FAQs. Applications link a candidate and optional resume to one job and include consent for AI interviewing. Immutable transition maps and transactional services enforce job and application state changes, persisted role/capability checks, company isolation, and mandatory audits. User-facing management workflows remain planned for Week 2.
+The recruitment schema connects companies and recruiter profiles to job postings, weighted skill requirements, applications, interview questions, and FAQs. Trusted administrators can provision companies and recruiter profiles through deterministic services or Django admin. Verified recruiters with `can_manage_jobs` use company-scoped services and semantic templates to create/edit draft jobs, add requirements/questions/FAQs, and invoke tested publishing transitions. Authenticated candidates see only open, active-company, unexpired jobs. Applications link a candidate and optional resume to one job and include consent for AI interviewing; the application creation workflow remains the next milestone.
 
 ## Interview scheduling and evaluation
 

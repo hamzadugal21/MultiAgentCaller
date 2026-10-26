@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}{% if job %}Edit job{% else %}Create job{% endif %}{% endblock %}
+
+{% block content %}
+<section>
+    <h1>{% if job %}Edit job{% else %}Create job{% endif %}</h1>
+    <form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">Save</button></form>
+    {% if job %}
+        <p>Status: {{ job.get_status_display }}</p>
+        <form method="post" action="{% url 'recruitment:job_state' job.id %}">{% csrf_token %}
+            <button name="status" value="open" type="submit">Publish or reopen</button>
+            <button name="status" value="paused" type="submit">Pause</button>
+            <button name="status" value="closed" type="submit">Close</button>
+            <button name="status" value="archived" type="submit">Archive</button>
+        </form>
+        <p><a href="{% url 'recruitment:job_skill' job.id %}">Add skill</a></p>
+        <p><a href="{% url 'recruitment:job_question' job.id %}">Add interview question</a></p>
+        <p><a href="{% url 'recruitment:job_faq' job.id %}">Add FAQ</a></p>
+    {% endif %}
+</section>
+{% endblock %}
