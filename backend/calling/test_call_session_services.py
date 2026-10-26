@@ -1,6 +1,15 @@
 import uuid
 
 import pytest
+from ai_system.interview.coordinator import (
+    ALLOWED_COORDINATOR_ACTIONS,
+    COORDINATOR_POLICY_VERSION,
+    CoordinatorAction,
+    CoordinatorCommand,
+    CoordinatorDirective,
+    CoordinatorToolError,
+    DeterministicInterviewCoordinator,
+)
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from channels.testing import WebsocketCommunicator
@@ -18,6 +27,7 @@ from auditlog.consent_services import (
 )
 from auditlog.models import AuditEvent
 from auditlog.services import DomainAuditPersistenceError
+from calling.coordinator_tools import DjangoInterviewCoordinatorTools
 from calling.models import CallSession, SimulatedInterviewResponse
 from calling.realtime import session_group_name
 from calling.services import (
@@ -773,3 +783,124 @@ def test_websocket_groups_are_isolated_and_payloads_are_server_derived(call_data
         await second_socket.disconnect()
 
     async_to_sync(scenario)()
+
+
+def test_deterministic_coordinator_asks_only_approved_questions(call_data):
+    questions = _questions(call_data)
+    session = prepare_simulated_call_session(
+        schedule=call_data["schedule"],
+        actor=call_data["candidate_user"],
+        idempotency_key=uuid.uuid4(),
+        policy_version=POLICY_VERSION,
+    )
+    coordinator = DeterministicInterviewCoordinator(
+        DjangoInterviewCoordinatorTools()
+    )
+    status = coordinator.execute(
+        CoordinatorCommand(
+            action=CoordinatorAction.STATUS,
+            session_id=session.pk,
+            actor=call_data["candidate_user"],
+        )
+    )
+    assert status.directive == CoordinatorDirective.START_REQUIRED
+    assert status.policy_version == COORDINATOR_POLICY_VERSION
+
+    started = coordinator.execute(
+        CoordinatorCommand(
+            action=CoordinatorAction.START,
+            session_id=session.pk,
+            actor=call_data["candidate_user"],
+        )
+    )
+    assert started.directive == CoordinatorDirective.ASK_QUESTION
+    assert started.snapshot.current_question_id == questions[0].pk
+    assert started.snapshot.current_question_text == questions[0].question_text
+
+    progressed = coordinator.execute(
+        CoordinatorCommand(
+            action=CoordinatorAction.SUBMIT_ANSWER,
+            session_id=session.pk,
+            actor=call_data["candidate_user"],
+            answer_text="First coordinator answer.",
+            idempotency_key=uuid.uuid4(),
+        )
+    )
+    assert progressed.directive == CoordinatorDirective.ASK_QUESTION
+    assert progressed.snapshot.current_question_id == questions[1].pk
+
+    completed = coordinator.execute(
+        CoordinatorCommand(
+            action=CoordinatorAction.SUBMIT_ANSWER,
+            session_id=session.pk,
+            actor=call_data["candidate_user"],
+            answer_text="Second coordinator answer.",
+            idempotency_key=uuid.uuid4(),
+        )
+    )
+    assert completed.directive == CoordinatorDirective.TERMINAL
+    assert completed.snapshot.status == CallSession.Status.COMPLETED
+
+
+def test_coordinator_allowlist_excludes_privileged_and_external_actions(call_data):
+    assert {action.value for action in ALLOWED_COORDINATOR_ACTIONS} == {
+        "status",
+        "start",
+        "pause",
+        "cancel",
+        "submit_answer",
+    }
+    coordinator = DeterministicInterviewCoordinator(
+        DjangoInterviewCoordinatorTools()
+    )
+    result = coordinator.execute(
+        CoordinatorCommand(
+            action="hire_candidate",
+            session_id=uuid.uuid4(),
+            actor=call_data["admin"],
+        )
+    )
+    assert result.directive == CoordinatorDirective.STOPPED
+    assert result.error_code == "unsupported_action"
+    assert result.snapshot is None
+
+
+def test_coordinator_candidate_tools_reject_recruiter_impersonation(call_data):
+    _questions(call_data)
+    session = prepare_simulated_call_session(
+        schedule=call_data["schedule"],
+        actor=call_data["candidate_user"],
+        idempotency_key=uuid.uuid4(),
+        policy_version=POLICY_VERSION,
+    )
+    coordinator = DeterministicInterviewCoordinator(
+        DjangoInterviewCoordinatorTools()
+    )
+    result = coordinator.execute(
+        CoordinatorCommand(
+            action=CoordinatorAction.START,
+            session_id=session.pk,
+            actor=call_data["recruiter_user"],
+        )
+    )
+    session.refresh_from_db()
+    assert result.directive == CoordinatorDirective.STOPPED
+    assert result.error_code == "action_rejected"
+    assert session.status == CallSession.Status.READY
+
+
+def test_coordinator_failure_fallback_does_not_expose_internal_error(call_data):
+    class FailingTools:
+        def snapshot(self, **kwargs):
+            raise CoordinatorToolError("secret database location")
+
+    result = DeterministicInterviewCoordinator(FailingTools()).execute(
+        CoordinatorCommand(
+            action=CoordinatorAction.STATUS,
+            session_id=uuid.uuid4(),
+            actor=call_data["candidate_user"],
+        )
+    )
+    assert result.directive == CoordinatorDirective.STOPPED
+    assert result.error_code == "action_rejected"
+    assert "secret" not in str(result)

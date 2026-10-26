@@ -202,6 +202,44 @@ def get_simulated_interview_state(*, session, actor):
     )
 
 
+def get_candidate_simulated_interview_state(*, session, actor):
+    try:
+        session = _session_queryset().get(pk=session.pk)
+    except (AttributeError, CallSession.DoesNotExist) as error:
+        raise CallSessionServiceError("The call session is not available.") from error
+    _authorize_actor(
+        actor,
+        application=session.schedule.application,
+        candidate_only=True,
+    )
+    questions = list(_approved_questions(session))
+    current_question = (
+        questions[session.current_question_index]
+        if session.current_question_index < len(questions)
+        else None
+    )
+    return SimulatedInterviewState(
+        session=session,
+        current_question=current_question,
+        total_questions=len(questions),
+        answered_questions=session.current_question_index,
+    )
+
+
+def get_candidate_call_session(*, session_id, actor):
+    session_id = _required_uuid(session_id, "call session identifier")
+    try:
+        session = _session_queryset().get(pk=session_id)
+    except CallSession.DoesNotExist as error:
+        raise CallSessionServiceError("The call session is not available.") from error
+    _authorize_actor(
+        actor,
+        application=session.schedule.application,
+        candidate_only=True,
+    )
+    return session
+
+
 def prepare_simulated_call_session(
     *,
     schedule,
