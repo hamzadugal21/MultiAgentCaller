@@ -261,3 +261,18 @@ Milestone commit: `fd9a6e4` (`feat: add interview invitation and scheduling work
 - Known non-failing warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning. No blockers remain.
 - Week 3 is **40%** complete; overall four-week progress is **60%**.
 - Next: implement Milestone 3.3 authenticated, session-scoped Channels/WebSocket status transport while preserving the deterministic HTTP simulation as fallback.
+
+## 2026-10-27 — Week 3 Milestone 3.3 authorized WebSocket status transport
+
+- Product commit: `a64e9be` (`feat: add authorized call status websocket`).
+- Replaced the HTTP-only ASGI callable with a Channels `ProtocolTypeRouter` while preserving Django HTTP handling. WebSocket routes use allowed-host origin validation and Django session authentication.
+- Added exact call-session authorization at connection and before every outgoing update, UUID-derived per-session groups, server-derived allowlisted status snapshots, unsupported-message errors, and safe close behavior.
+- Added on-commit status publishing after domain session changes. PostgreSQL remains authoritative; development uses the in-memory channel layer and production retains the existing Redis channel layer. Delivery failure is non-destructive because the validated HTTP simulation remains available.
+- WebSocket payloads contain only event type, session UUID, lifecycle status, question index, and simulated-mode flag. Caller-supplied group payloads are ignored, preventing answer, transcript, résumé, token, prompt, path, or secret forwarding.
+- Added two PostgreSQL-backed communicator tests covering unauthenticated denial, candidate ownership, cross-company recruiter denial, administrator access, safe error messages, per-session isolation, and server-derived payloads.
+- Validation: 18 focused calling tests and 174 complete tests passed; Django check reported 0 issues; no migration drift; pip check and Ruff passed; supported ASGI import returned `ProtocolTypeRouter`; Git diff check passed.
+- The initial WebSocket test run had two harness-only failures: an unconfigured test origin reached the origin validator first, and a session cookie was created inside async code. Cookie setup was moved to synchronous test setup and the configured localhost origin was used; the rerun passed.
+- A first plain root Python ASGI smoke command lacked `backend/` on `sys.path`; the supported `backend/manage.py shell` check succeeded. No runtime configuration changed for that command issue.
+- Known non-failing warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning. No blocker remains.
+- Week 3 is **60%** complete; overall four-week progress is **65%**.
+- Next: implement Milestone 3.4 optional local voice adapter boundaries without persisting recordings or changing the Render dependency boundary.

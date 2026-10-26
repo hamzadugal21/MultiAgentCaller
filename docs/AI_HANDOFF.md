@@ -16,12 +16,12 @@ Last updated: 2026-10-27 (Asia/Karachi)
 ## Current Git and progress snapshot
 
 - **Current branch:** `feat/week-3-ai-interview-runtime`
-- **Current commit:** `473ea99` — deterministic simulated interview lifecycle.
-- **Latest validated product checkpoint:** `473ea99` — Week 3 Milestone 3.2.
+- **Current commit:** `a64e9be` — authorized call-session WebSocket status transport.
+- **Latest validated product checkpoint:** `a64e9be` — Week 3 Milestone 3.3.
 - **Week 1:** 100% complete.
-- **Current week:** Week 3, 40% complete. Milestones 3.1 and 3.2 are committed and validated.
-- **Overall project:** 60% complete.
-- **Automated tests:** 172 passing, including the Week 2 pre-interview suite and deterministic simulated interview lifecycle.
+- **Current week:** Week 3, 60% complete. Milestones 3.1 through 3.3 are committed and validated.
+- **Overall project:** 65% complete.
+- **Automated tests:** 174 passing, including the Week 2 pre-interview suite, deterministic simulated interview, and WebSocket authorization/isolation coverage.
 
 ## Current technology stack
 
@@ -55,11 +55,11 @@ Root files retain repository-wide configuration and documentation. Django templa
 - `candidates`: Candidate profile/consent pages, skills, protected resume upload/download, randomized storage, PDF/DOCX validation and bounded extraction, processing transitions, and successful-only replacement.
 - `recruitment`: Administrator company/recruiter provisioning, company-scoped job management, skills/questions/FAQs, candidate browsing, secure applications, withdrawal, and audit-derived history.
 - `interviews`: Secure invitations, confirmation, rescheduling, cancellation/expiry, plus planned evaluation rubrics/criteria, candidate evaluations, scores, and reviewer fields.
-- `calling`: Deterministic call-session creation/lifecycle/authorization/auditing, server-rendered simulated question/answer progression, and schema foundations for transcript segments, call events, performance metrics, and disabled-by-default recording metadata.
+- `calling`: Deterministic call-session creation/lifecycle/authorization/auditing, server-rendered simulated question/answer progression, authenticated session-scoped WebSocket status transport, and schema foundations for transcript segments, call events, performance metrics, and disabled-by-default recording metadata.
 - `agents`: Versioned agent definitions, runs, actions, handoffs, approval fields, and escalation records.
 - `auditlog`: Immutable keyed audit events, security incidents, data-retention records, and append-only policy-versioned consent history. PostgreSQL triggers protect audit events and consent evidence from database-level update and deletion.
 
-Accounts, candidates, recruitment, interview scheduling, and the simulated interview provide tested server-rendered workflows. Calling has a deterministic domain and HTTP fallback path. WebSocket transport, agents, speech execution, and evaluation remain later Week 3/4 work.
+Accounts, candidates, recruitment, interview scheduling, and the simulated interview provide tested server-rendered workflows. Calling has a deterministic domain, HTTP fallback, and authorized status WebSocket. Agents, speech execution, and evaluation remain later Week 3/4 work.
 
 ## Planned AI agents
 
@@ -129,21 +129,21 @@ AI may screen, summarize, score against an approved rubric, and recommend. It mu
 - Secure interview invitation and scheduling with company-scoped recruiter authority, signed single-purpose tokens stored only as keyed-HMAC digests, persisted expiry/delivery/idempotency state, current-consent and verified-email confirmation, candidate reschedule requests, recruiter approval/rejection, cancellation/expiry, email notification, and deterministic audits.
 - Deterministic call-session creation and lifecycle with one session per confirmed schedule, persisted idempotency, simulated mode, current-consent gates, candidate/company authorization, scheduled-window enforcement, explicit terminal states, database constraints, transactional audit rollback, and legacy-state migration.
 - Candidate-owned simulated interview pages with approved active job questions, bounded private answers, deterministic ordering and completion, idempotent submission, pause/resume/cancel controls, recruiter/admin safe progress pages, POST/CSRF enforcement, and answer-free audit metadata.
+- Authenticated Channels status WebSocket with exact candidate/company/admin authorization, per-session groups, reauthorization before delivery, server-derived allowlisted payloads, event isolation, safe disconnect handling, and optional on-commit broadcasting. Development remains in-memory; production retains the existing Redis channel layer.
 
 ## Current work
 
-Week 2 remains complete at checkpoint `064100a`. Week 3 Milestones 3.1 and 3.2 are committed at `2bd2710` and `473ea99` on `feat/week-3-ai-interview-runtime`; the full suite passes 172 tests. The next task is Milestone 3.3: authorized Channels/WebSocket status transport with strict per-session isolation and the HTTP simulation preserved as fallback.
+Week 2 remains complete at checkpoint `064100a`. Week 3 Milestones 3.1 through 3.3 are committed at `2bd2710`, `473ea99`, and `a64e9be` on `feat/week-3-ai-interview-runtime`; the full suite passes 174 tests. The next task is Milestone 3.4: optional local voice adapter boundaries with deterministic unavailable/failure fallback.
 
 ## Pending work
 
-- Channels/Redis browser call transport and authorized real-time state updates.
 - Local STT, TTS, and VAD integration.
 - Agent orchestration, tool allowlists, safety checks, escalation, and human approvals.
 - Operational agent/evaluation pipeline, observability, retention jobs, production hardening, and deployment execution.
 
 ## Known limitations and blockers
 
-- **Limitations:** No operational voice pipeline, WebSocket call transport, agent orchestration, ML inference, malware scanner, final human-review UI, or production deployment exists yet. The current interview is an explicitly labelled text simulation; development Channels is in-memory. Resume checks are structural parsing controls, not malware scanning. Templates remain intentionally minimal because no Figma screenshots have been supplied.
+- **Limitations:** No operational voice pipeline, audio transport, agent orchestration, ML inference, malware scanner, final human-review UI, or production deployment exists yet. The current WebSocket carries status only, and the interview remains an explicitly labelled text simulation; development Channels is in-memory. Resume checks are structural parsing controls, not malware scanning. Templates remain intentionally minimal because no Figma screenshots have been supplied.
 - **Blockers:** None recorded. External design screenshots will be needed before pixel-accurate frontend implementation.
 
 ## Known non-failing warnings
@@ -171,18 +171,17 @@ git status --short
 
 ## Exact next recommended task
 
-Implement Week 3 Milestone 3.3: authenticated, per-session Channels/WebSocket status updates with candidate ownership, recruiter company isolation, safe event schemas, disconnect handling, and no answer/transcript/token payloads. Keep the validated HTTP simulation as the deterministic fallback.
+Implement Week 3 Milestone 3.4: optional local interfaces for VAD, Faster Whisper STT, Piper TTS, and transient audio input/output. Missing models, microphone/platform limitations, and adapter failures must return deterministic safe results while the HTTP simulation remains usable; do not persist recordings or change Render dependencies.
 
 Relevant files:
 
 - `backend/calling/models.py`
 - `backend/calling/services.py`
-- `backend/calling/views.py`
-- `backend/calling/urls.py`
 - `backend/calling/test_call_session_services.py`
-- `backend/config/asgi.py`
-- `backend/config/settings_development.py`
-- `backend/config/settings_production.py`
+- `ai_system/README.md`
+- `ml/README.md`
+- `requirements/ml.txt`
+- `backend/calling/models.py`
 - `backend/recruitment/models.py`
 - `backend/interviews/models.py`
 - `backend/agents/models.py`

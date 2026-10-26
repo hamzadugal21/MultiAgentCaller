@@ -211,3 +211,10 @@ Append new decisions; do not rewrite accepted historical decisions unless a late
 - **Reason:** Prove ownership, consent, state, idempotency, question progression, cancellation, privacy, and failure behavior before introducing real-time transport or model-driven dialogue.
 - **Consequences:** Mutations are POST-only and CSRF-protected. Only the candidate may start, pause, resume, answer, or complete; authorized recruiters/administrators may see safe status and cancel but cannot impersonate the candidate. Audit records contain question identifiers and indexes, not answer text.
 - **Status:** Accepted and implemented for Week 3 Milestone 3.2.
+
+## 2026-10-27 — WebSocket transport carries server-derived status only
+
+- **Decision:** Channels WebSockets may carry only an allowlisted server-derived call-session status snapshot. PostgreSQL remains authoritative; development uses the in-memory channel layer and production uses the already configured Redis layer only for delivery, not as an alternate workflow authority.
+- **Reason:** Real-time updates must not bypass domain services or leak answer, transcript, résumé, token, prompt, or secret data across sessions or companies.
+- **Consequences:** Each connection uses Django session authentication and exact object-level authorization, joins a UUID-derived per-session group, reauthorizes before every outgoing update, ignores caller-supplied event payloads, and closes safely on authorization or channel-layer failure. HTTP remains the deterministic fallback.
+- **Status:** Accepted and implemented for Week 3 Milestone 3.3.

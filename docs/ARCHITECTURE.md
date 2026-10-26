@@ -6,7 +6,7 @@ This document describes both the implemented foundation and the planned system. 
 
 Implemented today: Django configuration, PostgreSQL models/migrations, accounts web flow, role dashboards, resume validation, authentication audit signals, deterministic domain-audit validation, immutable audit/consent protection, append-only consent services, secure email-verification services, explicit recruitment and call-session transition policies, templates/static discovery, and runtime path separation.
 
-Implemented Week 2 product workflows: candidate profile/consent/verification/resume management, administrator/recruiter provisioning, company-scoped jobs, secure applications/withdrawal, and interview invitation/confirmation/rescheduling. Week 3 Milestones 3.1 and 3.2 add the deterministic call-session domain and server-rendered simulated interview. Planned: browser real-time/audio transport, local speech execution, multi-agent orchestration, ML inference, semantic safety agents, human review UI, retention jobs, and production deployment.
+Implemented Week 2 product workflows: candidate profile/consent/verification/resume management, administrator/recruiter provisioning, company-scoped jobs, secure applications/withdrawal, and interview invitation/confirmation/rescheduling. Week 3 Milestones 3.1 through 3.3 add the deterministic call-session domain, server-rendered simulated interview, and authenticated status WebSocket. Planned: browser audio transport, local speech execution, multi-agent orchestration, ML inference, semantic safety agents, human review UI, retention jobs, and production deployment.
 
 ## Overall system architecture
 
@@ -17,7 +17,8 @@ flowchart LR
     DJ --> APPS[Domain applications<br/>Week 2 services implemented]
     APPS --> PG[(PostgreSQL<br/>Implemented)]
     DJ --> MEDIA[Protected runtime media<br/>var/media]
-    DJ -. WebSocket audio .-> CH[Channels and Redis<br/>Planned runtime]
+    DJ -->|Allowlisted status WebSocket| CH[Channels status transport<br/>Implemented]
+    CH -. Production delivery .-> REDIS[(Redis channel layer<br/>Configured)]
     CH -.-> ORCH[Agent orchestration<br/>Planned]
     ORCH -.-> SPEECH[Local STT, TTS, VAD<br/>Planned]
     ORCH -.-> ML[ML inference and evaluation<br/>Planned]
@@ -70,7 +71,9 @@ Transactional services lock the schedule or session row, reload actors from Post
 
 `calling.SimulatedInterviewResponse` stores one bounded private answer per approved job question and session, with deterministic question indexes and UUID idempotency. The candidate pages expose one active question at a time and use POST/CSRF-protected preparation, start, pause, resume, answer, and cancellation operations. Recruiter/administrator pages expose safe operational progress without answer content. Answer audits contain only the session resource, application/schedule/question identifiers, and question index; mandatory audit failure rolls response and progress changes back.
 
-Persistent audio recording is not used by this runtime. Existing speech-engine, transcript, event, and metric schema remains a foundation only. Channels/Redis status transport is the next milestone, with the validated HTTP simulation retained as fallback.
+Persistent audio recording is not used by this runtime. Existing speech-engine, transcript, event, and metric schema remains a foundation only. Channels/Redis status transport is implemented, with the validated HTTP simulation retained as fallback; browser audio transport is not implemented.
+
+The implemented WebSocket path uses Django session authentication, origin/host validation, exact session authorization, and UUID-derived per-session channel groups. Candidate connections are owner-only; recruiters must remain verified, retain candidate-review capability, and match the job company; administrators are explicit trusted actors. Authorization is reloaded before each delivered update. Outgoing snapshots contain only type, session UUID, lifecycle status, question index, and simulated-mode flag. Caller-supplied channel event bodies are never forwarded, so answer text, transcript content, résumés, tokens, prompts, filesystem paths, and secrets cannot enter the WebSocket schema. PostgreSQL remains authoritative and on-commit broadcasts are optional; Redis/channel failure leaves the HTTP flow usable.
 
 ## Recruitment call workflow
 
