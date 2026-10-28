@@ -6,7 +6,7 @@ This document describes both the implemented foundation and the planned system. 
 
 Implemented today: Django configuration, PostgreSQL models/migrations, accounts web flow, role dashboards, resume validation, authentication audit signals, deterministic domain-audit validation, immutable audit/consent protection, append-only consent services, secure email-verification services, explicit recruitment and call-session transition policies, templates/static discovery, and runtime path separation.
 
-Implemented Week 2 product workflows: candidate profile/consent/verification/resume management, administrator/recruiter provisioning, company-scoped jobs, secure applications/withdrawal, and interview invitation/confirmation/rescheduling. Week 3 Milestones 3.1 through 3.5 add the deterministic call-session domain, server-rendered simulated interview, authenticated status WebSocket, optional local voice adapter boundaries, and a model-free deterministic interview coordinator. Planned: browser audio transport, operational local speech execution, broader specialist-agent orchestration, ML inference, semantic safety agents, human review UI, retention jobs, and production deployment.
+Implemented Week 2 product workflows: candidate profile/consent/verification/resume management, administrator/recruiter provisioning, company-scoped jobs, secure applications/withdrawal, and interview invitation/confirmation/rescheduling. Completed Week 3 adds the deterministic call-session domain, server-rendered simulated interview, authenticated status WebSocket, optional local voice adapter boundaries, model-free deterministic interview coordinator, expiry processing, and privacy-safe human escalation. Planned: browser audio transport, operational local speech execution, broader specialist-agent orchestration, ML inference, semantic safety agents, human review UI, retention jobs, and production deployment.
 
 ## Overall system architecture
 
@@ -17,12 +17,14 @@ flowchart LR
     DJ --> APPS[Domain applications<br/>Week 2 services implemented]
     APPS --> PG[(PostgreSQL<br/>Implemented)]
     DJ --> MEDIA[Protected runtime media<br/>var/media]
+    DJ --> COORD[Deterministic interview coordinator<br/>Implemented]
     DJ -->|Allowlisted status WebSocket| CH[Channels status transport<br/>Implemented]
     CH -. Production delivery .-> REDIS[(Redis channel layer<br/>Configured)]
     CH -.-> ORCH[Agent orchestration<br/>Planned]
     ORCH -.-> SPEECH[Local STT, TTS, VAD<br/>Planned]
     ORCH -.-> ML[ML inference and evaluation<br/>Planned]
     DJ --> AUDIT[Deterministic domain audit service<br/>Implemented foundation]
+    COORD --> AUDIT
     ORCH -.-> AUDIT
     REVIEW[Authorized human reviewer<br/>Planned workflow] -. approves .-> DJ
 ```
@@ -84,13 +86,14 @@ flowchart TD
     C --> D[Create call session<br/>Deterministic service implemented]
     D --> S[Simulated approved questions<br/>HTTP flow implemented]
     S --> D
+    S -->|Candidate requests human| J
     D --> E[Browser audio connection<br/>Planned]
     E --> F[VAD and STT<br/>Planned]
     F --> G[Orchestrator selects approved agent<br/>Planned]
     G --> H[Agent response and safety check<br/>Planned]
     H --> I[TTS response<br/>Planned]
     I -->|Next turn| F
-    H -->|Risk, request, or failure| J[Human escalation<br/>Planned]
+    H -->|Request or technical failure| J[Deterministic human escalation<br/>Implemented boundary]
     G --> K[Audit events and call metrics<br/>Schema implemented]
     I --> L[Rubric-based advisory evaluation<br/>Planned]
     L --> M[Authorized human review and final decision<br/>Mandatory]
@@ -98,7 +101,7 @@ flowchart TD
 
 ## Multi-agent orchestration
 
-Agent definitions, versions, runs, actions, handoffs, approvals, and escalations have persistent models. The planned orchestrator controls which specialist receives a turn and which allowlisted tools it may use. Agents receive minimum necessary context and return structured, auditable results.
+Agent definitions, versions, runs, actions, handoffs, approvals, and escalations have persistent models. The implemented deterministic coordinator controls the simulated interview's narrow candidate actions; broader planned orchestration will control which specialist receives a turn and which allowlisted tools it may use. Agents receive minimum necessary context and return structured, auditable results.
 
 ```mermaid
 flowchart TB
@@ -123,7 +126,9 @@ Deterministic Python policy enforcement remains authoritative for permissions, c
 
 Future agents never receive unrestricted ORM, SQL, filesystem, model-name, field-name, or recipient access. Each tool must call a narrow Python service with validated input, authorization context, consent enforcement, idempotency where required, mandatory audit recording, structured output, and safe errors.
 
-The implemented `DeterministicInterviewCoordinator` is the first orchestration boundary and is deliberately not an LLM. Its immutable command surface is status, start, pause, cancel, and submit answer. A candidate-scoped Django adapter reloads authority and calls the existing transactional services; the coordinator itself receives typed snapshots and structured safe failures. It returns only a start directive, one approved question, paused/terminal state, or stopped result. It has no message delivery, arbitrary ORM, filesystem, model-selection, scoring, hiring, or final-decision tool.
+The implemented `DeterministicInterviewCoordinator` is the first orchestration boundary and is deliberately not an LLM. Its immutable command surface is status, start, pause, cancel, submit answer, and request human. A candidate-scoped Django adapter reloads authority and calls the existing transactional services; the coordinator itself receives typed snapshots and structured safe failures. It returns only a start directive, one approved question, paused/terminal/escalated state, or stopped result. It has no message delivery, arbitrary ORM, filesystem, model-selection, scoring, hiring, or final-decision tool.
+
+`agents.escalation_services` provides the deterministic human-review boundary. Candidate-requested assistance pauses an active session, creates one idempotent `AgentEscalation`, and records a canonical allowlisted audit event in one transaction. Technical runtime failures atomically move the session to `failed` and create a high-severity review record. PostgreSQL-backed actor/ownership checks, UUID idempotency, fixed policy descriptions, and privacy-safe codes prevent callers from inserting private prose. Audit failure rolls the session and escalation back together. `expire_due_call_sessions` row-locks non-terminal due sessions and transitions them to `expired`; no employment decision is made by either service.
 
 ## Speech and ML components
 
@@ -135,7 +140,7 @@ Audio stays in memory and recording is not persisted. Adapter results do not aut
 
 `AuditEvent` records actors, categories, outcomes, severity, resource references, privacy-safe request metadata, chained fields, and a keyed integrity hash. Django blocks model-level modification/deletion and a PostgreSQL migration installs triggers that block bulk updates/deletes. Authentication signals record successful login, failed login with a hashed identifier, and logout.
 
-The deterministic domain audit service accepts a frozen structured command, matches it to an immutable Week 2 event registry, and derives the human-readable action only from that registered specification. Each specification declares required and allowed metadata keys. The service normalizes UUID identifiers, enforces actor/resource requirements, and accepts only bounded allowlisted scalar metadata. It rejects missing required metadata, unknown events and metadata, nested private objects, credentials, raw tokens, document/transcript contents, and filesystem paths. Mandatory audit failures raise safe exceptions and can participate in the calling domain service's transaction. An LLM never decides whether auditing is required, which mandatory fields may be omitted, whether an event may change, or whether private content belongs in metadata. Previous-event hash chaining remains unimplemented by design.
+The deterministic domain audit service accepts a frozen structured command, matches it to an immutable domain-event registry, and derives the human-readable action only from that registered specification. Each specification declares required and allowed metadata keys. The service normalizes UUID identifiers, enforces actor/resource requirements, and accepts only bounded allowlisted scalar metadata. It rejects missing required metadata, unknown events and metadata, nested private objects, credentials, raw tokens, document/transcript contents, and filesystem paths. Mandatory audit failures raise safe exceptions and can participate in the calling domain service's transaction. An LLM never decides whether auditing is required, which mandatory fields may be omitted, whether an event may change, or whether private content belongs in metadata. Previous-event hash chaining remains unimplemented by design.
 
 ## Consent history
 

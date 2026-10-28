@@ -76,11 +76,11 @@ Turn the schema foundation into secure candidate, recruiter, job, application, a
 - State changes use tested transition services rather than direct status assignment.
 - No migration drift or failing validation remains.
 
-## Week 3 — Voice calling and multi-agent system (90% complete)
+## Week 3 — Secure simulated calling and runtime boundaries (100% complete)
 
 ### Objectives
 
-Implement the browser call runtime, local speech pipeline, orchestration, specialist agents, safety controls, and escalation.
+Implement the secure deterministic browser simulation, optional local speech adapter boundaries, narrow coordination, safety controls, and escalation before any live voice or broader specialist-agent runtime.
 
 ### Tasks and deliverables
 
@@ -89,18 +89,16 @@ Implement the browser call runtime, local speech pipeline, orchestration, specia
 - **Milestone 3.3 — WebSockets and Redis:** committed and validated authenticated, session-authorized status transport, server-derived allowlisted payloads, per-session group isolation, safe disconnect/failure behavior, in-memory development channels, and the existing Redis production channel layer. The HTTP simulation remains authoritative fallback.
 - **Milestone 3.4 — voice adapter boundaries:** committed and validated typed transient-audio interfaces plus lazy local Silero VAD, Faster Whisper STT, and piper-plus TTS adapters with local-only model loading, safe structured failures, unsupported-microphone fallback, and no recording persistence.
 - **Milestone 3.5 — interview coordinator:** committed and validated deterministic coordinator with a versioned policy, approved-question snapshots, a fixed action allowlist, candidate-only narrow Django tools, safe failure results, and no model, messaging, arbitrary ORM, or employment-decision capability.
-- **Milestone 3.6 — safety and integration:** next; consolidate timeout/expiry, revocation, cancellation, unsafe-state recovery, human escalation flags, failure fallback, audit privacy, and complete simulated interview integration/security coverage.
-- Channels/Redis call connection, lifecycle, reconnect, event, and metric handling.
-- Silero VAD, Faster Whisper STT, Piper TTS, and interruption/turn-taking flow.
-- Calling orchestrator and profile, interview, FAQ, scheduling, safety, escalation, and evaluation agent interfaces, integrated with the deterministic domain-audit service.
-- Versioned prompts, allowlisted tools, bounded context, retries, timeouts, and structured outputs.
-- Redaction, consent enforcement, recording-disabled default, and retention metadata.
-- Human escalation and action-approval workflow.
+- **Milestone 3.6 — safety and integration:** committed and validated deterministic timeout/expiry processing, candidate-requested human assistance, technical-failure escalation, fixed safe errors, idempotent replay/conflict handling, mandatory audit rollback, consent/cancellation boundaries, and a complete approved-question simulated interview integration test.
+- Channels/Redis status delivery is implemented with PostgreSQL authority and HTTP fallback; browser audio transport and richer event/metric processing are deferred.
+- Optional Silero VAD, Faster Whisper STT, and Piper TTS adapter boundaries are implemented; operational browser speech and turn-taking are deferred.
+- The deterministic coordinator and escalation service are implemented; broader profile, FAQ, scheduling, semantic-safety, and evaluation agent runtimes are deferred.
+- Consent enforcement, audit redaction, recording-disabled default, safe retries, and structured failures are implemented for the simulated runtime.
 
 ### Required tests
 
-- Unit tests for audio adapters, orchestration transitions, tools, prompts, safety rules, and redaction.
-- Integration tests for simulated calls, failures, reconnects, handoffs, and escalation.
+- Unit tests for audio adapters, coordination transitions, narrow tools, safety rules, and redaction.
+- Integration tests for the simulated call lifecycle, failure/expiry, WebSocket isolation, and escalation.
 - Deterministic fixtures must contain no real candidate data.
 
 ### Security requirements
@@ -112,7 +110,7 @@ Implement the browser call runtime, local speech pipeline, orchestration, specia
 
 ### Completion criteria
 
-- A consented simulated browser interview completes through the local speech and agent pipeline.
+- A consented simulated browser interview completes through the deterministic coordinator without requiring speech models or live audio.
 - Safety and escalation scenarios are tested and auditable.
 - Failure recovery does not silently make or finalize decisions.
 
@@ -156,6 +154,6 @@ Deployment planning reference: [Render deployment plan](development/RENDER_DEPLO
 
 - Week 1: 100%
 - Week 2: 100%
-- Week 3: 90%
+- Week 3: 100%
 - Week 4: 0%
-- Overall: 73%
+- Overall: 75%

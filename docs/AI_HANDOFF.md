@@ -2,7 +2,7 @@
 
 This is the authoritative handoff document for another AI assistant. Read it after `AGENTS.md`, then verify its snapshot against Git and the source before changing code.
 
-Last updated: 2026-10-27 (Asia/Karachi)
+Last updated: 2026-10-28 (Asia/Karachi)
 
 ## Project identity
 
@@ -16,12 +16,12 @@ Last updated: 2026-10-27 (Asia/Karachi)
 ## Current Git and progress snapshot
 
 - **Current branch:** `feat/week-3-ai-interview-runtime`
-- **Current commit:** `da6cf21` — deterministic interview coordinator.
-- **Latest validated product checkpoint:** `da6cf21` — Week 3 Milestone 3.5.
+- **Current product commit:** `897aacc` — complete Week 3 interview runtime.
+- **Latest validated product checkpoint:** `897aacc` — Week 3 Milestone 3.6 and Week 3 completion.
 - **Week 1:** 100% complete.
-- **Current week:** Week 3, 90% complete. Milestones 3.1 through 3.5 are committed and validated.
-- **Overall project:** 73% complete.
-- **Automated tests:** 186 passing, including the Week 2 pre-interview suite, simulated interview, WebSocket security, voice-adapter fallback, and deterministic coordinator coverage.
+- **Current week:** Week 3, 100% complete. Milestones 3.1 through 3.6 are committed and validated.
+- **Overall project:** 75% complete.
+- **Automated tests:** 195 passing, including the Week 2 pre-interview suite, simulated interview, WebSocket security, voice-adapter fallback, deterministic coordinator, escalation, expiry, and Week 3 integration coverage.
 
 ## Current technology stack
 
@@ -41,8 +41,8 @@ The persistent plan and deferred decisions are documented in the [Render deploym
 frontend/      Django templates, shared static assets, design references
 backend/       Django configuration, applications, migrations, app tests
 database/      Database documentation, diagrams, safe utilities
-ai_system/     Planned orchestration, agents, prompts, safety, approvals
-ml/            Planned pipelines, training, inference, evaluation, artifacts
+ai_system/     Deterministic coordinator/voice contracts; planned broader agents
+ml/            Optional local voice adapters; planned inference/evaluation
 docs/          Architecture, roadmap, decisions, work log, handoff
 scripts/       Development, maintenance, and validation utilities
 tests/         Cross-application integration/security; future system/E2E tests
@@ -58,10 +58,10 @@ Root files retain repository-wide configuration and documentation. Django templa
 - `recruitment`: Administrator company/recruiter provisioning, company-scoped job management, skills/questions/FAQs, candidate browsing, secure applications, withdrawal, and audit-derived history.
 - `interviews`: Secure invitations, confirmation, rescheduling, cancellation/expiry, plus planned evaluation rubrics/criteria, candidate evaluations, scores, and reviewer fields.
 - `calling`: Deterministic call-session creation/lifecycle/authorization/auditing, server-rendered simulated question/answer progression, authenticated session-scoped WebSocket status transport, and schema foundations for transcript segments, call events, performance metrics, and disabled-by-default recording metadata.
-- `agents`: Versioned agent definitions, runs, actions, handoffs, approval fields, and escalation records.
+- `agents`: Versioned agent definitions, runs, actions, handoffs, approval fields, escalation records, and deterministic privacy-safe escalation services.
 - `auditlog`: Immutable keyed audit events, security incidents, data-retention records, and append-only policy-versioned consent history. PostgreSQL triggers protect audit events and consent evidence from database-level update and deletion.
 
-Accounts, candidates, recruitment, interview scheduling, and the simulated interview provide tested server-rendered workflows. Calling has a deterministic domain, HTTP fallback, and authorized status WebSocket. Agents, speech execution, and evaluation remain later Week 3/4 work.
+Accounts, candidates, recruitment, interview scheduling, and the simulated interview provide tested server-rendered workflows. Calling has a deterministic domain, HTTP fallback, authorized status WebSocket, expiry processing, and human-escalation boundary. Operational speech execution, broader specialist agents, and evaluation remain later work.
 
 ## Planned AI agents
 
@@ -74,9 +74,9 @@ Accounts, candidates, recruitment, interview scheduling, and the simulated inter
 - **Safety Agent:** Semantically detect prompt injection, bias, coercion, privacy concerns, and unsafe conversational content. It supplements and cannot override deterministic policy enforcement.
 - **Escalation Agent:** Route candidate requests, uncertainty, safety events, and technical failures to authorized humans.
 
-These agents have database definitions but no operational orchestration implementation yet. Auditing is not a generative-agent responsibility: ordinary Python domain services decide when an event is mandatory, validate a strict event specification, sanitize its metadata, and persist the immutable event. Future agent runtimes may only submit structured events through narrow service adapters.
+These specialist agents have database definitions but no unrestricted or generative operational runtime. Auditing is not a generative-agent responsibility: ordinary Python domain services decide when an event is mandatory, validate a strict event specification, sanitize its metadata, and persist the immutable event. Future agent runtimes may only submit structured events through narrow service adapters.
 
-Week 3 now includes a model-free `DeterministicInterviewCoordinator`, not a generative agent. It exposes only status, start, pause, cancel, and submit-answer commands through a candidate-scoped Django adapter. It selects approved job questions one at a time and returns fixed structured directives. The broader specialist-agent runtime remains planned.
+Week 3 includes a model-free `DeterministicInterviewCoordinator`, not a generative agent. It exposes only status, start, pause, cancel, submit-answer, and request-human commands through a candidate-scoped Django adapter. It selects approved job questions one at a time and returns fixed structured directives. The broader specialist-agent runtime remains planned.
 
 ## PostgreSQL architecture
 
@@ -102,7 +102,7 @@ PostgreSQL is the required relational database. Django migrations define UUID-ce
 - Never place secrets or private candidate content in Git or context documentation.
 - Resume files are limited to PDF/DOCX, 5 MB, structurally checked, randomly renamed, and stored under runtime media rather than static assets.
 - Malware scanning is required before production document processing and is not yet implemented.
-- Candidate AI-processing and interview consent Boolean fields are mutable caches. The current Milestone 2.1B implementation derives effective consent from append-only, policy-versioned history and requires workflow enforcement before processing.
+- Candidate AI-processing and interview consent Boolean fields are mutable caches. The committed consent implementation derives effective consent from append-only, policy-versioned history and requires workflow enforcement before processing.
 - Call recording defaults to disabled and requires explicit consent before it can be enabled.
 - Agent tools must be allowlisted and sensitive actions must use approval records.
 - Authentication events are sanitized and audit events are hash-protected and immutable.
@@ -122,7 +122,7 @@ AI may screen, summarize, score against an approved rubric, and recommend. It mu
 - Django 6.1 development and production `MAILERS` configuration.
 - Monorepo-style frontend/backend/database/AI/ML/docs/scripts/tests/var structure with updated paths and tooling.
 - Persistent agent operating guide, handoff, roadmap, decision log, work log, architecture documentation, and ignored local prompt counter.
-- Deterministic domain-audit service with a frozen caller command, immutable Week 2 event registry, specification-owned canonical actions, required and allowed metadata rules, safe UUID normalization, bounded payload validation, and safe mandatory-failure exceptions.
+- Deterministic domain-audit service with a frozen caller command, immutable domain-event registry, specification-owned canonical actions, required and allowed metadata rules, safe UUID normalization, bounded payload validation, and safe mandatory-failure exceptions.
 - Validated lightweight Render dependency manifest that includes only the base Django web stack and deliberately excludes heavy local AI/ML dependencies.
 - Append-only, policy-versioned consent evidence with deterministic grant/revoke/resolution services, mutable cache synchronization, strict actor/scope checks, idempotent replay, deterministic auditing, legacy import, and PostgreSQL immutability protection.
 - Secure email-verification challenge, pages, and enforcement with HMAC email binding, signed 24-hour tokens, resend/email-change invalidation, single-use consumption, cache-backed rate limits, and deterministic audits.
@@ -135,22 +135,22 @@ AI may screen, summarize, score against an approved rubric, and recommend. It mu
 - Candidate-owned simulated interview pages with approved active job questions, bounded private answers, deterministic ordering and completion, idempotent submission, pause/resume/cancel controls, recruiter/admin safe progress pages, POST/CSRF enforcement, and answer-free audit metadata.
 - Authenticated Channels status WebSocket with exact candidate/company/admin authorization, per-session groups, reauthorization before delivery, server-derived allowlisted payloads, event isolation, safe disconnect handling, and optional on-commit broadcasting. Development remains in-memory; production retains the existing Redis channel layer.
 - Typed transient audio and optional local Silero VAD, Faster Whisper STT, and piper-plus TTS adapters with lazy/local-only loading, bounded text/audio handling, fixed safe failure codes, unsupported-input/output fallbacks, and no recording persistence.
-- Versioned deterministic interview coordinator with an immutable five-action allowlist, candidate-only narrow tool adapter, approved-question sequencing, structured stop/failure results, and no generative, messaging, arbitrary-data, or employment-decision authority.
+- Versioned deterministic interview coordinator with an immutable six-action allowlist, candidate-only narrow tool adapter, approved-question sequencing, structured stop/failure/escalation results, and no generative, messaging, arbitrary-data, or employment-decision authority.
+- Deterministic session expiry and technical-failure services plus idempotent human escalation. Candidate requests pause active sessions, mandatory privacy-safe audit failure rolls back state and escalation together, and escalation records never contain answer, transcript, resume, token, path, or secret data.
 
 ## Current work
 
-Week 2 remains complete at checkpoint `064100a`. Week 3 Milestones 3.1 through 3.5 are committed at `2bd2710`, `473ea99`, `a64e9be`, `40789e2`, and `da6cf21` on `feat/week-3-ai-interview-runtime`; the full suite passes 186 tests. The next task is Milestone 3.6: safety, escalation, failure recovery, and complete Week 3 integration/security validation.
+Week 2 remains complete at checkpoint `064100a`. Week 3 Milestones 3.1 through 3.6 are committed at `2bd2710`, `473ea99`, `a64e9be`, `40789e2`, `da6cf21`, and `897aacc` on `feat/week-3-ai-interview-runtime`; the full suite passes 195 tests. Week 3 is complete. Week 4 has not started.
 
 ## Pending work
 
-- Week 3 safety/escalation integration and complete simulated runtime security validation.
-- Browser audio transport and live integration of the optional STT, TTS, and VAD adapters remain beyond the deterministic Week 3 baseline unless safely completed after required controls.
-- Agent orchestration, tool allowlists, safety checks, escalation, and human approvals.
+- Browser audio transport and live integration of the optional STT, TTS, and VAD adapters remain beyond the deterministic Week 3 baseline.
+- Broader specialist-agent orchestration, semantic safety checks, evaluation, and human-review workflow.
 - Operational agent/evaluation pipeline, observability, retention jobs, production hardening, and deployment execution.
 
 ## Known limitations and blockers
 
-- **Limitations:** No operational voice pipeline, audio transport, agent orchestration, generative inference, malware scanner, final human-review UI, or production deployment exists yet. Voice adapters are optional boundaries and were tested with injected synthetic engines, not live hardware or models. The current WebSocket carries status only, and the interview remains an explicitly labelled text simulation; development Channels is in-memory. Resume checks are structural parsing controls, not malware scanning. Templates remain intentionally minimal because no Figma screenshots have been supplied.
+- **Limitations:** No operational voice pipeline, audio transport, broader specialist-agent orchestration, generative inference, malware scanner, final human-review UI, or production deployment exists yet. Voice adapters are optional boundaries and were tested with injected synthetic engines, not live hardware or models. The current WebSocket carries status only, and the interview remains an explicitly labelled text simulation; development Channels is in-memory. Resume checks are structural parsing controls, not malware scanning. Templates remain intentionally minimal because no Figma screenshots have been supplied.
 - **Blockers:** None recorded. External design screenshots will be needed before pixel-accurate frontend implementation.
 
 ## Known non-failing warnings
@@ -171,31 +171,23 @@ Run from the repository root:
 .\.venv\Scripts\python.exe backend\manage.py makemigrations --check --dry-run
 .\.venv\Scripts\python.exe -m pytest -q
 .\.venv\Scripts\python.exe -m pip check
-.\.venv\Scripts\python.exe -m ruff check backend
+.\.venv\Scripts\python.exe -m ruff check backend ai_system ml tests
 git diff --check
 git status --short
 ```
 
 ## Exact next recommended task
 
-Implement Week 3 Milestone 3.6: deterministic timeout/expiry and unsafe-state recovery, explicit privacy-safe human escalation flags, service-failure fallback, consent-revocation/candidate-exit coverage, and a complete confirmed-interview-to-completed-simulation integration/security test. Do not add hiring outcomes, generative models, audio recording, or deployment.
+Begin Week 4 only after approval: implement deterministic rubric-based advisory evaluation and an authorized human-review boundary without automatic employment decisions. Preserve the completed simulated runtime, privacy-safe audit/escalation controls, and recording-disabled default; do not deploy or add generative behavior implicitly.
 
 Relevant files:
 
-- `backend/calling/models.py`
-- `backend/calling/services.py`
-- `ai_system/voice/interfaces.py`
-- `ai_system/interview/coordinator.py`
-- `ai_system/README.md`
-- `backend/calling/services.py`
-- `backend/calling/models.py`
-- `backend/calling/coordinator_tools.py`
-- `backend/agents/models.py`
-- `backend/auditlog/services.py`
-- `backend/recruitment/models.py`
 - `backend/interviews/models.py`
 - `backend/agents/models.py`
+- `backend/agents/escalation_services.py`
+- `backend/calling/models.py`
+- `backend/calling/services.py`
 - `backend/auditlog/services.py`
-- `ai_system/README.md`
+- `ai_system/interview/coordinator.py`
 - `docs/ARCHITECTURE.md`
 - `docs/ROADMAP.md`

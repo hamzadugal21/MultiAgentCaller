@@ -232,3 +232,10 @@ Append new decisions; do not rewrite accepted historical decisions unless a late
 - **Reason:** Question selection and workflow progression must be secure and testable before any generative behavior is considered.
 - **Consequences:** Only active job-owned questions are returned one at a time. Persisted role, ownership, consent, schedule, transition, idempotency, and audit controls remain in domain services. Unsupported, malformed, or failed commands stop with fixed safe codes. The coordinator cannot send messages, use arbitrary tools/ORM/paths, or make hiring decisions.
 - **Status:** Accepted and implemented for Week 3 Milestone 3.5.
+
+## 2026-10-28 — Deterministic human escalation and expiry boundary
+
+- **Decision:** Extend the model-free coordinator with one `request_human` action and implement expiry, candidate-requested assistance, and technical-failure escalation as deterministic transactional Python services. Escalation descriptions and audit actions are policy-owned, not caller prose.
+- **Reason:** A candidate must be able to stop and request authorized assistance, while runtime failures and due sessions must enter safe reviewable states without relying on a generative model or silently continuing.
+- **Consequences:** Active candidate requests pause the session; technical failure atomically marks it failed; due sessions expire through row-locked transitions. UUID idempotency supports safe retry, mandatory audit failure rolls back state and escalation together, and audit metadata contains only allowlisted identifiers/codes. No escalation service makes an employment decision.
+- **Status:** Accepted and implemented for Week 3 Milestone 3.6.

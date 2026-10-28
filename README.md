@@ -2,7 +2,7 @@
 
 An industry-oriented, browser-based recruitment platform where specialized AI agents conduct, evaluate, monitor, and audit candidate screening interviews.
 
-Week 2's secure pre-interview workflow is complete. Week 3 now includes the deterministic call-session foundation, simulated interview, authorized status WebSocket, optional local VAD/STT/TTS adapters, and a narrow deterministic interview coordinator. Final Week 3 safety/integration review remains.
+Weeks 1 through 3 are complete. Week 3 delivers the deterministic call-session foundation, simulated interview, authorized status WebSocket, optional local VAD/STT/TTS adapters, narrow deterministic interview coordinator, and privacy-safe human-escalation/failure boundary. Live voice operation, evaluation, final human review, production hardening, and deployment remain later work.
 
 ## Core agents
 
@@ -23,7 +23,7 @@ Python 3.14, Django 6.1, Django Channels, PostgreSQL, Redis, Faster Whisper, Pip
 
 ## Tests
 
-Run: `python -m pytest -q` (current validated total: 186 tests).
+Run: `python -m pytest -q` (current validated total: 195 tests).
 
 ## Security
 

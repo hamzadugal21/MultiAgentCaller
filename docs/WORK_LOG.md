@@ -302,3 +302,17 @@ Milestone commit: `fd9a6e4` (`feat: add interview invitation and scheduling work
 - Known non-failing warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning. No blocker remains.
 - Week 3 is **90%** complete; overall four-week progress is **73%**.
 - Next: complete Milestone 3.6 deterministic safety/escalation controls and Week 3 integration/security validation.
+
+## 2026-10-28 — Week 3 Milestone 3.6 safety, escalation, and completion
+
+- Product commit: `897aacc` (`feat: complete week 3 interview runtime`) on `feat/week-3-ai-interview-runtime`.
+- Added deterministic row-locked expiry processing, candidate-requested human assistance, and atomic technical-failure escalation. Candidate requests pause active sessions; technical failures enter `failed`; neither path makes or implies an employment decision.
+- Added UUID idempotency/replay/conflict handling, persisted actor and ownership authorization, canonical policy descriptions, fixed safe errors, privacy-safe `call_session.escalated` auditing, and transactional rollback when mandatory audit persistence fails.
+- Added migration `agents.0002_agentescalation_idempotency_key_and_more`, applied successfully with no migration drift. It permits deterministic service-originated escalation records and adds safe reason/idempotency fields without editing prior migrations.
+- Extended the model-free coordinator's exact allowlist with `request_human`, added a POST/CSRF-protected candidate control, and preserved the simulated HTTP path, recording-disabled default, and status-only WebSocket boundary.
+- Added a synthetic cross-application Week 3 integration test covering confirmed schedule, current consent, approved question progression, completion, and private-data-free audits. Added focused expiry, escalation, authorization, idempotency, rollback, CSRF, IDOR, and coordinator tests.
+- Validation: 109 focused audit/calling/agents/integration tests passed before final hardening; 65 focused safety/integration tests passed after idempotency hardening; the final complete suite passed **195 tests**. Django check reported 0 issues; migrations applied with no drift; pip check reported no broken requirements; Ruff across backend/AI/ML/tests and Git diff checks passed.
+- The first focused run had one test-ordering failure because CSRF correctly rejected an IDOR request before object lookup; the test was split so CSRF and object authorization are independently verified. The initial migration command was blocked by the managed sandbox's base-Python boundary and succeeded unchanged with scoped permission.
+- Known non-failing warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning. No blocker remains.
+- Week 3 is **100%** complete; overall four-week progress is **75%**.
+- Next: begin Week 4 deterministic advisory evaluation and authorized human-review design only after approval. Week 4 has not started.
