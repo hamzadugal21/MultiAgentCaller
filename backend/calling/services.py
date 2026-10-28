@@ -604,3 +604,33 @@ def transition_call_session(
         )
         queue_session_status_update(locked.pk)
         return locked
+
+
+def expire_due_call_sessions(*, at=None):
+    at = at or timezone.now()
+    if not timezone.is_aware(at):
+        raise CallSessionServiceError("A timezone-aware expiry time is required.")
+    expired_session_ids = []
+    with transaction.atomic():
+        due_sessions = list(
+            _session_queryset()
+            .select_for_update()
+            .filter(
+                status__in=(
+                    CallSession.Status.PENDING,
+                    CallSession.Status.READY,
+                    CallSession.Status.ACTIVE,
+                    CallSession.Status.PAUSED,
+                ),
+                expires_at__isnull=False,
+                expires_at__lte=at,
+            )
+            .order_by("expires_at", "id")
+        )
+        for session in due_sessions:
+            expired = transition_call_session(
+                session=session,
+                target_status=CallSession.Status.EXPIRED,
+            )
+            expired_session_ids.append(expired.pk)
+    return tuple(expired_session_ids)

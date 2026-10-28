@@ -1,6 +1,10 @@
 from ai_system.interview.coordinator import CoordinatorSnapshot, CoordinatorToolError
 from django.conf import settings
 
+from agents.escalation_services import (
+    EscalationServiceError,
+    request_human_escalation,
+)
 from calling.models import CallSession
 from calling.services import (
     CallSessionServiceError,
@@ -94,4 +98,16 @@ class DjangoInterviewCoordinatorTools:
                 policy_version=settings.CURRENT_AI_CONSENT_POLICY_VERSION,
             )
         except CallSessionServiceError as error:
+            raise CoordinatorToolError("Coordinator action was rejected.") from error
+
+    def request_human(self, *, session_id, actor, idempotency_key):
+        session = self._session(session_id=session_id, actor=actor)
+        try:
+            request_human_escalation(
+                session=session,
+                actor=actor,
+                reason_code="candidate_requested_human",
+                idempotency_key=idempotency_key,
+            )
+        except EscalationServiceError as error:
             raise CoordinatorToolError("Coordinator action was rejected.") from error

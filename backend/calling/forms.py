@@ -14,6 +14,15 @@ class SessionPreparationForm(forms.Form):
             self.initial.setdefault("idempotency_key", uuid.uuid4())
 
 
+class HumanEscalationForm(forms.Form):
+    idempotency_key = forms.UUIDField(widget=forms.HiddenInput)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.is_bound:
+            self.initial.setdefault("idempotency_key", uuid.uuid4())
+
+
 class SimulatedAnswerForm(forms.Form):
     answer_text = forms.CharField(
         max_length=MAX_SIMULATED_ANSWER_CHARACTERS,

@@ -13,6 +13,7 @@ class CoordinatorAction(StrEnum):
     PAUSE = "pause"
     CANCEL = "cancel"
     SUBMIT_ANSWER = "submit_answer"
+    REQUEST_HUMAN = "request_human"
 
 
 class CoordinatorDirective(StrEnum):
@@ -21,6 +22,7 @@ class CoordinatorDirective(StrEnum):
     PAUSED = "paused"
     TERMINAL = "terminal"
     STOPPED = "stopped"
+    ESCALATED = "escalated"
 
 
 ALLOWED_COORDINATOR_ACTIONS = frozenset(CoordinatorAction)
@@ -78,6 +80,14 @@ class InterviewCoordinatorTools(Protocol):
         idempotency_key,
     ) -> None: ...
 
+    def request_human(
+        self,
+        *,
+        session_id,
+        actor,
+        idempotency_key,
+    ) -> None: ...
+
 
 DIRECTIVES_BY_STATUS = MappingProxyType(
     {
@@ -129,6 +139,14 @@ class DeterministicInterviewCoordinator:
                     answer_text=command.answer_text,
                     idempotency_key=command.idempotency_key,
                 )
+            elif action == CoordinatorAction.REQUEST_HUMAN:
+                if command.idempotency_key is None:
+                    return self._stopped("invalid_command")
+                self._tools.request_human(
+                    session_id=command.session_id,
+                    actor=command.actor,
+                    idempotency_key=command.idempotency_key,
+                )
             snapshot = self._tools.snapshot(
                 session_id=command.session_id,
                 actor=command.actor,
@@ -139,6 +157,8 @@ class DeterministicInterviewCoordinator:
             snapshot.status,
             CoordinatorDirective.STOPPED,
         )
+        if action == CoordinatorAction.REQUEST_HUMAN:
+            directive = CoordinatorDirective.ESCALATED
         if directive == CoordinatorDirective.ASK_QUESTION and (
             snapshot.current_question_id is None
             or snapshot.current_question_text is None

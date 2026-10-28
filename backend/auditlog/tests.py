@@ -284,6 +284,7 @@ def test_event_registry_contains_exact_expected_event_types():
         "call_session.cancelled",
         "call_session.completed",
         "call_session.created",
+        "call_session.escalated",
         "call_session.expired",
         "call_session.failed",
         "call_session.paused",
@@ -356,6 +357,13 @@ def test_event_registry_has_exact_required_metadata_rules():
             "interview_schedule_id",
             "simulated_mode",
             "status_to",
+        },
+        "call_session.escalated": {
+            "application_id",
+            "call_session_id",
+            "escalation_category",
+            "escalation_severity",
+            "reason_code",
         },
         "call_session.expired": {
             "application_id",

@@ -19,6 +19,7 @@ UUID_METADATA_KEYS = frozenset(
         "application_id",
         "cancelled_schedule_id",
         "candidate_id",
+        "call_session_id",
         "company_id",
         "interview_schedule_id",
         "job_id",
@@ -41,6 +42,8 @@ CODE_METADATA_KEYS = frozenset(
         "collection_source",
         "consent_type",
         "delivery_channel",
+        "escalation_category",
+        "escalation_severity",
         "failure_code",
         "file_type",
         "parser",
@@ -587,6 +590,26 @@ EVENT_SPECS = MappingProxyType(
             "question_id",
             "question_index",
         },
+    ),
+    "call_session.escalated": _spec(
+        AuditEvent.Category.SECURITY,
+        "agents.AgentEscalation",
+        "Interview call session escalated for human review",
+        {
+            "application_id",
+            "call_session_id",
+            "escalation_category",
+            "escalation_severity",
+            "reason_code",
+        },
+        required_metadata={
+            "application_id",
+            "call_session_id",
+            "escalation_category",
+            "escalation_severity",
+            "reason_code",
+        },
+        actor_required=False,
     ),
     }
 )

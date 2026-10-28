@@ -288,6 +288,8 @@ class AgentEscalation(models.Model):
         AgentDefinition,
         on_delete=models.PROTECT,
         related_name="detected_escalations",
+        null=True,
+        blank=True,
     )
     category = models.CharField(
         max_length=30,
@@ -306,6 +308,13 @@ class AgentEscalation(models.Model):
         db_index=True,
     )
     description = models.TextField()
+    reason_code = models.CharField(max_length=80, blank=True)
+    idempotency_key = models.UUIDField(
+        unique=True,
+        null=True,
+        blank=True,
+        editable=False,
+    )
     evidence_summary = models.JSONField(default=dict, blank=True)
     assigned_to = models.ForeignKey(
         settings.AUTH_USER_MODEL,

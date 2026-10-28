@@ -7,7 +7,12 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from accounts.models import User
-from calling.forms import SessionPreparationForm, SimulatedAnswerForm
+from agents.escalation_services import EscalationServiceError, request_human_escalation
+from calling.forms import (
+    HumanEscalationForm,
+    SessionPreparationForm,
+    SimulatedAnswerForm,
+)
 from calling.models import CallSession
 from calling.services import (
     CallSessionServiceError,
@@ -126,6 +131,7 @@ def candidate_session_detail(request, session_id):
         {
             "state": state,
             "answer_form": SimulatedAnswerForm(),
+            "escalation_form": HumanEscalationForm(),
         },
     )
 
@@ -199,6 +205,28 @@ def cancel_candidate_session(request, session_id):
         )
     except CallSessionServiceError:
         messages.error(request, "The interview session could not be cancelled.")
+    return redirect("calling:candidate_session_detail", session_id=session.pk)
+
+
+@login_required
+@require_POST
+def request_human_review(request, session_id):
+    actor, _candidate = _candidate_actor(request.user)
+    session = _candidate_session(session_id, actor)
+    form = HumanEscalationForm(request.POST)
+    if not form.is_valid():
+        messages.error(request, "Human assistance could not be requested.")
+        return redirect("calling:candidate_session_detail", session_id=session.pk)
+    try:
+        request_human_escalation(
+            session=session,
+            actor=actor,
+            reason_code="candidate_requested_human",
+            idempotency_key=form.cleaned_data["idempotency_key"],
+        )
+        messages.success(request, "Human assistance has been requested.")
+    except EscalationServiceError:
+        messages.error(request, "Human assistance could not be requested.")
     return redirect("calling:candidate_session_detail", session_id=session.pk)
 
 

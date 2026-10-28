@@ -20,6 +20,12 @@ from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import User
+from agents.escalation_services import (
+    EscalationServiceError,
+    record_technical_failure,
+    request_human_escalation,
+)
+from agents.models import AgentEscalation
 from auditlog.consent_services import (
     grant_application_ai_interview_consent,
     grant_general_ai_processing_consent,
@@ -36,6 +42,7 @@ from calling.services import (
     CallSessionServiceError,
     CallSessionTransitionError,
     create_call_session,
+    expire_due_call_sessions,
     get_call_session_for_actor,
     prepare_simulated_call_session,
     submit_simulated_answer,
@@ -849,6 +856,7 @@ def test_coordinator_allowlist_excludes_privileged_and_external_actions(call_dat
         "pause",
         "cancel",
         "submit_answer",
+        "request_human",
     }
     coordinator = DeterministicInterviewCoordinator(
         DjangoInterviewCoordinatorTools()
@@ -904,3 +912,201 @@ def test_coordinator_failure_fallback_does_not_expose_internal_error(call_data):
     assert result.directive == CoordinatorDirective.STOPPED
     assert result.error_code == "action_rejected"
     assert "secret" not in str(result)
+
+
+def test_candidate_human_escalation_is_idempotent_pauses_and_audits(call_data):
+    _questions(call_data)
+    session = _active_session(call_data)
+    key = uuid.uuid4()
+
+    escalation = request_human_escalation(
+        session=session,
+        actor=call_data["candidate_user"],
+        reason_code="candidate_requested_human",
+        idempotency_key=key,
+    )
+    replay = request_human_escalation(
+        session=session,
+        actor=call_data["candidate_user"],
+        reason_code="candidate_requested_human",
+        idempotency_key=key,
+    )
+
+    session.refresh_from_db()
+    assert replay.pk == escalation.pk
+    assert session.status == CallSession.Status.PAUSED
+    assert escalation.detected_by is None
+    assert escalation.category == AgentEscalation.Category.CANDIDATE_REQUEST
+    assert escalation.description == "The candidate requested authorized human assistance."
+    assert AgentEscalation.objects.count() == 1
+    event = AuditEvent.objects.get(event_type="call_session.escalated")
+    assert event.resource_type == "agents.AgentEscalation"
+    assert event.resource_id == str(escalation.pk)
+    assert event.metadata == {
+        "application_id": str(call_data["application"].pk),
+        "call_session_id": str(session.pk),
+        "escalation_category": "candidate_request",
+        "escalation_severity": "medium",
+        "reason_code": "candidate_requested_human",
+    }
+
+
+def test_escalation_rejects_conflicting_key_and_unauthorized_actor(call_data):
+    session = _create(call_data)
+    key = uuid.uuid4()
+    request_human_escalation(
+        session=session,
+        actor=call_data["candidate_user"],
+        reason_code="candidate_requested_human",
+        idempotency_key=key,
+    )
+    with pytest.raises(EscalationServiceError, match="idempotency"):
+        request_human_escalation(
+            session=session,
+            actor=call_data["candidate_user"],
+            reason_code="unsafe_state",
+            idempotency_key=key,
+        )
+    with pytest.raises(EscalationServiceError, match="not authorized"):
+        request_human_escalation(
+            session=session,
+            actor=call_data["recruiter_user"],
+            reason_code="candidate_requested_human",
+            idempotency_key=uuid.uuid4(),
+        )
+
+
+def test_escalation_audit_failure_rolls_back_pause_and_record(monkeypatch, call_data):
+    _questions(call_data)
+    session = _active_session(call_data)
+
+    def fail_audit(command):
+        raise DomainAuditPersistenceError("Audit event could not be recorded.")
+
+    monkeypatch.setattr("agents.escalation_services.record_domain_event", fail_audit)
+    with pytest.raises(DomainAuditPersistenceError):
+        request_human_escalation(
+            session=session,
+            actor=call_data["candidate_user"],
+            reason_code="candidate_requested_human",
+            idempotency_key=uuid.uuid4(),
+        )
+    session.refresh_from_db()
+    assert session.status == CallSession.Status.ACTIVE
+    assert not AgentEscalation.objects.exists()
+
+
+def test_runtime_failure_creates_atomic_human_review_boundary(call_data):
+    session = _create(call_data)
+    key = uuid.uuid4()
+    failed, escalation = record_technical_failure(
+        session=session,
+        failure_code="voice_service_unavailable",
+        idempotency_key=key,
+    )
+    replayed_session, replayed_escalation = record_technical_failure(
+        session=session,
+        failure_code="voice_service_unavailable",
+        idempotency_key=key,
+    )
+    assert failed.status == CallSession.Status.FAILED
+    assert failed.failure_code == "voice_service_unavailable"
+    assert escalation.reason_code == "runtime_failure"
+    assert escalation.severity == AgentEscalation.Severity.HIGH
+    assert replayed_session.pk == failed.pk
+    assert replayed_escalation.pk == escalation.pk
+    assert AuditEvent.objects.filter(event_type="call_session.failed").exists()
+    assert AuditEvent.objects.filter(event_type="call_session.escalated").exists()
+    with pytest.raises(EscalationServiceError, match="idempotency"):
+        record_technical_failure(
+            session=session,
+            failure_code="different_failure",
+            idempotency_key=key,
+        )
+
+
+def test_runtime_failure_audit_failure_rolls_back_state(monkeypatch, call_data):
+    session = _create(call_data)
+
+    def fail_audit(command):
+        raise DomainAuditPersistenceError("Audit event could not be recorded.")
+
+    monkeypatch.setattr("agents.escalation_services.record_domain_event", fail_audit)
+    with pytest.raises(DomainAuditPersistenceError):
+        record_technical_failure(
+            session=session,
+            failure_code="simulated_runtime_failure",
+            idempotency_key=uuid.uuid4(),
+        )
+    session.refresh_from_db()
+    assert session.status == CallSession.Status.PENDING
+    assert not AgentEscalation.objects.exists()
+    assert not AuditEvent.objects.filter(event_type="call_session.failed").exists()
+
+
+def test_due_sessions_expire_deterministically(call_data):
+    session = _create(call_data)
+    session = transition_call_session(
+        session=session,
+        target_status=CallSession.Status.READY,
+    )
+    due_at = timezone.now()
+    CallSession.objects.filter(pk=session.pk).update(
+        expires_at=due_at - timezone.timedelta(seconds=1)
+    )
+
+    assert expire_due_call_sessions(at=due_at) == (session.pk,)
+    session.refresh_from_db()
+    assert session.status == CallSession.Status.EXPIRED
+    assert session.completion_reason == "session_expired"
+    assert expire_due_call_sessions(at=due_at) == ()
+
+
+def test_coordinator_candidate_can_request_human_review(call_data):
+    _questions(call_data)
+    session = _active_session(call_data)
+    result = DeterministicInterviewCoordinator(
+        DjangoInterviewCoordinatorTools()
+    ).execute(
+        CoordinatorCommand(
+            action=CoordinatorAction.REQUEST_HUMAN,
+            session_id=session.pk,
+            actor=call_data["candidate_user"],
+            idempotency_key=uuid.uuid4(),
+        )
+    )
+    assert result.directive == CoordinatorDirective.ESCALATED
+    assert result.snapshot.status == CallSession.Status.PAUSED
+    assert AgentEscalation.objects.filter(call_session=session).exists()
+
+
+def test_human_review_endpoint_is_post_only_csrf_protected_and_owned(call_data):
+    _questions(call_data)
+    session = _active_session(call_data)
+    url = reverse("calling:request_human_review", args=(session.pk,))
+    client = Client(enforce_csrf_checks=True)
+    client.force_login(call_data["candidate_user"])
+    assert client.get(url).status_code == 405
+    assert client.post(url, {"idempotency_key": uuid.uuid4()}).status_code == 403
+    detail = client.get(
+        reverse("calling:candidate_session_detail", args=(session.pk,))
+    )
+    csrf_token = client.cookies["csrftoken"].value
+    key = uuid.uuid4()
+    response = client.post(
+        url,
+        {"idempotency_key": key, "csrfmiddlewaretoken": csrf_token},
+    )
+    assert detail.status_code == 200
+    assert response.status_code == 302
+    assert AgentEscalation.objects.filter(idempotency_key=key).exists()
+
+    other_candidate = User.objects.create_user(
+        email="escalation-other-candidate@example.com",
+        password="TestingOnly!9384",
+    )
+    idor_client = Client()
+    idor_client.force_login(other_candidate)
+    assert idor_client.post(
+        url, {"idempotency_key": uuid.uuid4()}
+    ).status_code == 404

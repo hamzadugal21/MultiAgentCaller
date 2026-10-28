@@ -36,6 +36,11 @@ urlpatterns = [
         views.cancel_candidate_session,
         name="cancel_candidate_session",
     ),
+    path(
+        "sessions/<uuid:session_id>/request-human/",
+        views.request_human_review,
+        name="request_human_review",
+    ),
     path("review/", views.recruiter_session_list, name="recruiter_session_list"),
     path(
         "review/<uuid:session_id>/",
