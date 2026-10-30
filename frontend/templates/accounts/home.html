@@ -1,0 +1,227 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+        name="description"
+        content="HireFlow AI brings candidates, recruiters, and companies into one clear, secure recruitment workflow."
+    >
+    <title>HireFlow AI — Structured recruitment. Human decisions.</title>
+    <link rel="stylesheet" href="{% static 'accounts/css/home.css' %}">
+</head>
+<body class="home-page">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <header class="home-header">
+        <div class="home-container home-nav">
+            <a class="home-brand" href="{% url 'accounts:home' %}" aria-label="HireFlow AI home">
+                <span>HireFlow</span> <strong>AI</strong>
+            </a>
+
+            <nav class="desktop-nav" aria-label="Primary navigation">
+                <a href="{% url 'accounts:how_it_works' %}">How It Works</a>
+                <a href="#for-candidates">For Candidates</a>
+                <a href="#for-recruiters">For Recruiters</a>
+            </nav>
+
+            <div class="desktop-actions">
+                <a class="nav-login" href="{% url 'accounts:login' %}">Log in</a>
+                <a class="home-button home-button-primary" href="{% url 'accounts:signup' %}">
+                    Get Started
+                </a>
+            </div>
+
+            <details class="mobile-menu">
+                <summary>Menu</summary>
+                <nav aria-label="Mobile navigation">
+                    <a href="{% url 'accounts:how_it_works' %}">How It Works</a>
+                    <a href="#for-candidates">For Candidates</a>
+                    <a href="#for-recruiters">For Recruiters</a>
+                    <a href="{% url 'accounts:login' %}">Log in</a>
+                    <a href="{% url 'accounts:signup' %}">Get Started</a>
+                </nav>
+            </details>
+        </div>
+    </header>
+
+    <main id="main-content">
+        <section class="home-hero" aria-labelledby="hero-title">
+            <div class="home-container hero-layout">
+                <div class="hero-copy">
+                    <p class="home-eyebrow">AI-assisted recruitment platform</p>
+                    <h1 id="hero-title">Hire better with structured recruitment and smarter interviews.</h1>
+                    <p class="hero-description">
+                        HireFlow AI brings candidates, recruiters, and companies into one secure hiring
+                        workflow—from job application to interview scheduling and review.
+                    </p>
+                    <div class="hero-actions">
+                        <a
+                            class="home-button home-button-primary"
+                            href="{% url 'accounts:login' %}?next={% url 'recruitment:job_list' %}"
+                        >
+                            Find Jobs
+                        </a>
+                        <a class="home-button home-button-secondary" href="#for-recruiters">
+                            For Recruiters
+                        </a>
+                    </div>
+                    <p class="hero-note">
+                        A clearer hiring experience, from first application to final review.
+                    </p>
+                </div>
+
+                <aside class="dashboard-preview" aria-label="Candidate dashboard preview">
+                    <div class="preview-bar">Candidate overview</div>
+                    <div class="preview-content">
+                        <h2>Good morning, Ayesha</h2>
+                        <p>Here is where your application stands.</p>
+
+                        <div class="profile-preview-card">
+                            <div class="preview-card-heading">
+                                <strong>Profile completion</strong>
+                                <span>80%</span>
+                            </div>
+                            <div
+                                class="progress-track"
+                                role="progressbar"
+                                aria-label="Profile completion"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                aria-valuenow="80"
+                            >
+                                <span></span>
+                            </div>
+                            <p>Complete your profile to improve your application.</p>
+                        </div>
+
+                        <div class="application-preview-card">
+                            <span class="preview-label">Active application</span>
+                            <h3>Frontend Developer</h3>
+                            <span class="status-badge"><i aria-hidden="true"></i> Interview confirmed</span>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <section class="home-section benefits-section" id="for-candidates" aria-labelledby="benefits-title">
+            <div class="home-container">
+                <p class="home-eyebrow">Why HireFlow</p>
+                <h2 id="benefits-title">A better experience on both sides of hiring.</h2>
+                <p class="section-intro">
+                    Purposeful tools for candidates and recruiters, without unnecessary complexity.
+                </p>
+
+                <div class="benefit-grid">
+                    <article class="benefit-card benefit-card-blue">
+                        <span class="card-number">01</span>
+                        <h3>Apply with confidence</h3>
+                        <p>Build a clear profile, discover opportunities, and follow each application from one place.</p>
+                    </article>
+                    <article class="benefit-card">
+                        <span class="card-number">02</span>
+                        <h3>Manage hiring clearly</h3>
+                        <p>Keep applications, interview schedules, and hiring decisions organized in one workflow.</p>
+                    </article>
+                    <article class="benefit-card benefit-card-blue">
+                        <span class="card-number">03</span>
+                        <h3>Structured AI interviews</h3>
+                        <p>Support consistent interview experiences while keeping people in control of outcomes.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="home-section process-section" id="how-it-works" aria-labelledby="process-title">
+            <div class="home-container">
+                <p class="home-eyebrow">The process</p>
+                <h2 id="process-title">From first step to informed decision.</h2>
+                <p class="section-intro">Four connected stages. One clear recruitment journey.</p>
+
+                <ol class="process-grid">
+                    <li>
+                        <span class="step-marker">01</span>
+                        <h3>Create profile</h3>
+                        <p>Share your experience and the roles you are interested in.</p>
+                    </li>
+                    <li>
+                        <span class="step-marker">02</span>
+                        <h3>Apply for a role</h3>
+                        <p>Submit your application and keep track of its progress.</p>
+                    </li>
+                    <li>
+                        <span class="step-marker">03</span>
+                        <h3>Confirm interview</h3>
+                        <p>Review interview details and provide consent where required.</p>
+                    </li>
+                    <li>
+                        <span class="step-marker">04</span>
+                        <h3>Recruiter reviews outcome</h3>
+                        <p>Recruiters assess results and make the final hiring decision.</p>
+                    </li>
+                </ol>
+            </div>
+        </section>
+
+        <section class="home-section trust-section" id="for-recruiters" aria-labelledby="trust-title">
+            <div class="home-container">
+                <p class="home-eyebrow">Built with care</p>
+                <h2 id="trust-title">Designed for secure and transparent hiring.</h2>
+
+                <div class="trust-grid">
+                    <article class="trust-card">
+                        <h3>Secure accounts</h3>
+                        <p>Role-aware access and protected account workflows.</p>
+                    </article>
+                    <article class="trust-card">
+                        <h3>Consent-aware interviews</h3>
+                        <p>Clear consent checkpoints before AI-assisted interviews.</p>
+                    </article>
+                    <article class="trust-card">
+                        <h3>Human-reviewed outcomes</h3>
+                        <p>Recruiters remain responsible for hiring decisions.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="home-cta" aria-labelledby="cta-title">
+            <div class="home-container">
+                <p class="home-eyebrow">Move forward with clarity</p>
+                <h2 id="cta-title">Ready to take the next step?</h2>
+                <p>Find your next opportunity or bring more structure to your hiring process.</p>
+                <div class="cta-actions">
+                    <a
+                        class="home-button home-button-primary"
+                        href="{% url 'accounts:login' %}?next={% url 'recruitment:job_list' %}"
+                    >
+                        Explore Jobs
+                    </a>
+                    <a class="home-button home-button-light" href="{% url 'accounts:login' %}">
+                        Manage Hiring
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="home-footer">
+        <div class="home-container footer-main">
+            <div>
+                <a class="footer-brand" href="{% url 'accounts:home' %}">HireFlow AI</a>
+                <p>Structured recruitment. Human decisions.</p>
+            </div>
+            <nav aria-label="Footer navigation">
+                <a href="{% url 'accounts:how_it_works' %}">How It Works</a>
+                <a href="{% url 'accounts:login' %}">Login</a>
+                <a href="{% url 'accounts:signup' %}">Create Account</a>
+            </nav>
+        </div>
+        <div class="home-container footer-bottom">
+            <p>© 2026 HireFlow AI. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>

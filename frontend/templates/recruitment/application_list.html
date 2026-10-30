@@ -1,14 +1,158 @@
-{% extends "base.html" %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Track your applications and prepare for upcoming interviews on HireFlow AI.">
+    <title>My Applications - HireFlow AI</title>
+    <link rel="stylesheet" href="{% static 'accounts/css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'accounts/css/candidate-dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'recruitment/css/application-list.css' %}">
+</head>
+<body class="candidate-dashboard-page candidate-applications-page">
+    <a class="skip-link" href="#applications-main">Skip to applications</a>
 
-{% block title %}Applications{% endblock %}
+    <div class="candidate-shell">
+        <aside class="candidate-sidebar" aria-label="Candidate navigation">
+            <div class="sidebar-brand-row">
+                <a class="sidebar-brand" href="{% url 'accounts:candidate_dashboard' %}" aria-label="HireFlow AI candidate dashboard">HireFlow <strong>AI</strong></a>
+                <details class="candidate-mobile-menu">
+                    <summary>Menu</summary>
+                    <nav aria-label="Candidate mobile navigation">
+                        <a href="{% url 'accounts:candidate_dashboard' %}">Dashboard</a>
+                        <a href="{% url 'candidates:profile_edit' %}">My Profile</a>
+                        <a href="{% url 'candidates:resume_list' %}">My Resume</a>
+                        <a href="{% url 'recruitment:job_list' %}">Browse Jobs</a>
+                        <a aria-current="page" href="{% url 'recruitment:application_list' %}">My Applications</a>
+                        <a href="{% url 'calling:candidate_session_list' %}">Interviews</a>
+                    </nav>
+                </details>
+            </div>
 
-{% block content %}
-<section>
-    <h1>Applications</h1>
-    <ul>
-        {% for application in applications %}
-            <li><a href="{% url 'recruitment:application_detail' application.id %}">{{ application.job.title }}</a> — {{ application.get_status_display }}</li>
-        {% empty %}<li>No applications are available.</li>{% endfor %}
-    </ul>
-</section>
-{% endblock %}
+            <nav class="sidebar-nav" aria-label="Candidate primary navigation">
+                <a href="{% url 'accounts:candidate_dashboard' %}"><span aria-hidden="true">D</span> Dashboard</a>
+                <a href="{% url 'candidates:profile_edit' %}"><span aria-hidden="true">P</span> My Profile</a>
+                <a href="{% url 'candidates:resume_list' %}"><span aria-hidden="true">R</span> My Resume</a>
+                <a href="{% url 'recruitment:job_list' %}"><span aria-hidden="true">J</span> Browse Jobs</a>
+                <a class="is-active" aria-current="page" href="{% url 'recruitment:application_list' %}"><span aria-hidden="true">A</span> My Applications</a>
+                <a href="{% url 'calling:candidate_session_list' %}"><span aria-hidden="true">I</span> Interviews</a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a class="sidebar-help" href="#interview-help"><span aria-hidden="true">?</span> Help &amp; Support</a>
+                <div class="sidebar-account">
+                    <span class="candidate-avatar" aria-hidden="true">{{ initials }}</span>
+                    <span><strong>{{ display_name }}</strong><small>Candidate</small></span>
+                </div>
+                <form method="post" action="{% url 'accounts:logout' %}">
+                    {% csrf_token %}
+                    <button class="sidebar-logout" type="submit"><span aria-hidden="true">X</span> Log out</button>
+                </form>
+            </div>
+        </aside>
+
+        <div class="candidate-workspace">
+            <header class="applications-header">
+                <div>
+                    <h1>My Applications</h1>
+                    <p>Track your applications and prepare for upcoming interviews.</p>
+                </div>
+                <div class="header-account" aria-label="Signed in as {{ display_name }}">
+                    <span class="notification-mark" aria-label="No new notifications">N</span>
+                    <span class="candidate-avatar candidate-avatar-light" aria-hidden="true">{{ initials }}</span>
+                </div>
+            </header>
+
+            <main id="applications-main" class="applications-main">
+                {% if messages %}
+                    <div class="applications-messages" aria-live="polite">
+                        {% for message in messages %}<p>{{ message }}</p>{% endfor %}
+                    </div>
+                {% endif %}
+
+                <section class="application-summary-grid" aria-label="Application summary">
+                    <article class="application-summary-card"><h2>Active applications</h2><strong>{{ active_application_count|stringformat:"02d" }}</strong></article>
+                    <article class="application-summary-card"><h2>Under review</h2><strong>{{ under_review_count|stringformat:"02d" }}</strong></article>
+                    <article class="application-summary-card"><h2>Upcoming interviews</h2><strong>{{ upcoming_interview_count|stringformat:"02d" }}</strong></article>
+                </section>
+
+                <section class="applications-panel" aria-labelledby="applications-list-heading">
+                    <h2 id="applications-list-heading">Your applications</h2>
+                    <div class="application-list" role="list">
+                        {% for entry in application_entries %}
+                            <article class="application-row" role="listitem">
+                                <div class="application-role">
+                                    <h3>{{ entry.application.job.title }}</h3>
+                                    <p>{{ entry.application.job.company.name }} <span aria-hidden="true">&middot;</span> Applied {{ entry.application.applied_at|date:"M j, Y" }}</p>
+                                </div>
+                                <span class="application-status status-{{ entry.status_class }}">{{ entry.display_status }}</span>
+                                <a class="application-detail-link" href="{% url 'recruitment:application_detail' entry.application.id %}" aria-label="View {{ entry.application.job.title }} application details">View details</a>
+                            </article>
+                        {% empty %}
+                            <div class="applications-empty-state">
+                                <h3>No applications yet</h3>
+                                <p>When you apply for an eligible role, its status and interview details will appear here.</p>
+                                <a href="{% url 'recruitment:job_list' %}">Browse open jobs</a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                {% if upcoming_schedule %}
+                    <section class="upcoming-interview-panel" aria-labelledby="upcoming-interview-heading">
+                        <div class="interview-heading-row">
+                            <h2 id="upcoming-interview-heading">Upcoming AI-assisted interview</h2>
+                            <span class="application-status status-confirmed">{{ upcoming_schedule.get_status_display }}</span>
+                        </div>
+                        <div class="upcoming-interview-details">
+                            <div>
+                                <span class="detail-label">Job</span>
+                                <h3>{{ upcoming_schedule.application.job.title }}</h3>
+                                <p>{{ upcoming_schedule.application.job.company.name }}</p>
+                            </div>
+                            <dl>
+                                <div><dt>Date</dt><dd>{{ upcoming_local_start|date:"M j, Y" }}</dd></div>
+                                <div><dt>Time</dt><dd>{{ upcoming_local_start|time:"g:i A" }} ({{ upcoming_schedule.timezone }})</dd></div>
+                                <div><dt>Format</dt><dd>Structured online interview</dd></div>
+                                {% if upcoming_session %}<div><dt>Session</dt><dd>{{ upcoming_session.get_status_display }}</dd></div>{% endif %}
+                            </dl>
+                        </div>
+                        <p class="interview-explanation">Your interview uses approved questions to support a structured process. An authorized recruiter reviews the outcome.</p>
+                        <ul class="readiness-checklist" aria-label="Interview readiness">
+                            {% for label, ready in readiness_checks %}
+                                <li class="{% if ready %}is-ready{% else %}needs-attention{% endif %}"><span aria-hidden="true">{% if ready %}&#10003;{% else %}!{% endif %}</span>{{ label }}{% if not ready %} - needs attention{% endif %}</li>
+                            {% endfor %}
+                        </ul>
+                        <div class="interview-actions">
+                            {% if upcoming_session %}
+                                <a class="interview-primary-action" href="{% url 'calling:candidate_session_detail' upcoming_session.id %}">View interview</a>
+                            {% else %}
+                                <a class="interview-primary-action" href="{% url 'calling:candidate_session_list' %}">View interview</a>
+                            {% endif %}
+                            <a class="interview-secondary-action" href="{% url 'interviews:reschedule_request' upcoming_schedule.id %}">Request reschedule</a>
+                        </div>
+                    </section>
+                {% else %}
+                    <section class="upcoming-interview-panel interview-empty-state" aria-labelledby="upcoming-interview-heading">
+                        <h2 id="upcoming-interview-heading">Upcoming AI-assisted interview</h2>
+                        <p>No confirmed upcoming interview is currently available. Invitation and schedule updates will appear here when they are authorized.</p>
+                    </section>
+                {% endif %}
+
+                <section class="interview-preparation-panel" aria-labelledby="preparation-heading">
+                    <h2 id="preparation-heading">Before your interview</h2>
+                    <ul>
+                        <li>Review the job description.</li>
+                        <li>Find a quiet place with a reliable internet connection.</li>
+                        <li>Be ready to answer questions about your skills and experience.</li>
+                    </ul>
+                    <p>HireFlow AI supports the interview workflow. Authorized recruiters remain responsible for final hiring decisions.</p>
+                </section>
+
+                <aside id="interview-help" class="interview-help-note">Need help with an interview invitation? Use the application details page to review its current status and available actions.</aside>
+            </main>
+        </div>
+    </div>
+</body>
+</html>

@@ -50,7 +50,7 @@ from calling.services import (
 )
 from candidates.models import CandidateProfile, Resume
 from config.asgi import application as asgi_application
-from interviews.models import InterviewSchedule
+from interviews.models import InterviewRescheduleRequest, InterviewSchedule
 from recruitment.models import (
     Company,
     InterviewQuestion,
@@ -629,6 +629,170 @@ def test_recruiter_status_view_is_company_scoped_and_hides_answers(call_data):
     )
     client.force_login(other_recruiter)
     assert client.get(url).status_code == 404
+
+
+def test_recruiter_interview_management_enforces_screen_authorization(
+    client, call_data
+):
+    url = reverse("calling:recruiter_session_list")
+    assert client.get(url).status_code == 302
+
+    client.force_login(call_data["candidate_user"])
+    assert client.get(url).status_code == 403
+
+    client.force_login(call_data["admin"])
+    assert client.get(url).status_code == 403
+
+    recruiter = call_data["recruiter_user"].recruiter_profile
+    recruiter.is_verified = False
+    recruiter.save(update_fields=("is_verified",))
+    client.force_login(call_data["recruiter_user"])
+    assert client.get(url).status_code == 403
+
+    recruiter.is_verified = True
+    recruiter.can_review_candidates = False
+    recruiter.save(update_fields=("is_verified", "can_review_candidates"))
+    assert client.get(url).status_code == 403
+
+    recruiter.can_review_candidates = True
+    recruiter.save(update_fields=("can_review_candidates",))
+    call_data["company"].is_active = False
+    call_data["company"].save(update_fields=("is_active",))
+    assert client.get(url).status_code == 403
+
+
+def test_recruiter_interview_management_has_safe_empty_state(client):
+    company = Company.objects.create(name="Empty Interview Company")
+    recruiter_user = User.objects.create_user(
+        email="empty-interview-recruiter@example.com",
+        password="TestingOnly!9384",
+        role=User.Role.RECRUITER,
+    )
+    RecruiterProfile.objects.create(
+        user=recruiter_user,
+        company=company,
+        is_verified=True,
+        can_review_candidates=True,
+    )
+    client.force_login(recruiter_user)
+
+    response = client.get(reverse("calling:recruiter_session_list"))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "No upcoming interviews" in content
+    assert "No reschedule requests require review." in content
+    assert content.count(">00<") == 3
+
+
+def test_recruiter_interview_management_is_company_scoped_and_safe(
+    client, call_data
+):
+    call_data["candidate_user"].first_name = "Ayesha"
+    call_data["candidate_user"].last_name = "Khan"
+    call_data["candidate_user"].save(update_fields=("first_name", "last_name"))
+    call_data["schedule"].access_token_hash = "b" * 64
+    call_data["schedule"].invitation_delivery_status = (
+        InterviewSchedule.DeliveryStatus.SENT
+    )
+    call_data["schedule"].save(
+        update_fields=("access_token_hash", "invitation_delivery_status")
+    )
+    session = _create(call_data)
+    reschedule = InterviewRescheduleRequest.objects.create(
+        schedule=call_data["schedule"],
+        requested_by=call_data["candidate_user"],
+        proposed_start=timezone.now() + timezone.timedelta(days=2),
+        proposed_end=timezone.now() + timezone.timedelta(days=2, hours=1),
+        timezone="Asia/Karachi",
+    )
+
+    other_company = Company.objects.create(name="Private Interview Company")
+    other_recruiter_user = User.objects.create_user(
+        email="private-interview-recruiter@example.com",
+        password="TestingOnly!9384",
+        role=User.Role.RECRUITER,
+    )
+    other_recruiter = RecruiterProfile.objects.create(
+        user=other_recruiter_user,
+        company=other_company,
+        is_verified=True,
+        can_review_candidates=True,
+    )
+    other_job = JobPosting.objects.create(
+        company=other_company,
+        created_by=other_recruiter,
+        title="Private Company Role",
+        reference_code="PRIVATE-INTERVIEW-ROLE",
+        description="Synthetic private role",
+        status=JobPosting.Status.OPEN,
+    )
+    other_candidate_user = User.objects.create_user(
+        email="private-interview-candidate@example.com",
+        password="TestingOnly!9384",
+        first_name="Private",
+        last_name="Candidate",
+    )
+    other_application = JobApplication.objects.create(
+        job=other_job,
+        candidate=other_candidate_user.candidate_profile,
+    )
+    other_start = timezone.now() + timezone.timedelta(days=3)
+    other_schedule = InterviewSchedule.objects.create(
+        application=other_application,
+        scheduled_by=other_recruiter_user,
+        scheduled_start=other_start,
+        scheduled_end=other_start + timezone.timedelta(hours=1),
+        status=InterviewSchedule.Status.CONFIRMED,
+        confirmed_at=timezone.now(),
+    )
+    client.force_login(call_data["recruiter_user"])
+    url = reverse("calling:recruiter_session_list")
+
+    response = client.get(url, {"schedule": call_data["schedule"].pk})
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Ayesha Khan" in content
+    assert call_data["application"].job.title in content
+    assert "Candidate email: Verified" in content
+    assert "AI processing consent: Active" in content
+    assert "AI interview consent: Active" in content
+    assert "Invitation delivered and candidate confirmation received." in content
+    assert reverse("calling:recruiter_session_detail", args=(session.pk,)) in content
+    assert reverse(
+        "interviews:schedule_cancel", args=(call_data["schedule"].pk,)
+    ) in content
+    assert reverse("interviews:reschedule_review", args=(reschedule.pk,)) in content
+    assert "Reschedule unavailable" in content
+    assert "Private Candidate" not in content
+    assert "Private Company Role" not in content
+    assert call_data["candidate_user"].email not in content
+    assert call_data["schedule"].access_token_hash not in content
+    assert call_data["application"].resume.original_filename not in content
+    assert client.get(url, {"schedule": other_schedule.pk}).status_code == 404
+
+
+def test_recruiter_interview_management_shows_only_supported_pending_actions(
+    client, call_data
+):
+    call_data["schedule"].status = InterviewSchedule.Status.PENDING
+    call_data["schedule"].confirmed_at = None
+    call_data["schedule"].save(update_fields=("status", "confirmed_at"))
+    client.force_login(call_data["recruiter_user"])
+
+    response = client.get(reverse("calling:recruiter_session_list"))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Awaiting confirmation" in content
+    assert "Interview status unavailable" in content
+    assert reverse(
+        "interviews:invitation_resend", args=(call_data["schedule"].pk,)
+    ) in content
+    assert reverse(
+        "interviews:schedule_cancel", args=(call_data["schedule"].pk,)
+    ) in content
 
 
 def _websocket_headers(user=None):

@@ -1,52 +1,113 @@
-﻿{% extends "base.html" %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Securely sign in to your HireFlow AI workspace.">
+    <title>Log in — HireFlow AI</title>
+    <link rel="stylesheet" href="{% static 'accounts/css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'accounts/css/login.css' %}">
+    <script defer src="{% static 'accounts/js/login.js' %}"></script>
+</head>
+<body class="login-page">
+    <a class="login-skip-link" href="#login-form">Skip to login form</a>
 
-{% block title %}Log In{% endblock %}
+    <main class="login-layout">
+        <section class="login-brand-panel" aria-labelledby="brand-message">
+            <a class="login-brand" href="{% url 'accounts:home' %}" aria-label="HireFlow AI home">
+                <span>HireFlow</span> <strong>AI</strong>
+            </a>
+            <span class="login-brand-rule" aria-hidden="true"></span>
 
-{% block content %}
-<section class="auth-card">
-    <div class="auth-heading">
-        <p class="eyebrow">Secure access</p>
-        <h1>Welcome back</h1>
-        <p>Log in using your registered email address.</p>
-    </div>
-
-    <form method="post" novalidate>
-        {% csrf_token %}
-
-        {% if form.non_field_errors %}
-            <div class="form-errors">
-                {% for error in form.non_field_errors %}
-                    <p>{{ error }}</p>
-                {% endfor %}
+            <div class="login-brand-copy">
+                <p class="login-eyebrow">Structured hiring platform</p>
+                <h1 id="brand-message">Your next opportunity<br>starts here.</h1>
+                <p>Access your secure candidate, recruiter, or administrator workspace.</p>
             </div>
-        {% endif %}
 
-        {% for field in form %}
-            <div class="form-group">
-                <label for="{{ field.id_for_label }}">
-                    {{ field.label }}
-                </label>
-
-                {{ field }}
-
-                {% for error in field.errors %}
-                    <p class="field-error">{{ error }}</p>
-                {% endfor %}
+            <div class="login-graphic" aria-hidden="true">
+                <span class="graphic-line"></span>
+                <span class="graphic-connector"></span>
+                <span class="graphic-endpoint"></span>
             </div>
-        {% endfor %}
+            <p class="login-brand-note">A more organized way to connect people and opportunity.</p>
+        </section>
 
-        {% if next %}
-            <input type="hidden" name="next" value="{{ next }}">
-        {% endif %}
+        <section class="login-surface" aria-labelledby="login-title">
+            <div class="login-card">
+                <div class="login-heading">
+                    <h2 id="login-title">Welcome back</h2>
+                    <p>Sign in to continue to HireFlow AI.</p>
+                </div>
 
-        <button type="submit" class="button button-primary button-full">
-            Log in
-        </button>
-    </form>
+                {% if messages %}
+                    <div class="login-messages" aria-live="polite">
+                        {% for message in messages %}
+                            <p class="login-message {{ message.tags }}">{{ message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
 
-    <p class="auth-footer">
-        Need a candidate account?
-        <a href="{% url 'accounts:signup' %}">Sign up</a>
-    </p>
-</section>
-{% endblock %}
+                <form id="login-form" method="post" novalidate>
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="login-form-errors" role="alert">
+                            {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="login-field">
+                        <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+                        {{ form.username }}
+                        {% for error in form.username.errors %}
+                            <p class="login-field-error" role="alert">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    <div class="login-field">
+                        <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+                        <div class="password-field-wrap">
+                            {{ form.password }}
+                            <button
+                                class="password-toggle"
+                                type="button"
+                                aria-label="Show password"
+                                aria-pressed="false"
+                            >
+                                <span aria-hidden="true">◉</span>
+                            </button>
+                        </div>
+                        {% for error in form.password.errors %}
+                            <p class="login-field-error" role="alert">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    <p class="password-reset-note" aria-disabled="true" title="Password reset is not yet available">
+                        Forgot password?
+                    </p>
+
+                    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+
+                    <button type="submit" class="login-submit">Log in</button>
+                </form>
+
+                <p class="shared-login-note">
+                    Candidates, recruiters, and administrators use the same secure login.
+                </p>
+                <hr>
+                <p class="login-registration">
+                    <span>New candidate?</span>
+                    <a href="{% url 'accounts:signup' %}">Create an account</a>
+                </p>
+            </div>
+
+            <p class="login-security-note">
+                <span aria-hidden="true">🔒</span>
+                Your account is protected with secure sign-in controls.
+            </p>
+        </section>
+    </main>
+</body>
+</html>

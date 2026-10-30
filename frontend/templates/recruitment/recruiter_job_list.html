@@ -1,0 +1,173 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Manage company-scoped job postings in HireFlow AI.">
+    <title>Manage Jobs — HireFlow AI</title>
+    <link rel="stylesheet" href="{% static 'accounts/css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'accounts/css/recruiter-dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'recruitment/css/manage-jobs.css' %}">
+</head>
+<body class="recruiter-dashboard-page manage-jobs-page">
+    <a class="skip-link" href="#manage-jobs-main">Skip to job management</a>
+    <div class="recruiter-shell">
+        <aside class="recruiter-sidebar" aria-label="Recruiter navigation">
+            <div class="recruiter-brand-row">
+                <a class="recruiter-brand" href="{% url 'accounts:recruiter_dashboard' %}" aria-label="HireFlow AI recruiter dashboard">HireFlow <strong>AI</strong></a>
+                <details class="recruiter-mobile-menu">
+                    <summary>Menu</summary>
+                    <nav aria-label="Recruiter mobile navigation">
+                        <a href="{% url 'accounts:recruiter_dashboard' %}">Dashboard</a>
+                        <a aria-current="page" href="{% url 'recruitment:job_list' %}">Manage Jobs</a>
+                        {% if recruiter.can_review_candidates %}
+                            <a href="{% url 'recruitment:application_list' %}">Applications</a>
+                            <a href="{% url 'calling:recruiter_session_list' %}">Interviews</a>
+                        {% endif %}
+                        <span>Company Profile — unavailable</span>
+                    </nav>
+                </details>
+            </div>
+
+            <nav class="recruiter-nav" aria-label="Recruiter primary navigation">
+                <a href="{% url 'accounts:recruiter_dashboard' %}"><span aria-hidden="true">▦</span> Dashboard</a>
+                <a class="is-active" aria-current="page" href="{% url 'recruitment:job_list' %}"><span aria-hidden="true">▤</span> Manage Jobs</a>
+                {% if recruiter.can_review_candidates %}
+                    <a href="{% url 'recruitment:application_list' %}"><span aria-hidden="true">◎</span> Applications</a>
+                    <a href="{% url 'calling:recruiter_session_list' %}"><span aria-hidden="true">□</span> Interviews</a>
+                {% else %}
+                    <span class="nav-disabled" aria-disabled="true"><span aria-hidden="true">◎</span> Applications</span>
+                    <span class="nav-disabled" aria-disabled="true"><span aria-hidden="true">□</span> Interviews</span>
+                {% endif %}
+                <span class="nav-disabled" aria-disabled="true" title="Company profile management is not available yet"><span aria-hidden="true">◇</span> Company Profile</span>
+            </nav>
+
+            <div class="recruiter-sidebar-footer">
+                <a class="recruiter-help" href="#job-writing-help"><span aria-hidden="true">?</span> Help &amp; Support</a>
+                <div class="recruiter-profile-card">
+                    <span class="recruiter-avatar" aria-hidden="true">{{ initials }}</span>
+                    <span>
+                        <strong>{{ display_name }}</strong>
+                        <small>{{ recruiter.job_title|default:"Recruiter" }} · {{ recruiter.company.name }}</small>
+                    </span>
+                </div>
+                <form method="post" action="{% url 'accounts:logout' %}">
+                    {% csrf_token %}
+                    <button class="recruiter-logout" type="submit"><span aria-hidden="true">↪</span> Log out</button>
+                </form>
+            </div>
+        </aside>
+
+        <div class="recruiter-workspace">
+            <header class="recruiter-header">
+                <div>
+                    <h1>Manage jobs</h1>
+                    <p>Create, publish, and manage roles for {{ recruiter.company.name }}.</p>
+                </div>
+                <div class="recruiter-header-actions">
+                    <a class="recruiter-button recruiter-button-primary" href="{% url 'recruitment:job_create' %}">Create new job</a>
+                    <span class="header-notification" aria-label="No new notifications">♧</span>
+                    <span class="recruiter-avatar recruiter-avatar-light" aria-hidden="true">{{ initials }}</span>
+                </div>
+            </header>
+
+            <main id="manage-jobs-main" class="manage-jobs-main">
+                {% if messages %}
+                    <div class="manage-jobs-messages" aria-live="polite">
+                        {% for message in messages %}<p class="manage-jobs-message {{ message.tags }}">{{ message }}</p>{% endfor %}
+                    </div>
+                {% endif %}
+
+                <section class="manage-job-controls" aria-labelledby="job-controls-heading">
+                    <h2 id="job-controls-heading" class="visually-hidden">Job search and filters</h2>
+                    <div class="manage-control-grid">
+                        <label class="manage-search-control">
+                            <span class="visually-hidden">Search jobs</span>
+                            <input type="search" placeholder="Search jobs" disabled aria-describedby="job-filter-note">
+                        </label>
+                        <label>
+                            <span class="visually-hidden">Filter by status</span>
+                            <select disabled aria-describedby="job-filter-note"><option>All statuses</option></select>
+                        </label>
+                        <label>
+                            <span class="visually-hidden">Filter by department</span>
+                            <select disabled aria-describedby="job-filter-note"><option>All departments</option></select>
+                        </label>
+                        <button type="button" disabled>Clear filters</button>
+                    </div>
+                    <p id="job-filter-note" class="manage-control-note">Search, filtering, sorting, and department data are not available in the current job-management backend.</p>
+                </section>
+
+                <section class="job-summary-grid" aria-label="Job status summary">
+                    <article><p>Published</p><strong>{{ published_job_count|stringformat:"02d" }}</strong></article>
+                    <article><p>Drafts</p><strong>{{ draft_job_count|stringformat:"02d" }}</strong></article>
+                    <article><p>Closed</p><strong>{{ closed_job_count|stringformat:"02d" }}</strong></article>
+                </section>
+
+                <section class="managed-jobs-panel" aria-labelledby="all-jobs-heading">
+                    <h2 id="all-jobs-heading">All jobs</h2>
+                    <div class="managed-jobs-table-wrap" tabindex="0" role="region" aria-label="Company jobs table">
+                        <table class="managed-jobs-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Job title</th>
+                                    <th scope="col">Department</th>
+                                    <th scope="col">Applications</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Last updated</th>
+                                    <th scope="col">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for job in jobs %}
+                                    <tr>
+                                        <th scope="row">{{ job.title }}</th>
+                                        <td><span class="not-available">Not specified</span></td>
+                                        <td>{{ job.applicant_count|stringformat:"02d" }}</td>
+                                        <td><span class="managed-job-status status-{{ job.status }}">{{ job.get_status_display }}</span></td>
+                                        <td>{{ job.updated_at|date:"d M Y" }}</td>
+                                        <td>
+                                            <div class="managed-job-actions">
+                                                <a href="{% url 'recruitment:job_edit' job.id %}">Manage</a>
+                                                {% if job.status == "draft" %}
+                                                    <form method="post" action="{% url 'recruitment:job_state' job.id %}">{% csrf_token %}<button name="status" value="open" type="submit">Publish</button></form>
+                                                {% elif job.status == "open" %}
+                                                    <form method="post" action="{% url 'recruitment:job_state' job.id %}">{% csrf_token %}<button name="status" value="closed" type="submit">Close</button></form>
+                                                {% elif job.status == "paused" %}
+                                                    <form method="post" action="{% url 'recruitment:job_state' job.id %}">{% csrf_token %}<button name="status" value="open" type="submit">Reopen</button></form>
+                                                    <form method="post" action="{% url 'recruitment:job_state' job.id %}">{% csrf_token %}<button name="status" value="closed" type="submit">Close</button></form>
+                                                {% elif job.status == "closed" %}
+                                                    <form method="post" action="{% url 'recruitment:job_state' job.id %}">{% csrf_token %}<button name="status" value="open" type="submit">Reopen</button></form>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr class="managed-jobs-empty-row">
+                                        <td colspan="6">
+                                            <strong>No jobs have been created yet</strong>
+                                            <span>Create a draft job when your company is ready to recruit.</span>
+                                            <a class="recruiter-button recruiter-button-primary" href="{% url 'recruitment:job_create' %}">Create new job</a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="job-writing-help" class="job-writing-card" aria-labelledby="job-writing-heading">
+                    <div>
+                        <h2 id="job-writing-heading">Create stronger job posts</h2>
+                        <p>Add clear responsibilities, required skills, approved interview questions, and FAQs to help candidates understand the role.</p>
+                    </div>
+                    <a class="recruiter-button recruiter-button-primary" href="{% url 'recruitment:job_create' %}">Create new job</a>
+                </section>
+
+                <aside class="job-publishing-note">Only published jobs are visible to eligible candidates.</aside>
+            </main>
+        </div>
+    </div>
+</body>
+</html>

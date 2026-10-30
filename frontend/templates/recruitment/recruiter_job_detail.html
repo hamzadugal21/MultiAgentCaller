@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}{{ job.title }}{% endblock %}
+
+{% block content %}
+<article>
+    <h1>{{ job.title }}</h1>
+    <p>{{ job.company.name }}</p>
+    <p>{{ job.description }}</p>
+    <h2>Required skills</h2>
+    <ul>{% for item in job.skill_requirements.all %}<li>{{ item.skill.name }}</li>{% empty %}<li>No skills listed.</li>{% endfor %}</ul>
+    <h2>Frequently asked questions</h2>
+    {% for faq in job.faqs.all %}{% if faq.is_active %}<h3>{{ faq.question }}</h3><p>{{ faq.answer }}</p>{% endif %}{% endfor %}
+    <p><a href="{% url 'recruitment:job_edit' job.id %}">Edit job</a></p>
+</article>
+{% endblock %}

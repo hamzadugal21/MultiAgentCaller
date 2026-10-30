@@ -1,11 +1,174 @@
-{% extends "base.html" %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Apply securely for {{ job.title }} at {{ job.company.name }}.">
+    <title>Apply for {{ job.title }} - HireFlow AI</title>
+    <link rel="stylesheet" href="{% static 'accounts/css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'accounts/css/candidate-dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'recruitment/css/application-form.css' %}">
+</head>
+<body class="candidate-dashboard-page candidate-application-page">
+    <a class="skip-link" href="#application-main">Skip to application form</a>
 
-{% block title %}Apply for {{ job.title }}{% endblock %}
+    <div class="candidate-shell">
+        <aside class="candidate-sidebar" aria-label="Candidate navigation">
+            <div class="sidebar-brand-row">
+                <a class="sidebar-brand" href="{% url 'accounts:candidate_dashboard' %}" aria-label="HireFlow AI candidate dashboard">HireFlow <strong>AI</strong></a>
+                <details class="candidate-mobile-menu">
+                    <summary>Menu</summary>
+                    <nav aria-label="Candidate mobile navigation">
+                        <a href="{% url 'accounts:candidate_dashboard' %}">Dashboard</a>
+                        <a href="{% url 'candidates:profile_edit' %}">My Profile</a>
+                        <a href="{% url 'candidates:resume_list' %}">My Resume</a>
+                        <a aria-current="page" href="{% url 'recruitment:job_list' %}">Browse Jobs</a>
+                        <a href="{% url 'recruitment:application_list' %}">My Applications</a>
+                        <a href="{% url 'calling:candidate_session_list' %}">Interviews</a>
+                    </nav>
+                </details>
+            </div>
 
-{% block content %}
-<section>
-    <h1>Apply for {{ job.title }}</h1>
-    <p>You must have a verified email address and an active processed resume.</p>
-    <form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">Submit application</button></form>
-</section>
-{% endblock %}
+            <nav class="sidebar-nav" aria-label="Candidate primary navigation">
+                <a href="{% url 'accounts:candidate_dashboard' %}"><span aria-hidden="true">D</span> Dashboard</a>
+                <a href="{% url 'candidates:profile_edit' %}"><span aria-hidden="true">P</span> My Profile</a>
+                <a href="{% url 'candidates:resume_list' %}"><span aria-hidden="true">R</span> My Resume</a>
+                <a class="is-active" aria-current="page" href="{% url 'recruitment:job_list' %}"><span aria-hidden="true">J</span> Browse Jobs</a>
+                <a href="{% url 'recruitment:application_list' %}"><span aria-hidden="true">A</span> My Applications</a>
+                <a href="{% url 'calling:candidate_session_list' %}"><span aria-hidden="true">I</span> Interviews</a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a class="sidebar-help" href="#privacy-note"><span aria-hidden="true">?</span> Help &amp; Support</a>
+                <div class="sidebar-account">
+                    <span class="candidate-avatar" aria-hidden="true">{{ initials }}</span>
+                    <span><strong>{{ display_name }}</strong><small>Candidate</small></span>
+                </div>
+                <form method="post" action="{% url 'accounts:logout' %}">
+                    {% csrf_token %}
+                    <button class="sidebar-logout" type="submit"><span aria-hidden="true">X</span> Log out</button>
+                </form>
+            </div>
+        </aside>
+
+        <div class="candidate-workspace">
+            <header class="application-header">
+                <nav aria-label="Breadcrumb">
+                    <a href="{% url 'recruitment:job_list' %}">Browse Jobs</a>
+                    <span aria-hidden="true">/</span>
+                    <a href="{% url 'recruitment:job_detail' job.id %}">{{ job.title }}</a>
+                    <span aria-hidden="true">/</span>
+                    <span aria-current="page">Apply</span>
+                </nav>
+                <div class="header-account" aria-label="Signed in as {{ display_name }}">
+                    <span class="notification-mark" aria-label="No new notifications">N</span>
+                    <span class="candidate-avatar candidate-avatar-light" aria-hidden="true">{{ initials }}</span>
+                </div>
+            </header>
+
+            <main id="application-main" class="application-main">
+                <section class="application-title" aria-labelledby="application-heading">
+                    <span class="application-company-mark" aria-hidden="true">{{ job.company.name|slice:":2"|upper }}</span>
+                    <div>
+                        <p>Application for</p>
+                        <h1 id="application-heading">{{ job.title }}</h1>
+                        <span>{{ job.company.name }}{% if job.location %} - {{ job.location }}{% endif %}</span>
+                    </div>
+                </section>
+
+                {% if messages %}
+                    <div class="application-messages" aria-live="polite">
+                        {% for message in messages %}<p class="application-message">{{ message }}</p>{% endfor %}
+                    </div>
+                {% endif %}
+
+                <form class="application-panel" method="post" novalidate>
+                    {% csrf_token %}
+                    <header>
+                        <p class="application-step">Secure application</p>
+                        <h2>Apply for this role</h2>
+                        <p>Review your active resume and application preferences before submitting.</p>
+                    </header>
+
+                    {% if form.non_field_errors %}
+                        <div class="application-errors" role="alert">
+                            <strong>We could not submit your application.</strong>
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+
+                    <section class="application-section" aria-labelledby="resume-heading">
+                        <div class="section-heading-row">
+                            <div><span class="section-number" aria-hidden="true">1</span><h3 id="resume-heading">Select your resume</h3></div>
+                            <a href="{% url 'candidates:resume_list' %}">Manage resumes</a>
+                        </div>
+
+                        {% if eligible_resume %}
+                            <div class="selected-resume-card">
+                                <span class="resume-file-mark" aria-hidden="true">CV</span>
+                                <div>
+                                    <strong>{{ eligible_resume.original_filename }}</strong>
+                                    <span>Active resume - Ready to submit</span>
+                                    <small>Uploaded {{ eligible_resume.uploaded_at|date:"M j, Y" }}</small>
+                                </div>
+                                <span class="resume-ready">Ready</span>
+                            </div>
+                        {% else %}
+                            <div class="application-empty-state">
+                                <strong>No eligible resume is available.</strong>
+                                <p>Upload and successfully process a resume before applying.</p>
+                                <a href="{% url 'candidates:resume_list' %}">Go to My Resume</a>
+                            </div>
+                        {% endif %}
+
+                        <div class="application-field">
+                            <label for="{{ form.resume.id_for_label }}">Resume</label>
+                            {{ form.resume }}
+                            <p>Only your own active, successfully processed resume can be selected.</p>
+                            {% if form.resume.errors %}<div class="field-errors" role="alert">{{ form.resume.errors }}</div>{% endif %}
+                        </div>
+                    </section>
+
+                    <section class="application-section" aria-labelledby="note-heading">
+                        <div class="section-heading-row">
+                            <div><span class="section-number" aria-hidden="true">2</span><h3 id="note-heading">Add a cover note</h3></div>
+                            <span class="optional-label">Optional</span>
+                        </div>
+                        <div class="application-field">
+                            <label for="{{ form.cover_note.id_for_label }}">Cover note</label>
+                            {{ form.cover_note }}
+                            <p>Keep your note relevant to this application. Do not include passwords or sensitive account information.</p>
+                            {% if form.cover_note.errors %}<div class="field-errors" role="alert">{{ form.cover_note.errors }}</div>{% endif %}
+                        </div>
+                    </section>
+
+                    <section class="application-section" aria-labelledby="consent-heading">
+                        <div class="section-heading-row">
+                            <div><span class="section-number" aria-hidden="true">3</span><h3 id="consent-heading">AI interview consent</h3></div>
+                            <span class="optional-label">Optional now</span>
+                        </div>
+                        <label class="consent-control" for="{{ form.consent_to_ai_interview.id_for_label }}">
+                            {{ form.consent_to_ai_interview }}
+                            <span>
+                                <strong>I consent to AI-assisted interview processing for this application.</strong>
+                                <small>This consent is recorded as immutable history and can be revoked later. Current consent is required before an AI interview can be scheduled or attended.</small>
+                            </span>
+                        </label>
+                        {% if form.consent_to_ai_interview.errors %}<div class="field-errors" role="alert">{{ form.consent_to_ai_interview.errors }}</div>{% endif %}
+                    </section>
+
+                    {% if not request.user.email_verified %}<div class="application-warning" role="status">Your email must be verified before this application can be submitted.</div>{% endif %}
+
+                    <footer class="application-actions">
+                        <a class="application-cancel" href="{% url 'recruitment:job_detail' job.id %}">Back to job</a>
+                        <button class="application-submit" type="submit"{% if not eligible_resume %} disabled aria-disabled="true"{% endif %}>Submit application</button>
+                    </footer>
+
+                    <p id="privacy-note" class="application-privacy-note">Your application is visible only to authorized reviewers for this company. AI assistance does not make the final employment decision; an authorized person remains responsible for review.</p>
+                </form>
+            </main>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,31 +1,157 @@
-﻿{% extends "base.html" %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Your private, company-scoped HireFlow AI recruiter dashboard.">
+    <title>Recruiter Dashboard — HireFlow AI</title>
+    <link rel="stylesheet" href="{% static 'accounts/css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'accounts/css/recruiter-dashboard.css' %}">
+</head>
+<body class="recruiter-dashboard-page">
+    <a class="skip-link" href="#recruiter-main">Skip to dashboard content</a>
+    <div class="recruiter-shell">
+        <aside class="recruiter-sidebar" aria-label="Recruiter navigation">
+            <div class="recruiter-brand-row">
+                <a class="recruiter-brand" href="{% url 'accounts:recruiter_dashboard' %}" aria-label="HireFlow AI recruiter dashboard">HireFlow <strong>AI</strong></a>
+                <details class="recruiter-mobile-menu">
+                    <summary>Menu</summary>
+                    <nav aria-label="Recruiter mobile navigation">
+                        <a aria-current="page" href="{% url 'accounts:recruiter_dashboard' %}">Dashboard</a>
+                        {% if recruiter.can_manage_jobs %}<a href="{% url 'recruitment:job_list' %}">Manage Jobs</a>{% endif %}
+                        {% if recruiter.can_review_candidates %}
+                            <a href="{% url 'recruitment:application_list' %}">Applications</a>
+                            <a href="{% url 'calling:recruiter_session_list' %}">Interviews</a>
+                        {% endif %}
+                        <span>Company Profile — unavailable</span>
+                    </nav>
+                </details>
+            </div>
 
-{% block title %}Recruiter Dashboard{% endblock %}
+            <nav class="recruiter-nav" aria-label="Recruiter primary navigation">
+                <a class="is-active" aria-current="page" href="{% url 'accounts:recruiter_dashboard' %}"><span aria-hidden="true">▦</span> Dashboard</a>
+                {% if recruiter.can_manage_jobs %}
+                    <a href="{% url 'recruitment:job_list' %}"><span aria-hidden="true">▤</span> Manage Jobs</a>
+                {% else %}
+                    <span class="nav-disabled" aria-disabled="true"><span aria-hidden="true">▤</span> Manage Jobs</span>
+                {% endif %}
+                {% if recruiter.can_review_candidates %}
+                    <a href="{% url 'recruitment:application_list' %}"><span aria-hidden="true">◎</span> Applications</a>
+                    <a href="{% url 'calling:recruiter_session_list' %}"><span aria-hidden="true">□</span> Interviews</a>
+                {% else %}
+                    <span class="nav-disabled" aria-disabled="true"><span aria-hidden="true">◎</span> Applications</span>
+                    <span class="nav-disabled" aria-disabled="true"><span aria-hidden="true">□</span> Interviews</span>
+                {% endif %}
+                <span class="nav-disabled" aria-disabled="true" title="Company profile management is not available yet"><span aria-hidden="true">◇</span> Company Profile</span>
+            </nav>
 
-{% block content %}
-<section class="dashboard">
-    <p class="eyebrow">Recruiter dashboard</p>
-    <h1>Recruitment workspace</h1>
-    <p>Manage candidates, jobs and AI screening interviews.</p>
-    <p><a href="{% url 'recruitment:application_list' %}">Review company applications</a></p>
+            <div class="recruiter-sidebar-footer">
+                <a class="recruiter-help" href="#responsibility-note"><span aria-hidden="true">?</span> Help &amp; Support</a>
+                <div class="recruiter-profile-card">
+                    <span class="recruiter-avatar" aria-hidden="true">{{ initials }}</span>
+                    <span>
+                        <strong>{{ display_name }}</strong>
+                        <small>{{ recruiter.job_title|default:"Recruiter" }} · {{ recruiter.company.name }}</small>
+                    </span>
+                </div>
+                <form method="post" action="{% url 'accounts:logout' %}">
+                    {% csrf_token %}
+                    <button class="recruiter-logout" type="submit"><span aria-hidden="true">↪</span> Log out</button>
+                </form>
+            </div>
+        </aside>
 
-    <div class="dashboard-grid">
-        <article class="dashboard-card">
-            <h2>Candidates</h2>
-            <p>Review candidate profiles and screening results.</p>
-        </article>
+        <div class="recruiter-workspace">
+            <header class="recruiter-header">
+                <div>
+                    <h1>Good morning, {{ request.user.first_name|default:"Recruiter" }}</h1>
+                    <p>Here is what is happening with {{ recruiter.company.name }} recruitment.</p>
+                </div>
+                <div class="recruiter-header-actions">
+                    {% if recruiter.can_manage_jobs %}<a class="recruiter-button recruiter-button-primary" href="{% url 'recruitment:job_create' %}">+ Create new job</a>{% endif %}
+                    <span class="header-notification" aria-label="No new notifications">♢</span>
+                    <span class="recruiter-avatar recruiter-avatar-light" aria-hidden="true">{{ initials }}</span>
+                </div>
+            </header>
 
-        <article class="dashboard-card">
-            <h2>Job positions</h2>
-            <p>Create roles and define their interview requirements.</p>
-            <a href="{% url 'recruitment:job_list' %}">Manage jobs</a>
-        </article>
+            <main id="recruiter-main" class="recruiter-dashboard-main">
+                <section class="metric-grid" aria-label="Recruitment summary">
+                    <article class="metric-card" data-icon="J"><p>Active jobs</p><strong>{{ active_job_count|stringformat:"02d" }}</strong></article>
+                    <article class="metric-card" data-icon="A"><p>New applications</p><strong>{{ new_application_count|stringformat:"02d" }}</strong></article>
+                    <article class="metric-card" data-icon="I"><p>Interviews this week</p><strong>{{ interviews_this_week_count|stringformat:"02d" }}</strong></article>
+                    <article class="metric-card" data-icon="R"><p>Candidates awaiting review</p><strong>{{ awaiting_review_count|stringformat:"02d" }}</strong></article>
+                </section>
 
-        <article class="dashboard-card">
-            <h2>AI call sessions</h2>
-            <p>Schedule and monitor browser-based recruitment calls.</p>
-            <a href="{% url 'calling:recruiter_session_list' %}">View interview sessions</a>
-        </article>
+                <div class="dashboard-columns">
+                    <section class="recruiter-panel" aria-labelledby="recent-applications-heading">
+                        <div class="recruiter-panel-heading">
+                            <h2 id="recent-applications-heading">Recent applications</h2>
+                            {% if recruiter.can_review_candidates %}<a href="{% url 'recruitment:application_list' %}">View all applications</a>{% endif %}
+                        </div>
+                        <div class="dashboard-list">
+                            {% for entry in recent_application_entries %}
+                                <article class="application-item">
+                                    <div class="candidate-summary"><strong>{{ entry.candidate_name }}</strong><small>{{ entry.application.job.title }}</small></div>
+                                    <span class="status-badge {{ entry.status_class }}">{{ entry.display_status }}</span>
+                                    {% if recruiter.can_review_candidates %}<a class="row-link" href="{% url 'recruitment:application_detail' entry.application.id %}">Review</a>{% endif %}
+                                </article>
+                            {% empty %}
+                                <div class="dashboard-empty"><h3>No applications to review</h3><p>New company applications will appear here.</p></div>
+                            {% endfor %}
+                        </div>
+                    </section>
+
+                    <section class="recruiter-panel" aria-labelledby="upcoming-interviews-heading">
+                        <div class="recruiter-panel-heading">
+                            <h2 id="upcoming-interviews-heading">Upcoming interviews</h2>
+                            {% if recruiter.can_review_candidates %}<a href="{% url 'calling:recruiter_session_list' %}">Manage interviews</a>{% endif %}
+                        </div>
+                        <div class="dashboard-list">
+                            {% for entry in upcoming_interview_entries %}
+                                <article class="interview-item">
+                                    <div class="interview-summary"><strong>{{ entry.candidate_name }}</strong><small>{{ entry.schedule.application.job.title }}</small></div>
+                                    <span class="interview-time">{{ entry.local_start|date:"d M Y" }}<br>{{ entry.local_start|time:"g:i A" }} {{ entry.schedule.timezone }}</span>
+                                    <span class="status-badge {{ entry.schedule.status }}">{{ entry.schedule.get_status_display }}</span>
+                                </article>
+                            {% empty %}
+                                <div class="dashboard-empty"><h3>No upcoming interviews</h3><p>Authorized scheduled interviews will appear here.</p></div>
+                            {% endfor %}
+                        </div>
+                    </section>
+                </div>
+
+                <section class="recruiter-panel" aria-labelledby="active-jobs-heading">
+                    <div class="recruiter-panel-heading">
+                        <h2 id="active-jobs-heading">Published jobs</h2>
+                        {% if recruiter.can_manage_jobs %}<a href="{% url 'recruitment:job_list' %}">Manage jobs</a>{% endif %}
+                    </div>
+                    <div class="job-card-grid">
+                        {% for job in active_jobs %}
+                            <article class="job-card">
+                                <h3>{{ job.title }}</h3>
+                                <p>{{ job.applicant_count }} applicant{{ job.applicant_count|pluralize }}</p>
+                                <span class="status-badge open">Published</span>
+                                <div class="job-card-actions">
+                                    <a href="{% url 'recruitment:job_detail' job.id %}">View job</a>
+                                    {% if recruiter.can_manage_jobs %}<a href="{% url 'recruitment:job_edit' job.id %}">Manage job</a>{% endif %}
+                                </div>
+                            </article>
+                        {% empty %}
+                            <div class="dashboard-empty"><h3>No active jobs</h3><p>Open, unexpired company jobs will appear here.</p></div>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <section id="responsibility-note" class="responsibility-note" aria-labelledby="responsibility-heading">
+                    <span aria-hidden="true">i</span>
+                    <div>
+                        <h2 id="responsibility-heading">Responsible recruitment</h2>
+                        <p>AI may assist with structured interviews and review preparation. Authorized humans remain responsible for all consequential employment decisions.</p>
+                    </div>
+                </section>
+            </main>
+        </div>
     </div>
-</section>
-{% endblock %}
+</body>
+</html>

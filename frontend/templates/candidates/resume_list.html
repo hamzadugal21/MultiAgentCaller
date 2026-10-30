@@ -1,21 +1,176 @@
-{% extends "base.html" %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Manage your protected HireFlow AI résumé uploads.">
+    <title>My Résumé — HireFlow AI</title>
+    <link rel="stylesheet" href="{% static 'accounts/css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'accounts/css/candidate-dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'candidates/css/candidate-resume.css' %}">
+</head>
+<body class="candidate-dashboard-page candidate-resume-page">
+    <a class="skip-link" href="#resume-main">Skip to résumé content</a>
 
-{% block title %}Your resumes{% endblock %}
+    <div class="candidate-shell">
+        <aside class="candidate-sidebar" aria-label="Candidate navigation">
+            <div class="sidebar-brand-row">
+                <a class="sidebar-brand" href="{% url 'accounts:candidate_dashboard' %}" aria-label="HireFlow AI candidate dashboard">
+                    HireFlow <strong>AI</strong>
+                </a>
+                <details class="candidate-mobile-menu">
+                    <summary>Menu</summary>
+                    <nav aria-label="Candidate mobile navigation">
+                        <a href="{% url 'accounts:candidate_dashboard' %}">Dashboard</a>
+                        <a href="{% url 'candidates:profile_edit' %}">My Profile</a>
+                        <a aria-current="page" href="{% url 'candidates:resume_list' %}">My Résumé</a>
+                        <a href="{% url 'recruitment:job_list' %}">Browse Jobs</a>
+                        <a href="{% url 'recruitment:application_list' %}">My Applications</a>
+                        <a href="{% url 'calling:candidate_session_list' %}">Interviews</a>
+                    </nav>
+                </details>
+            </div>
 
-{% block content %}
-<section>
-    <h1>Your resumes</h1>
-    <p><a href="{% url 'candidates:resume_upload' %}">Upload a replacement resume</a></p>
-    <ul>
-        {% for resume in resumes %}
-            <li>
-                {{ resume.original_filename }} — {{ resume.get_processing_status_display }}
-                {% if resume.is_active %}(active){% endif %}
-                <a href="{% url 'candidates:resume_download' resume.id %}">Download</a>
-            </li>
-        {% empty %}
-            <li>No resume has been uploaded.</li>
-        {% endfor %}
-    </ul>
-</section>
-{% endblock %}
+            <nav class="sidebar-nav" aria-label="Candidate primary navigation">
+                <a href="{% url 'accounts:candidate_dashboard' %}"><span aria-hidden="true">▦</span> Dashboard</a>
+                <a href="{% url 'candidates:profile_edit' %}"><span aria-hidden="true">○</span> My Profile</a>
+                <a class="is-active" aria-current="page" href="{% url 'candidates:resume_list' %}">
+                    <span aria-hidden="true">▤</span> My Résumé
+                </a>
+                <a href="{% url 'recruitment:job_list' %}"><span aria-hidden="true">⌕</span> Browse Jobs</a>
+                <a href="{% url 'recruitment:application_list' %}"><span aria-hidden="true">☷</span> My Applications</a>
+                <a href="{% url 'calling:candidate_session_list' %}"><span aria-hidden="true">▣</span> Interviews</a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a class="sidebar-help" href="#resume-help"><span aria-hidden="true">?</span> Help &amp; Support</a>
+                <div class="sidebar-account">
+                    <span class="candidate-avatar" aria-hidden="true">{{ initials }}</span>
+                    <span><strong>{{ display_name }}</strong><small>Candidate</small></span>
+                </div>
+                <form method="post" action="{% url 'accounts:logout' %}">
+                    {% csrf_token %}
+                    <button class="sidebar-logout" type="submit"><span aria-hidden="true">↪</span> Log out</button>
+                </form>
+            </div>
+        </aside>
+
+        <div class="candidate-workspace">
+            <header class="dashboard-header">
+                <div>
+                    <h1>My Résumé</h1>
+                    <p>Keep an up-to-date résumé ready for your job applications.</p>
+                </div>
+                <div class="header-account" aria-label="Signed in as {{ display_name }}">
+                    <span class="notification-mark" aria-label="No new notifications">♧</span>
+                    <span class="candidate-avatar candidate-avatar-light" aria-hidden="true">{{ initials }}</span>
+                </div>
+            </header>
+
+            <main id="resume-main" class="candidate-resume-main">
+                {% if messages %}
+                    <div class="dashboard-messages" aria-live="polite">
+                        {% for message in messages %}
+                            <p class="dashboard-message {{ message.tags }}">{{ message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <section class="dashboard-panel active-resume-card" aria-labelledby="active-resume-heading">
+                    <h2 id="active-resume-heading">Active résumé</h2>
+                    {% if active_resume %}
+                        <div class="active-resume-row">
+                            <span class="resume-file-type" aria-hidden="true">{{ active_resume_file_type }}</span>
+                            <div class="resume-file-information">
+                                <h3>{{ active_resume.original_filename }}</h3>
+                                <p>Updated {{ active_resume.uploaded_at|date:"d M Y" }} <span aria-hidden="true">·</span> {{ active_resume.file_size|filesizeformat }}</p>
+                            </div>
+                            <span class="resume-status is-ready">Ready</span>
+                        </div>
+                        <p class="active-resume-note">This résumé is used for your active job applications.</p>
+                        <div class="resume-actions">
+                            <a class="dashboard-button dashboard-button-secondary" href="{% url 'candidates:resume_download' active_resume.id %}">Download</a>
+                            <a class="dashboard-button dashboard-button-secondary" href="#resume-upload">Replace résumé</a>
+                        </div>
+                    {% else %}
+                        <div class="resume-empty-state">
+                            <h3>No active résumé</h3>
+                            <p>Upload a PDF or DOCX file below to prepare a résumé for future applications.</p>
+                        </div>
+                    {% endif %}
+                </section>
+
+                <section id="resume-upload" class="dashboard-panel resume-upload-card" aria-labelledby="upload-heading">
+                    <h2 id="upload-heading">{% if active_resume %}Upload a new résumé{% else %}Upload your résumé{% endif %}</h2>
+                    <p>
+                        Upload a PDF or DOCX file up to 5 MB.
+                        {% if active_resume %}Your current résumé stays active until the new file is processed successfully.{% endif %}
+                    </p>
+                    <form method="post" action="{% url 'candidates:resume_upload' %}" enctype="multipart/form-data" class="resume-upload-form">
+                        {% csrf_token %}
+                        <div class="resume-drop-zone {% if upload_form.file.errors %}has-error{% endif %}">
+                            <label for="{{ upload_form.file.id_for_label }}">
+                                <span class="upload-icon-shell" aria-hidden="true">
+                                    <img src="{% static 'accounts/img/resume-upload.svg' %}" alt="" width="24" height="24">
+                                </span>
+                                <strong>Drag and drop your résumé here</strong>
+                                <small>PDF or DOCX, maximum 5 MB</small>
+                                <span class="dashboard-button dashboard-button-secondary">Choose file</span>
+                            </label>
+                            {{ upload_form.file }}
+                        </div>
+                        {% if upload_form.file.errors %}
+                            <div class="resume-upload-errors" role="alert">{{ upload_form.file.errors }}</div>
+                        {% endif %}
+                        {% if upload_form.non_field_errors %}
+                            <div class="resume-upload-errors" role="alert">{{ upload_form.non_field_errors }}</div>
+                        {% endif %}
+                        <button class="dashboard-button dashboard-button-primary" type="submit">Upload and process</button>
+                    </form>
+                </section>
+
+                <section class="dashboard-panel resume-process-card" aria-labelledby="process-heading">
+                    <h2 id="process-heading">How résumé updates work</h2>
+                    <ol class="resume-process-steps">
+                        <li><span>1</span><strong>Upload document</strong></li>
+                        <li><span>2</span><strong>We validate and process it</strong></li>
+                        <li><span>3</span><strong>Your new résumé becomes active after successful processing</strong></li>
+                    </ol>
+                    <p>Structural PDF/DOCX checks and bounded text extraction are used. These checks are not malware scanning.</p>
+                </section>
+
+                <section class="dashboard-panel previous-resumes-card" aria-labelledby="previous-heading">
+                    <h2 id="previous-heading">Previous uploads</h2>
+                    <div class="previous-resume-list">
+                        {% for resume in previous_resumes %}
+                            <article class="previous-resume-row">
+                                <div>
+                                    <h3>{{ resume.original_filename }}</h3>
+                                    <p>Uploaded {{ resume.uploaded_at|date:"d M Y" }}</p>
+                                </div>
+                                {% if resume.processing_status == "completed" %}
+                                    <span class="resume-status is-ready">Replaced</span>
+                                {% elif resume.processing_status == "failed" %}
+                                    <span class="resume-status is-failed">Processing failed</span>
+                                {% else %}
+                                    <span class="resume-status">{{ resume.get_processing_status_display }}</span>
+                                {% endif %}
+                            </article>
+                        {% empty %}
+                            <div class="resume-empty-state previous-empty-state">
+                                <h3>No previous uploads</h3>
+                                <p>Earlier résumé versions and safe processing statuses will appear here.</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <aside id="resume-help" class="resume-help-note">
+                    <strong>Privacy note:</strong> Résumés are protected and available only through authorized recruitment workflows and owner-protected downloads.
+                </aside>
+            </main>
+        </div>
+    </div>
+</body>
+</html>

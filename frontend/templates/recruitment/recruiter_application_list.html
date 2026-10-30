@@ -1,0 +1,246 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Review company-scoped job applications in HireFlow AI.">
+    <title>Applications — HireFlow AI</title>
+    <link rel="stylesheet" href="{% static 'accounts/css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'accounts/css/recruiter-dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'recruitment/css/recruiter-applications.css' %}">
+</head>
+<body class="recruiter-dashboard-page recruiter-applications-page">
+    <a class="skip-link" href="#recruiter-applications-main">Skip to applicants</a>
+    <div class="recruiter-shell">
+        <aside class="recruiter-sidebar" aria-label="Recruiter navigation">
+            <div class="recruiter-brand-row">
+                <a class="recruiter-brand" href="{% url 'accounts:recruiter_dashboard' %}" aria-label="HireFlow AI recruiter dashboard">HireFlow <strong>AI</strong></a>
+                <details class="recruiter-mobile-menu">
+                    <summary>Menu</summary>
+                    <nav aria-label="Recruiter mobile navigation">
+                        <a href="{% url 'accounts:recruiter_dashboard' %}">Dashboard</a>
+                        {% if recruiter.can_manage_jobs %}<a href="{% url 'recruitment:job_list' %}">Manage Jobs</a>{% endif %}
+                        <a aria-current="page" href="{% url 'recruitment:application_list' %}">Applications</a>
+                        <a href="{% url 'calling:recruiter_session_list' %}">Interviews</a>
+                        <span>Company Profile — unavailable</span>
+                    </nav>
+                </details>
+            </div>
+
+            <nav class="recruiter-nav" aria-label="Recruiter primary navigation">
+                <a href="{% url 'accounts:recruiter_dashboard' %}"><span aria-hidden="true">▦</span> Dashboard</a>
+                {% if recruiter.can_manage_jobs %}
+                    <a href="{% url 'recruitment:job_list' %}"><span aria-hidden="true">▤</span> Manage Jobs</a>
+                {% else %}
+                    <span class="nav-disabled" aria-disabled="true"><span aria-hidden="true">▤</span> Manage Jobs</span>
+                {% endif %}
+                <a class="is-active" aria-current="page" href="{% url 'recruitment:application_list' %}"><span aria-hidden="true">◎</span> Applications</a>
+                <a href="{% url 'calling:recruiter_session_list' %}"><span aria-hidden="true">□</span> Interviews</a>
+                <span class="nav-disabled" aria-disabled="true" title="Company profile management is not available yet"><span aria-hidden="true">◇</span> Company Profile</span>
+            </nav>
+
+            <div class="recruiter-sidebar-footer">
+                <a class="recruiter-help" href="#application-privacy-note"><span aria-hidden="true">?</span> Help &amp; Support</a>
+                <div class="recruiter-profile-card">
+                    <span class="recruiter-avatar" aria-hidden="true">{{ initials }}</span>
+                    <span>
+                        <strong>{{ display_name }}</strong>
+                        <small>{{ recruiter.job_title|default:"Recruiter" }} · {{ recruiter.company.name }}</small>
+                    </span>
+                </div>
+                <form method="post" action="{% url 'accounts:logout' %}">
+                    {% csrf_token %}
+                    <button class="recruiter-logout" type="submit"><span aria-hidden="true">↪</span> Log out</button>
+                </form>
+            </div>
+        </aside>
+
+        <div class="recruiter-workspace">
+            <header class="recruiter-header">
+                <div>
+                    <h1>Applications</h1>
+                    <p>Review candidates for your company’s job openings.</p>
+                </div>
+                <div class="recruiter-header-actions">
+                    <span class="header-notification" aria-label="No new notifications">♧</span>
+                    <span class="recruiter-avatar recruiter-avatar-light" aria-hidden="true">{{ initials }}</span>
+                </div>
+            </header>
+
+            <main id="recruiter-applications-main" class="recruiter-applications-main">
+                <section class="application-filter-panel" aria-labelledby="application-filters-heading">
+                    <h2 id="application-filters-heading" class="visually-hidden">Candidate search and filters</h2>
+                    <div class="application-filter-grid">
+                        <label>
+                            <span class="visually-hidden">Search candidates</span>
+                            <input type="search" placeholder="Search candidates" disabled aria-describedby="application-filter-note">
+                        </label>
+                        <label>
+                            <span class="visually-hidden">Filter by job</span>
+                            <select disabled aria-describedby="application-filter-note"><option>All jobs</option></select>
+                        </label>
+                        <label>
+                            <span class="visually-hidden">Filter by status</span>
+                            <select disabled aria-describedby="application-filter-note"><option>All statuses</option></select>
+                        </label>
+                        <button type="button" disabled>Clear filters</button>
+                    </div>
+                    <p id="application-filter-note">Candidate search and filtering are not available in the current backend.</p>
+                </section>
+
+                <div class="application-review-workspace{% if selected_application %} has-selection{% endif %}">
+                <section class="applicant-list-panel" aria-labelledby="applicant-count-heading">
+                    <h2 id="applicant-count-heading">{{ application_entries|length }} applicant{{ application_entries|length|pluralize }}</h2>
+                    <div class="recruiter-applicant-list">
+                        {% for entry in application_entries %}
+                            <article class="recruiter-applicant-row{% if selected_application and entry.application.id == selected_application.id %} is-selected{% endif %}">
+                                <span class="applicant-initials" aria-hidden="true">{{ entry.candidate_initials }}</span>
+                                <div class="applicant-row-body">
+                                    <h3>{{ entry.candidate_name }}</h3>
+                                    <p>{{ entry.application.job.title }}</p>
+                                    <small>Applied: {{ entry.application.applied_at|date:"d M Y" }}</small>
+                                    <span class="applicant-status status-{{ entry.status_class }}">{{ entry.application.get_status_display }}</span>
+                                </div>
+                                <a class="applicant-review-link" href="{% url 'recruitment:application_detail' entry.application.id %}"{% if selected_application and entry.application.id == selected_application.id %} aria-current="page"{% endif %} aria-label="Review {{ entry.candidate_name }}’s application for {{ entry.application.job.title }}">
+                                    <span>Review</span><b aria-hidden="true">›</b>
+                                </a>
+                            </article>
+                        {% empty %}
+                            <div class="recruiter-applications-empty">
+                                <span aria-hidden="true">◎</span>
+                                <h3>No applications are available for review</h3>
+                                <p>Applications for your company’s jobs will appear here.</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                {% if selected_application %}
+                    <article class="application-detail-panel" aria-labelledby="selected-applicant-heading">
+                        <header class="selected-applicant-header">
+                            <span class="selected-applicant-avatar" aria-hidden="true">{{ candidate_initials }}</span>
+                            <div>
+                                <h2 id="selected-applicant-heading">{{ candidate_name }}</h2>
+                                <p>Applied for {{ application.job.title }}</p>
+                            </div>
+                            <span class="applicant-status status-{{ application.status }}">{{ application.get_status_display }}</span>
+                        </header>
+
+                        <section class="application-detail-card" aria-labelledby="candidate-summary-heading">
+                            <h3 id="candidate-summary-heading">Candidate summary</h3>
+                            <dl class="candidate-summary-grid">
+                                <div>
+                                    <dt>Location</dt>
+                                    <dd>{% if application.candidate.city %}{{ application.candidate.city }}, {{ application.candidate.country_code }}{% else %}Not provided{% endif %}</dd>
+                                </div>
+                                <div>
+                                    <dt>Experience</dt>
+                                    <dd>{{ application.candidate.years_of_experience }} year{{ application.candidate.years_of_experience|pluralize }}</dd>
+                                </div>
+                            </dl>
+                            <div class="candidate-skills">
+                                <strong>Skills</strong>
+                                <div>
+                                    {% for candidate_skill in candidate_skills %}
+                                        <span>{{ candidate_skill.skill.name }}</span>
+                                    {% empty %}
+                                        <small>No skills have been recorded.</small>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="candidate-readiness-badges" aria-label="Candidate readiness">
+                                <span class="{% if application.candidate.user.email_verified %}is-ready{% else %}is-unavailable{% endif %}">Email {% if application.candidate.user.email_verified %}verified{% else %}not verified{% endif %}</span>
+                                <span class="{% if general_consent_active %}is-ready{% else %}is-unavailable{% endif %}">AI processing consent {% if general_consent_active %}active{% else %}inactive{% endif %}</span>
+                                <span class="{% if interview_consent_active %}is-ready{% else %}is-unavailable{% endif %}">AI interview consent {% if interview_consent_active %}active{% else %}inactive{% endif %}</span>
+                            </div>
+                        </section>
+
+                        <section class="application-detail-card resume-readiness-card" aria-labelledby="resume-readiness-heading">
+                            <div>
+                                <h3 id="resume-readiness-heading">Résumé</h3>
+                                {% if application.resume %}
+                                    <strong>{{ application.resume.original_filename }}</strong>
+                                    <span class="{% if resume_ready %}is-ready{% else %}is-unavailable{% endif %}">{{ application.resume.get_processing_status_display }}</span>
+                                {% else %}
+                                    <p>No résumé is attached to this application.</p>
+                                {% endif %}
+                            </div>
+                            <button class="detail-secondary-action" type="button" disabled title="Recruiter résumé viewing is not available in the current backend">View résumé unavailable</button>
+                        </section>
+
+                        <section class="application-detail-card" aria-labelledby="application-details-heading">
+                            <h3 id="application-details-heading">Application details</h3>
+                            <dl class="application-metadata-grid">
+                                <div><dt>Applied</dt><dd>{{ application.applied_at|date:"d M Y" }}</dd></div>
+                                <div><dt>Status</dt><dd>{{ application.get_status_display }}</dd></div>
+                            </dl>
+                            <p>Candidate profile and résumé readiness are shown from the submitted application record.</p>
+                        </section>
+
+                        <section id="interview-management" class="application-detail-card interview-detail-card" aria-labelledby="interview-heading">
+                            <h3 id="interview-heading">Interview</h3>
+                            {% if schedule %}
+                                <dl class="application-metadata-grid">
+                                    <div><dt>Date</dt><dd>{{ schedule.scheduled_start|date:"d M Y" }}</dd></div>
+                                    <div><dt>Time</dt><dd>{{ schedule.scheduled_start|time:"H:i" }} ({{ schedule.timezone }})</dd></div>
+                                    <div><dt>Format</dt><dd>Structured online interview</dd></div>
+                                    <div><dt>Status</dt><dd>{{ schedule.get_status_display }}</dd></div>
+                                </dl>
+                                <div class="interview-management-actions">
+                                    {% if session %}
+                                        <a class="detail-primary-action" href="{% url 'calling:recruiter_session_detail' session.id %}">Manage interview</a>
+                                    {% else %}
+                                        <span class="detail-disabled-note">A call session has not been prepared.</span>
+                                    {% endif %}
+                                    {% if schedule.status == "pending" %}
+                                        <form method="post" action="{% url 'interviews:invitation_resend' schedule.id %}">{% csrf_token %}<button class="detail-secondary-action" type="submit">Retry invitation</button></form>
+                                    {% endif %}
+                                    {% if schedule.status == "pending" or schedule.status == "confirmed" %}
+                                        <form method="post" action="{% url 'interviews:schedule_cancel' schedule.id %}">{% csrf_token %}<button class="detail-secondary-action" type="submit">Cancel interview</button></form>
+                                    {% endif %}
+                                </div>
+                                {% for reschedule in pending_reschedules %}
+                                    <div class="pending-reschedule">
+                                        <p>Reschedule requested for {{ reschedule.proposed_start|date:"d M Y, H:i" }} ({{ reschedule.timezone }}).</p>
+                                        <form method="post" action="{% url 'interviews:reschedule_review' reschedule.id %}">
+                                            {% csrf_token %}
+                                            <button class="detail-primary-action" name="decision" value="approve" type="submit">Approve</button>
+                                            <button class="detail-secondary-action" name="decision" value="reject" type="submit">Reject</button>
+                                        </form>
+                                    </div>
+                                {% endfor %}
+                            {% elif application.candidate.user.email_verified and general_consent_active and interview_consent_active %}
+                                <p>No interview has been scheduled.</p>
+                                <a class="detail-primary-action" href="{% url 'interviews:invitation_create' application.id %}">Invite to interview</a>
+                            {% else %}
+                                <p>No interview has been scheduled. Current verified email and AI consent are required before an invitation can be created.</p>
+                                <button class="detail-primary-action" type="button" disabled>Manage interview unavailable</button>
+                            {% endif %}
+                        </section>
+
+                        <section id="application-history" class="application-detail-card application-history-card" aria-labelledby="application-history-heading">
+                            <h3 id="application-history-heading">Application history</h3>
+                            <ol>
+                                {% for event in history %}
+                                    <li><time datetime="{{ event.event_timestamp|date:'c' }}">{{ event.event_timestamp|date:"d M Y, H:i" }}</time><span>{{ event.action }}</span></li>
+                                {% empty %}
+                                    <li>No application history is available.</li>
+                                {% endfor %}
+                            </ol>
+                        </section>
+
+                        <div class="application-detail-actions">
+                            <a class="detail-secondary-action" href="#application-history">View application history</a>
+                        </div>
+                        <aside class="application-detail-privacy">Candidate information is shown only for authorized recruitment review. Final employment decisions remain human-controlled.</aside>
+                    </article>
+                {% endif %}
+                </div>
+
+                <aside id="application-privacy-note" class="application-privacy-note">Candidate information is shown only for authorized recruitment review. Open an application to view its existing authorized details.</aside>
+            </main>
+        </div>
+    </div>
+</body>
+</html>

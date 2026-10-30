@@ -1,5 +1,4 @@
 from django.urls import path
-from django.views.generic import RedirectView
 
 from .views import (
     EmailLoginView,
@@ -10,6 +9,8 @@ from .views import (
     email_verification_confirm_view,
     email_verification_request_view,
     email_verification_resend_view,
+    home_view,
+    how_it_works_view,
     recruiter_dashboard_view,
     signup_view,
 )
@@ -18,14 +19,8 @@ app_name = "accounts"
 
 
 urlpatterns = [
-    path(
-        "",
-        RedirectView.as_view(
-            pattern_name="accounts:dashboard",
-            permanent=False,
-        ),
-        name="home",
-    ),
+    path("", home_view, name="home"),
+    path("how-it-works/", how_it_works_view, name="how_it_works"),
     path("signup/", signup_view, name="signup"),
     path("login/", EmailLoginView.as_view(), name="login"),
     path("logout/", SecureLogoutView.as_view(), name="logout"),

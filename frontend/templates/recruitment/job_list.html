@@ -1,15 +1,148 @@
-{% extends "base.html" %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Browse current roles available to HireFlow AI candidates.">
+    <title>Browse Jobs — HireFlow AI</title>
+    <link rel="stylesheet" href="{% static 'accounts/css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'accounts/css/candidate-dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'recruitment/css/job-list.css' %}">
+</head>
+<body class="candidate-dashboard-page candidate-job-list-page">
+    <a class="skip-link" href="#job-list-main">Skip to job results</a>
 
-{% block title %}Jobs{% endblock %}
+    <div class="candidate-shell">
+        <aside class="candidate-sidebar" aria-label="Candidate navigation">
+            <div class="sidebar-brand-row">
+                <a class="sidebar-brand" href="{% url 'accounts:candidate_dashboard' %}" aria-label="HireFlow AI candidate dashboard">
+                    HireFlow <strong>AI</strong>
+                </a>
+                <details class="candidate-mobile-menu">
+                    <summary>Menu</summary>
+                    <nav aria-label="Candidate mobile navigation">
+                        <a href="{% url 'accounts:candidate_dashboard' %}">Dashboard</a>
+                        <a href="{% url 'candidates:profile_edit' %}">My Profile</a>
+                        <a href="{% url 'candidates:resume_list' %}">My Résumé</a>
+                        <a aria-current="page" href="{% url 'recruitment:job_list' %}">Browse Jobs</a>
+                        <a href="{% url 'recruitment:application_list' %}">My Applications</a>
+                        <a href="{% url 'calling:candidate_session_list' %}">Interviews</a>
+                    </nav>
+                </details>
+            </div>
 
-{% block content %}
-<section>
-    <h1>Jobs</h1>
-    {% if request.user.role == "recruiter" %}<p><a href="{% url 'recruitment:job_create' %}">Create job</a></p>{% endif %}
-    <ul>
-        {% for job in jobs %}
-            <li><a href="{% url 'recruitment:job_detail' job.id %}">{{ job.title }}</a> — {{ job.company.name }} — {{ job.get_status_display }}</li>
-        {% empty %}<li>No jobs are currently available.</li>{% endfor %}
-    </ul>
-</section>
-{% endblock %}
+            <nav class="sidebar-nav" aria-label="Candidate primary navigation">
+                <a href="{% url 'accounts:candidate_dashboard' %}"><span aria-hidden="true">▦</span> Dashboard</a>
+                <a href="{% url 'candidates:profile_edit' %}"><span aria-hidden="true">○</span> My Profile</a>
+                <a href="{% url 'candidates:resume_list' %}"><span aria-hidden="true">▤</span> My Résumé</a>
+                <a class="is-active" aria-current="page" href="{% url 'recruitment:job_list' %}">
+                    <span aria-hidden="true">⌕</span> Browse Jobs
+                </a>
+                <a href="{% url 'recruitment:application_list' %}"><span aria-hidden="true">☷</span> My Applications</a>
+                <a href="{% url 'calling:candidate_session_list' %}"><span aria-hidden="true">▣</span> Interviews</a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a class="sidebar-help" href="#job-recommendation-help"><span aria-hidden="true">?</span> Help &amp; Support</a>
+                <div class="sidebar-account">
+                    <span class="candidate-avatar" aria-hidden="true">{{ initials }}</span>
+                    <span><strong>{{ display_name }}</strong><small>Candidate</small></span>
+                </div>
+                <form method="post" action="{% url 'accounts:logout' %}">
+                    {% csrf_token %}
+                    <button class="sidebar-logout" type="submit"><span aria-hidden="true">↪</span> Log out</button>
+                </form>
+            </div>
+        </aside>
+
+        <div class="candidate-workspace">
+            <header class="dashboard-header">
+                <div>
+                    <h1>Browse jobs</h1>
+                    <p>Discover roles that match your skills and career goals.</p>
+                </div>
+                <div class="header-account" aria-label="Signed in as {{ display_name }}">
+                    <span class="notification-mark" aria-label="No new notifications">♧</span>
+                    <span class="candidate-avatar candidate-avatar-light" aria-hidden="true">{{ initials }}</span>
+                </div>
+            </header>
+
+            <main id="job-list-main" class="candidate-job-list-main">
+                <section class="job-discovery-controls" aria-labelledby="job-search-heading">
+                    <h2 id="job-search-heading" class="visually-hidden">Search and filter jobs</h2>
+                    <div class="job-search-row">
+                        <label class="job-search-field">
+                            <span class="visually-hidden">Search jobs</span>
+                            <span aria-hidden="true">⌕</span>
+                            <input type="search" placeholder="Search by job title, skill, or company" disabled aria-describedby="search-unavailable">
+                        </label>
+                        <button class="job-search-button" type="button" disabled>Search</button>
+                    </div>
+                    <div class="job-filter-row" aria-describedby="search-unavailable">
+                        <label><span class="visually-hidden">Location</span><select disabled><option>All locations</option></select></label>
+                        <label><span class="visually-hidden">Job type</span><select disabled><option>All job types</option></select></label>
+                        <label><span class="visually-hidden">Experience level</span><select disabled><option>All experience levels</option></select></label>
+                        <span class="clear-filter-placeholder" aria-hidden="true">Clear filters</span>
+                    </div>
+                    <p id="search-unavailable" class="control-support-note">Search, filters, and sorting are not available yet. All currently eligible jobs are shown below.</p>
+                </section>
+
+                <div class="job-results-toolbar">
+                    <p><strong>{{ jobs|length }}</strong> job{{ jobs|length|pluralize }} found</p>
+                    <label class="job-sort-control"><span class="visually-hidden">Sort jobs</span><select disabled><option>Newest first</option></select></label>
+                </div>
+
+                <section class="job-result-list" aria-label="Available jobs">
+                    {% for job in jobs %}
+                        <article class="job-result-card">
+                            <div class="job-card-heading">
+                                <span class="company-initials" aria-hidden="true">{{ job.company.name|slice:":2"|upper }}</span>
+                                <div>
+                                    <h2><a href="{% url 'recruitment:job_detail' job.id %}">{{ job.title }}</a></h2>
+                                    <p>{{ job.company.name }}</p>
+                                    <small>{{ job.location|default:job.get_workplace_type_display }}</small>
+                                </div>
+                            </div>
+                            <div class="job-primary-badges" aria-label="Job details">
+                                <span>{{ job.get_employment_type_display }}</span>
+                                <span>
+                                    {% if job.minimum_experience_years == 0 and not job.maximum_experience_years %}Entry level
+                                    {% elif job.maximum_experience_years %}{{ job.minimum_experience_years }}–{{ job.maximum_experience_years }} years
+                                    {% else %}{{ job.minimum_experience_years }}+ years{% endif %}
+                                </span>
+                            </div>
+                            <p class="job-description">{{ job.description|truncatechars:180 }}</p>
+                            <div class="job-card-footer">
+                                <div class="job-skill-tags" aria-label="Required skills">
+                                    {% for requirement in job.skill_requirements.all|slice:":3" %}
+                                        <span>{{ requirement.skill.name }}</span>
+                                    {% empty %}
+                                        <span>Skills listed in details</span>
+                                    {% endfor %}
+                                </div>
+                                <small>Posted {{ job.published_at|default:job.created_at|timesince }} ago</small>
+                                <a class="job-view-button" href="{% url 'recruitment:job_detail' job.id %}">View job</a>
+                            </div>
+                        </article>
+                    {% empty %}
+                        <div class="job-empty-state">
+                            <span aria-hidden="true">⌕</span>
+                            <h2>No open jobs are available right now</h2>
+                            <p>New roles from active companies will appear here when they are published and accepting applications.</p>
+                        </div>
+                    {% endfor %}
+                </section>
+
+                <aside id="job-recommendation-help" class="job-recommendation-card">
+                    <div>
+                        <h2>Get more relevant jobs</h2>
+                        <p>Complete your profile and add skills to improve future job recommendations.</p>
+                    </div>
+                    <a class="job-view-button" href="{% url 'candidates:profile_edit' %}">Update profile</a>
+                </aside>
+            </main>
+        </div>
+    </div>
+</body>
+</html>

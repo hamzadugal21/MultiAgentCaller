@@ -1,0 +1,154 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Private HireFlow AI company and recruiter administration overview.">
+    <title>Companies &amp; Recruiters — HireFlow AI</title>
+    <link rel="stylesheet" href="{% static 'accounts/css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'accounts/css/admin-dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'accounts/css/admin-management.css' %}">
+</head>
+<body class="admin-dashboard-page admin-management-page">
+    <a class="skip-link" href="#admin-management-main">Skip to management content</a>
+    <div class="admin-shell">
+        <aside class="admin-sidebar" aria-label="Administrator navigation">
+            <div class="admin-brand-row">
+                <a class="admin-brand" href="{% url 'accounts:admin_dashboard' %}" aria-label="HireFlow AI administrator dashboard">HireFlow <strong>AI</strong></a>
+                <details class="admin-mobile-menu">
+                    <summary>Menu</summary>
+                    <nav aria-label="Administrator mobile navigation">
+                        <a href="{% url 'accounts:admin_dashboard' %}">Dashboard</a>
+                        <a aria-current="page" href="#companies">Companies</a>
+                        <a href="#recruiters">Recruiters</a>
+                        <span>Audit activity — unavailable</span>
+                        <span>System settings — unavailable</span>
+                    </nav>
+                </details>
+            </div>
+
+            <nav class="admin-nav" aria-label="Administrator primary navigation">
+                <a href="{% url 'accounts:admin_dashboard' %}"><span aria-hidden="true">▦</span> Dashboard</a>
+                <a class="is-active" aria-current="page" href="#companies"><span aria-hidden="true">▤</span> Companies</a>
+                <a href="#recruiters"><span aria-hidden="true">○</span> Recruiters</a>
+                <span class="nav-disabled" aria-disabled="true" title="A separate audit browser is not available"><span aria-hidden="true">☷</span> Audit activity</span>
+                <span class="nav-disabled" aria-disabled="true" title="Platform settings are managed through approved configuration"><span aria-hidden="true">⚙</span> System settings</span>
+                <a href="#access-accountability"><span aria-hidden="true">?</span> Help &amp; Support</a>
+            </nav>
+
+            <div class="admin-sidebar-footer">
+                <div class="admin-profile-card">
+                    <span class="admin-avatar" aria-hidden="true">{{ initials }}</span>
+                    <span>
+                        <strong>{{ display_name }}</strong>
+                        <small>Platform Administration</small>
+                    </span>
+                </div>
+                <form method="post" action="{% url 'accounts:logout' %}">
+                    {% csrf_token %}
+                    <button class="admin-logout" type="submit"><span aria-hidden="true">↪</span> Log out</button>
+                </form>
+            </div>
+        </aside>
+
+        <div class="admin-workspace">
+            <header class="admin-header">
+                <div>
+                    <h1>Companies &amp; recruiters</h1>
+                    <p>Manage company accounts, recruiter membership, and verification status.</p>
+                </div>
+                <div class="admin-header-controls" aria-label="Administrator account controls">
+                    <span class="admin-notification" aria-label="Notifications are not available">♧</span>
+                    <span class="admin-avatar admin-avatar-light" aria-hidden="true">{{ initials }}</span>
+                    <span class="admin-header-name">Admin</span>
+                </div>
+            </header>
+
+            <main id="admin-management-main" class="admin-management-main">
+                <div class="admin-top-actions" aria-label="Administrator provisioning actions">
+                    {% if request.user.is_staff %}
+                        <a class="admin-button admin-button-primary" href="{% url 'admin:recruitment_company_add' %}">Add company</a>
+                        <a class="admin-button admin-button-secondary" href="{% url 'admin:accounts_user_add' %}">Add recruiter</a>
+                    {% else %}
+                        <span class="admin-button admin-button-disabled" aria-disabled="true">Add company unavailable</span>
+                        <span class="admin-button admin-button-disabled" aria-disabled="true">Add recruiter unavailable</span>
+                    {% endif %}
+                </div>
+
+                <nav class="management-tabs" aria-label="Management sections">
+                    <a class="is-active" aria-current="page" href="#companies">Companies</a>
+                    <a href="#recruiters">Recruiters</a>
+                    <span class="visually-hidden">Both management sections are displayed on this page.</span>
+                </nav>
+
+                <section class="management-filters" aria-labelledby="management-filter-heading">
+                    <h2 id="management-filter-heading" class="visually-hidden">Company search and filters</h2>
+                    <label>
+                        <span class="visually-hidden">Search companies</span>
+                        <input type="search" placeholder="Search companies" disabled aria-describedby="management-filter-note">
+                    </label>
+                    <label>
+                        <span class="visually-hidden">Company status</span>
+                        <select disabled aria-describedby="management-filter-note"><option>All statuses</option></select>
+                    </label>
+                    <span class="disabled-filter-action" aria-disabled="true">Clear filters</span>
+                    <p id="management-filter-note">Search and status filters are unavailable in this overview. Existing Django admin pages provide authorized management tools.</p>
+                </section>
+
+                <section id="companies" class="management-section" aria-labelledby="companies-heading">
+                    <div class="management-section-heading">
+                        <div><h2 id="companies-heading">Companies</h2><p>Authorized persisted company accounts and safe activity totals.</p></div>
+                        {% if request.user.is_staff %}<a href="{% url 'admin:recruitment_company_changelist' %}">Open company administration</a>{% endif %}
+                    </div>
+                    <div class="management-table-wrap">
+                        <table class="management-table">
+                            <thead><tr><th scope="col">Company</th><th scope="col">Recruiters</th><th scope="col">Active jobs</th><th scope="col">Status</th><th scope="col">Last updated</th><th scope="col">Action</th></tr></thead>
+                            <tbody>
+                                {% for company in companies %}
+                                    <tr>
+                                        <th scope="row" data-label="Company">{{ company.name }}</th>
+                                        <td data-label="Recruiters">{{ company.recruiter_count }} recruiter{{ company.recruiter_count|pluralize }}</td>
+                                        <td data-label="Active jobs">{{ company.active_job_count }} job{{ company.active_job_count|pluralize }}</td>
+                                        <td data-label="Status"><span class="admin-status {% if company.is_active %}is-verified{% else %}is-disabled{% endif %}">{% if company.is_active %}Active{% else %}Inactive{% endif %}</span></td>
+                                        <td data-label="Last updated">Updated {{ company.updated_at|timesince }} ago</td>
+                                        <td data-label="Action">{% if request.user.is_staff %}<a class="admin-row-link" href="{% url 'admin:recruitment_company_change' company.id %}">Manage</a>{% else %}<span class="admin-muted">Unavailable</span>{% endif %}</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr><td class="admin-empty" colspan="6"><strong>No companies yet</strong><span>Authorized company records will appear here after provisioning.</span></td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="recruiters" class="management-section" aria-labelledby="recruiters-heading">
+                    <div class="management-section-heading">
+                        <div><h2 id="recruiters-heading">Recruiter verification</h2><p>Verify recruiters before they can manage company jobs.</p></div>
+                        {% if request.user.is_staff %}<a href="{% url 'admin:recruitment_recruiterprofile_changelist' %}">Open recruiter administration</a>{% endif %}
+                    </div>
+                    <div class="recruiter-verification-list">
+                        {% for entry in recruiter_entries %}
+                            <article class="recruiter-verification-item">
+                                <span class="management-avatar" aria-hidden="true">{{ entry.initials }}</span>
+                                <div class="management-recruiter-identity"><h3>{{ entry.display_name }}</h3><p>{{ entry.profile.company.name }}</p></div>
+                                <span class="admin-status {{ entry.status_class }}">{{ entry.status_label }}</span>
+                                {% if request.user.is_staff %}<a class="admin-row-link" href="{% url 'admin:recruitment_recruiterprofile_change' entry.profile.id %}">Review access</a>{% else %}<span class="admin-muted">Management unavailable</span>{% endif %}
+                            </article>
+                        {% empty %}
+                            <div class="admin-empty"><strong>No recruiter profiles yet</strong><span>Provisioned recruiter membership and verification status will appear here.</span></div>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <section id="access-accountability" class="admin-accountability" aria-labelledby="access-accountability-heading">
+                    <div>
+                        <h2 id="access-accountability-heading">Access and accountability</h2>
+                        <p>Company and recruiter access is managed by authorized administrators and recorded in platform audit activity. Candidate private data is not displayed on this page.</p>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+</body>
+</html>

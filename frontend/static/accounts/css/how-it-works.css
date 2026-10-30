@@ -1,0 +1,372 @@
+.how-page .active-nav-link,
+.how-page [aria-current="page"] {
+    color: var(--hf-teal-dark);
+}
+
+.how-container {
+    width: min(1220px, calc(100% - 48px));
+    margin: 0 auto;
+}
+
+.how-eyebrow {
+    margin: 0;
+    color: var(--hf-teal-dark);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.eyebrow-rule,
+.audience-accent {
+    display: block;
+    border-radius: 2px;
+    background: var(--hf-teal);
+}
+
+.eyebrow-rule {
+    width: 55px;
+    height: 3px;
+    margin-top: 18px;
+}
+
+.how-hero {
+    min-height: 475px;
+    padding: 80px 0 70px;
+    background: var(--hf-white);
+}
+
+.how-hero h1 {
+    max-width: 1180px;
+    margin: 23px 0 0;
+    font-size: clamp(2.85rem, 4.5vw, 3.375rem);
+    font-weight: 650;
+    line-height: 1.44;
+    letter-spacing: -0.035em;
+}
+
+.how-hero p:last-child {
+    max-width: 1070px;
+    margin: 5px 0 0;
+    color: var(--hf-text);
+    font-size: 1.1875rem;
+    line-height: 1.48;
+}
+
+.how-workflow {
+    min-height: 714px;
+    padding: 55px 0 60px;
+    background: var(--hf-gray-soft);
+}
+
+.how-workflow h2,
+.how-audience h2,
+.how-trust h2,
+.how-cta h2 {
+    margin: 13px 0 0;
+    font-size: clamp(1.9rem, 3vw, 2.125rem);
+    font-weight: 650;
+    line-height: 1.44;
+    letter-spacing: -0.025em;
+}
+
+.how-section-intro {
+    margin: 0;
+    color: var(--hf-text);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+}
+
+.journey-list {
+    display: grid;
+    gap: 14px;
+    margin: 38px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.journey-list li {
+    position: relative;
+    display: grid;
+    grid-template-columns: 50px minmax(250px, 383px) minmax(0, 1fr);
+    gap: 20px;
+    align-items: center;
+    min-height: 78px;
+    padding: 13px 28px 13px 16px;
+    border: 1px solid var(--hf-border);
+    border-radius: 10px;
+    background: var(--hf-white);
+}
+
+.journey-list li:not(:last-child)::after {
+    position: absolute;
+    top: 77px;
+    left: 23px;
+    z-index: 1;
+    width: 2px;
+    height: 16px;
+    background: var(--hf-teal);
+    content: "";
+}
+
+.journey-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--hf-blue-soft);
+    color: var(--hf-teal-dark);
+    font-size: 0.875rem;
+    font-weight: 800;
+}
+
+.journey-list h3 {
+    margin: 0;
+    font-size: 1.0625rem;
+    font-weight: 650;
+    line-height: 1.47;
+}
+
+.journey-list p {
+    margin: 0;
+    color: var(--hf-text);
+    font-size: 0.875rem;
+    line-height: 1.45;
+}
+
+.how-audience {
+    min-height: 658px;
+    padding: 63px 0 70px;
+    background: var(--hf-white);
+}
+
+.how-audience h2 {
+    margin-top: 15px;
+    font-size: 2rem;
+}
+
+.audience-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 25px;
+    margin-top: 61px;
+}
+
+.audience-card {
+    min-height: 356px;
+    padding: 24px 20px;
+    border: 1px solid var(--hf-border);
+    border-radius: 12px;
+    background: var(--hf-white);
+}
+
+.audience-accent {
+    width: 45px;
+    height: 4px;
+}
+
+.audience-card h3 {
+    margin: 16px 0 0;
+    font-size: 1.3125rem;
+    font-weight: 650;
+    line-height: 1.43;
+}
+
+.audience-card ul {
+    display: grid;
+    gap: 34px;
+    margin: 36px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.audience-card li {
+    display: grid;
+    grid-template-columns: 8px 1fr;
+    gap: 14px;
+    align-items: center;
+    color: var(--hf-text);
+    font-size: 0.875rem;
+    line-height: 1.45;
+}
+
+.how-trust {
+    min-height: 315px;
+    padding: 52px 0 62px;
+    background: var(--hf-blue-soft);
+}
+
+.how-trust h2 {
+    margin: 0;
+    font-size: 2.0625rem;
+}
+
+.transparency-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 27px;
+    margin-top: 40px;
+}
+
+.transparency-grid article {
+    display: grid;
+    grid-template-columns: 26px 1fr;
+    gap: 12px;
+    align-items: start;
+    min-height: 112px;
+    padding: 19px;
+    border-radius: 11px;
+    background: var(--hf-white);
+}
+
+.transparency-grid article > span {
+    color: var(--hf-teal-dark);
+    font-size: 1.4375rem;
+    font-weight: 650;
+    line-height: 1.45;
+}
+
+.transparency-grid h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 650;
+    line-height: 1.45;
+}
+
+.transparency-grid p {
+    margin: 8px 0 0;
+    color: var(--hf-text);
+    font-size: 0.75rem;
+    line-height: 1.45;
+}
+
+.how-cta {
+    min-height: 280px;
+    padding: 54px 0;
+    background: var(--hf-navy);
+    color: var(--hf-white);
+}
+
+.how-cta h2 {
+    margin: 0;
+    font-size: 2.1875rem;
+}
+
+.how-cta p {
+    margin: 12px 0 0;
+    font-size: 1rem;
+    line-height: 1.45;
+}
+
+.how-cta-actions {
+    display: flex;
+    gap: 20px;
+    margin-top: 38px;
+}
+
+.how-cta-actions .home-button:first-child {
+    min-width: 175px;
+}
+
+.how-cta-actions .home-button:last-child {
+    min-width: 191px;
+}
+
+@media (max-width: 900px) {
+    .journey-list li {
+        grid-template-columns: 50px 1fr;
+    }
+
+    .journey-list p {
+        grid-column: 2;
+    }
+
+    .audience-grid,
+    .transparency-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .audience-card {
+        min-height: 0;
+    }
+
+    .audience-card ul {
+        gap: 22px;
+    }
+
+    .how-audience,
+    .how-trust {
+        min-height: 0;
+    }
+}
+
+@media (max-width: 560px) {
+    .how-container {
+        width: min(100% - 32px, 1220px);
+    }
+
+    .how-hero {
+        min-height: 0;
+        padding: 62px 0 68px;
+    }
+
+    .how-hero h1 {
+        font-size: 2.45rem;
+        line-height: 1.2;
+    }
+
+    .how-hero p:last-child {
+        margin-top: 25px;
+        font-size: 1rem;
+    }
+
+    .how-workflow,
+    .how-audience,
+    .how-trust,
+    .how-cta {
+        padding-top: 55px;
+        padding-bottom: 55px;
+    }
+
+    .journey-list li {
+        grid-template-columns: 42px 1fr;
+        gap: 14px;
+        padding: 16px;
+    }
+
+    .journey-number {
+        width: 42px;
+        height: 42px;
+    }
+
+    .journey-list li:not(:last-child)::after {
+        top: 100%;
+        left: 36px;
+        height: 15px;
+    }
+
+    .journey-list p {
+        grid-column: 1 / -1;
+        padding-left: 56px;
+    }
+
+    .audience-grid {
+        margin-top: 42px;
+    }
+
+    .how-trust h2,
+    .how-cta h2 {
+        font-size: 1.85rem;
+    }
+
+    .how-cta-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .how-cta-actions .home-button {
+        width: 100%;
+    }
+}

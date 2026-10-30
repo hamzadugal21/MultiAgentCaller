@@ -1,13 +1,20 @@
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from accounts.models import User
 from agents.escalation_services import EscalationServiceError, request_human_escalation
+from auditlog.consent_services import (
+    has_effective_application_ai_interview_consent,
+    has_effective_general_ai_processing_consent,
+)
 from calling.forms import (
     HumanEscalationForm,
     SessionPreparationForm,
@@ -23,7 +30,7 @@ from calling.services import (
     transition_call_session,
 )
 from candidates.models import CandidateProfile
-from interviews.models import InterviewSchedule
+from interviews.models import InterviewRescheduleRequest, InterviewSchedule
 from recruitment.models import RecruiterProfile
 
 
@@ -233,18 +240,122 @@ def request_human_review(request, session_id):
 @login_required
 def recruiter_session_list(request):
     actor, recruiter = _review_actor(request.user)
-    sessions = CallSession.objects.select_related(
-        "schedule__application__candidate__user",
-        "schedule__application__job__company",
-    )
-    if recruiter is not None:
-        sessions = sessions.filter(
-            schedule__application__job__company=recruiter.company
+    if recruiter is None or not recruiter.company.is_active:
+        raise PermissionDenied
+    now = timezone.now()
+    schedules = list(
+        InterviewSchedule.objects.filter(
+            application__job__company=recruiter.company,
+            is_current=True,
         )
+        .select_related(
+            "application__candidate__user",
+            "application__job__company",
+        )
+        .prefetch_related("call_sessions")
+        .order_by("scheduled_start", "id")
+    )
+    upcoming_entries = []
+    for schedule in schedules:
+        if (
+            schedule.status
+            not in {
+                InterviewSchedule.Status.PENDING,
+                InterviewSchedule.Status.CONFIRMED,
+            }
+            or schedule.scheduled_end <= now
+        ):
+            continue
+        try:
+            display_timezone = ZoneInfo(schedule.timezone)
+        except (ZoneInfoNotFoundError, TypeError, ValueError):
+            display_timezone = timezone.get_default_timezone()
+        candidate_user = schedule.application.candidate.user
+        candidate_name = candidate_user.get_full_name().strip() or "Candidate"
+        sessions = list(schedule.call_sessions.all())
+        upcoming_entries.append(
+            {
+                "candidate_name": candidate_name,
+                "display_start": timezone.localtime(
+                    schedule.scheduled_start,
+                    display_timezone,
+                ),
+                "schedule": schedule,
+                "session": sessions[0] if sessions else None,
+                "status_class": schedule.status,
+                "status_label": (
+                    "Awaiting confirmation"
+                    if schedule.status == InterviewSchedule.Status.PENDING
+                    else schedule.get_status_display()
+                ),
+            }
+        )
+    selected_entry = None
+    selected_schedule_id = request.GET.get("schedule")
+    if selected_schedule_id:
+        selected_entry = next(
+            (
+                entry
+                for entry in upcoming_entries
+                if str(entry["schedule"].pk) == selected_schedule_id
+            ),
+            None,
+        )
+        if selected_entry is None:
+            raise Http404
+    elif upcoming_entries:
+        selected_entry = upcoming_entries[0]
+
+    pending_reschedules = list(
+        InterviewRescheduleRequest.objects.filter(
+            schedule__application__job__company=recruiter.company,
+            schedule__is_current=True,
+            status=InterviewRescheduleRequest.Status.PENDING,
+        )
+        .select_related(
+            "schedule__application__candidate__user",
+            "schedule__application__job",
+        )
+        .order_by("created_at", "id")
+    )
+    selected_context = {}
+    if selected_entry is not None:
+        selected_schedule = selected_entry["schedule"]
+        application = selected_schedule.application
+        policy_version = settings.CURRENT_AI_CONSENT_POLICY_VERSION
+        selected_context = {
+            "general_consent_active": has_effective_general_ai_processing_consent(
+                candidate=application.candidate,
+                policy_version=policy_version,
+            ),
+            "interview_consent_active": has_effective_application_ai_interview_consent(
+                application=application,
+                policy_version=policy_version,
+            ),
+            "selected_entry": selected_entry,
+        }
+    display_name = actor.get_full_name().strip() or actor.email
+    initials = "".join(
+        part[0].upper() for part in (actor.first_name, actor.last_name) if part
+    )[:2] or actor.email[0].upper()
     return render(
         request,
         "calling/recruiter_session_list.html",
-        {"actor": actor, "sessions": sessions},
+        {
+            "actor": actor,
+            "awaiting_confirmation_count": sum(
+                entry["schedule"].status == InterviewSchedule.Status.PENDING
+                for entry in upcoming_entries
+            ),
+            "display_name": display_name,
+            "initials": initials,
+            "pending_reschedules": pending_reschedules,
+            "recruiter": recruiter,
+            "reschedule_request_count": len(pending_reschedules),
+            "upcoming_entries": upcoming_entries,
+            "upcoming_interview_count": len(upcoming_entries),
+            **selected_context,
+        },
     )
 
 

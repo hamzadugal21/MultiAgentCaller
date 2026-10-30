@@ -1,61 +1,207 @@
-﻿{% extends "base.html" %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Your private HireFlow AI candidate dashboard.">
+    <title>Candidate Dashboard — HireFlow AI</title>
+    <link rel="stylesheet" href="{% static 'accounts/css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'accounts/css/candidate-dashboard.css' %}">
+</head>
+<body class="candidate-dashboard-page">
+    <a class="skip-link" href="#dashboard-main">Skip to dashboard content</a>
 
-{% block title %}Candidate Dashboard{% endblock %}
+    <div class="candidate-shell">
+        <aside class="candidate-sidebar" aria-label="Candidate navigation">
+            <div class="sidebar-brand-row">
+                <a class="sidebar-brand" href="{% url 'accounts:candidate_dashboard' %}" aria-label="HireFlow AI candidate dashboard">
+                    HireFlow <strong>AI</strong>
+                </a>
+                <details class="candidate-mobile-menu">
+                    <summary>Menu</summary>
+                    <nav aria-label="Candidate mobile navigation">
+                        <a aria-current="page" href="{% url 'accounts:candidate_dashboard' %}">Dashboard</a>
+                        <a href="{% url 'candidates:profile_edit' %}">My Profile</a>
+                        <a href="{% url 'candidates:resume_list' %}">My Résumé</a>
+                        <a href="{% url 'recruitment:job_list' %}">Browse Jobs</a>
+                        <a href="{% url 'recruitment:application_list' %}">My Applications</a>
+                        <a href="{% url 'calling:candidate_session_list' %}">Interviews</a>
+                    </nav>
+                </details>
+            </div>
 
-{% block content %}
-<section class="dashboard">
-    <p class="eyebrow">Candidate dashboard</p>
-    <h1>Hello, {{ request.user.first_name|default:request.user.email }}</h1>
-    <p>Your secure candidate account is ready.</p>
-    <p><a href="{% url 'recruitment:job_list' %}">Browse open jobs</a> · <a href="{% url 'recruitment:application_list' %}">Your applications</a></p>
+            <nav class="sidebar-nav" aria-label="Candidate primary navigation">
+                <a class="is-active" aria-current="page" href="{% url 'accounts:candidate_dashboard' %}">
+                    <span aria-hidden="true">▦</span> Dashboard
+                </a>
+                <a href="{% url 'candidates:profile_edit' %}"><span aria-hidden="true">○</span> My Profile</a>
+                <a href="{% url 'candidates:resume_list' %}"><span aria-hidden="true">▤</span> My Résumé</a>
+                <a href="{% url 'recruitment:job_list' %}"><span aria-hidden="true">⌕</span> Browse Jobs</a>
+                <a href="{% url 'recruitment:application_list' %}"><span aria-hidden="true">☷</span> My Applications</a>
+                <a href="{% url 'calling:candidate_session_list' %}"><span aria-hidden="true">▣</span> Interviews</a>
+            </nav>
 
-    <section aria-labelledby="verification-heading">
-        <h2 id="verification-heading">Email verification</h2>
-        {% if request.user.email_verified %}
-            <p>Your email address is verified.</p>
-        {% else %}
-            <p>Verify your email before applying for a job.</p>
-            <form method="post" action="{% url 'accounts:email_verification_request' %}">
-                {% csrf_token %}
-                <button class="button button-primary" type="submit">Send verification email</button>
-            </form>
-            <form method="post" action="{% url 'accounts:email_verification_resend' %}">
-                {% csrf_token %}
-                <button class="button" type="submit">Resend verification email</button>
-            </form>
-        {% endif %}
-    </section>
+            <div class="sidebar-footer">
+                <a class="sidebar-help" href="#helpful-next-steps"><span aria-hidden="true">?</span> Help &amp; Support</a>
+                <div class="sidebar-account">
+                    <span class="candidate-avatar" aria-hidden="true">{{ initials }}</span>
+                    <span><strong>{{ display_name }}</strong><small>Candidate</small></span>
+                </div>
+                <form method="post" action="{% url 'accounts:logout' %}">
+                    {% csrf_token %}
+                    <button class="sidebar-logout" type="submit"><span aria-hidden="true">↪</span> Log out</button>
+                </form>
+            </div>
+        </aside>
 
-    <div class="dashboard-grid">
-        <article class="dashboard-card">
-            <h2>AI screening call</h2>
-            <p>
-                Open a confirmed interview in the deterministic text simulation.
-            </p>
-            <a class="button button-primary" href="{% url 'calling:candidate_session_list' %}">
-                View interviews
-            </a>
-        </article>
+        <div class="candidate-workspace">
+            <header class="dashboard-header">
+                <div>
+                    <h1>Welcome back, {{ request.user.first_name|default:"Candidate" }}</h1>
+                    <p>Here is an overview of your recruitment journey.</p>
+                </div>
+                <div class="header-account" aria-label="Signed in as {{ display_name }}">
+                    <span class="notification-mark" aria-label="No new notifications">♧</span>
+                    <span class="candidate-avatar candidate-avatar-light" aria-hidden="true">{{ initials }}</span>
+                </div>
+            </header>
 
-        <article class="dashboard-card">
-            <h2>Candidate profile</h2>
-            <p>Keep your profile and current resume up to date.</p>
-            <p><a href="{% url 'candidates:profile_edit' %}">Edit profile</a></p>
-            <p><a href="{% url 'candidates:resume_list' %}">Manage resumes</a></p>
-            <form method="post" action="{% url 'candidates:general_consent' %}">
-                {% csrf_token %}
-                {% if request.user.candidate_profile.ai_processing_consent %}
-                    <button type="submit" name="action" value="revoke">Revoke AI-processing consent</button>
-                {% else %}
-                    <button type="submit" name="action" value="grant">Grant AI-processing consent</button>
+            <main id="dashboard-main" class="candidate-dashboard-main">
+                {% if messages %}
+                    <div class="dashboard-messages" aria-live="polite">
+                        {% for message in messages %}
+                            <p class="dashboard-message {{ message.tags }}">{{ message }}</p>
+                        {% endfor %}
+                    </div>
                 {% endif %}
-            </form>
-        </article>
 
-        <article class="dashboard-card">
-            <h2>Interview status</h2>
-            <p>No completed interview evaluations are available yet.</p>
-        </article>
+                {% if not request.user.email_verified %}
+                    <section class="dashboard-notice" aria-labelledby="verification-heading">
+                        <div>
+                            <h2 id="verification-heading">Verify your email to apply</h2>
+                            <p>You can update your profile and résumé now. Verification is required before applying for a job.</p>
+                        </div>
+                        <div class="notice-actions">
+                            <form method="post" action="{% url 'accounts:email_verification_request' %}">
+                                {% csrf_token %}
+                                <button class="dashboard-button dashboard-button-primary" type="submit">Send verification email</button>
+                            </form>
+                            <form method="post" action="{% url 'accounts:email_verification_resend' %}">
+                                {% csrf_token %}
+                                <button class="dashboard-text-button" type="submit">Resend</button>
+                            </form>
+                        </div>
+                    </section>
+                {% endif %}
+
+                <section class="dashboard-panel profile-completion-card" aria-labelledby="completion-heading">
+                    <div class="completion-heading-row">
+                        <div>
+                            <h2 id="completion-heading">Complete your profile</h2>
+                            <p>A complete profile helps recruiters understand your experience.</p>
+                        </div>
+                        <a class="dashboard-button dashboard-button-primary" href="{% url 'candidates:profile_edit' %}">Complete profile</a>
+                    </div>
+                    <label for="profile-progress">{{ profile_completion }}% complete</label>
+                    <progress id="profile-progress" value="{{ profile_completion }}" max="100">{{ profile_completion }}%</progress>
+                    <ul class="remaining-actions">
+                        {% for action in remaining_profile_actions %}
+                            <li>{{ action }}</li>
+                        {% empty %}
+                            <li>Your profile essentials are complete.</li>
+                        {% endfor %}
+                    </ul>
+                </section>
+
+                <section class="summary-grid" aria-label="Candidate summary">
+                    <article class="summary-card">
+                        <h2>Applications</h2>
+                        <strong>{{ active_application_count|stringformat:"02d" }}</strong>
+                        <p>Active application{{ active_application_count|pluralize }}</p>
+                    </article>
+                    <article class="summary-card">
+                        <h2>Interviews</h2>
+                        <strong>{{ upcoming_interview_count|stringformat:"02d" }}</strong>
+                        <p>Upcoming interview{{ upcoming_interview_count|pluralize }}</p>
+                    </article>
+                    <article class="summary-card">
+                        <h2>Résumé</h2>
+                        {% if active_resume %}
+                            <strong class="summary-word">Ready</strong>
+                            <p>Updated {{ active_resume.uploaded_at|date:"d M Y" }}</p>
+                        {% else %}
+                            <strong class="summary-word summary-word-muted">Not ready</strong>
+                            <p>No active résumé</p>
+                        {% endif %}
+                    </article>
+                </section>
+
+                <section class="dashboard-panel interview-card" aria-labelledby="interview-heading">
+                    <div class="panel-heading-row">
+                        <h2 id="interview-heading">Your next interview</h2>
+                        {% if upcoming_interview %}
+                            <span class="dashboard-badge status-{{ upcoming_interview.status }}">{{ upcoming_interview.get_status_display }}</span>
+                        {% endif %}
+                    </div>
+                    {% if upcoming_interview %}
+                        <div class="interview-details">
+                            <div>
+                                <h3>{{ upcoming_interview.application.job.title }}</h3>
+                                <p>{{ upcoming_interview.application.job.company.name }}</p>
+                            </div>
+                            <dl>
+                                <div><dt>Date</dt><dd>{{ upcoming_interview.scheduled_start|date:"d M Y" }}</dd></div>
+                                <div><dt>Time</dt><dd>{{ upcoming_interview.scheduled_start|time:"g:i A" }} {{ upcoming_interview.timezone }}</dd></div>
+                            </dl>
+                        </div>
+                        <a class="dashboard-button dashboard-button-primary" href="{% url 'calling:candidate_session_list' %}">View interview</a>
+                    {% else %}
+                        <div class="dashboard-empty-state">
+                            <h3>No upcoming interviews are scheduled.</h3>
+                            <p>Confirmed interview details will appear here.</p>
+                        </div>
+                    {% endif %}
+                </section>
+
+                <section class="dashboard-panel applications-card" aria-labelledby="applications-heading">
+                    <div class="panel-heading-row">
+                        <h2 id="applications-heading">Recent applications</h2>
+                        <a href="{% url 'recruitment:application_list' %}">View all</a>
+                    </div>
+                    <div class="application-list">
+                        {% for application in recent_applications %}
+                            <a class="application-row" href="{% url 'recruitment:application_detail' application.id %}">
+                                <span>
+                                    <strong>{{ application.job.title }}</strong>
+                                    <small>{{ application.job.company.name }}</small>
+                                </span>
+                                <span class="dashboard-badge status-{{ application.status }}">{{ application.get_status_display }}</span>
+                            </a>
+                        {% empty %}
+                            <div class="dashboard-empty-state application-empty-state">
+                                <h3>No applications yet</h3>
+                                <p>Browse open roles and apply when you find the right opportunity.</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <section id="helpful-next-steps" class="next-steps-grid" aria-labelledby="next-steps-heading">
+                    <h2 id="next-steps-heading" class="visually-hidden">Helpful next steps</h2>
+                    <article class="dashboard-panel next-step-card">
+                        <h3>Explore matching jobs</h3>
+                        <p>Discover opportunities aligned with your skills and interests.</p>
+                        <a class="dashboard-button dashboard-button-secondary" href="{% url 'recruitment:job_list' %}">Browse jobs</a>
+                    </article>
+                    <article class="dashboard-panel next-step-card">
+                        <h3>Keep your résumé current</h3>
+                        <p>Update your résumé so recruiters see your latest experience.</p>
+                        <a class="dashboard-button dashboard-button-secondary" href="{% url 'candidates:resume_list' %}">Manage résumé</a>
+                    </article>
+                </section>
+            </main>
+        </div>
     </div>
-</section>
-{% endblock %}
+</body>
+</html>

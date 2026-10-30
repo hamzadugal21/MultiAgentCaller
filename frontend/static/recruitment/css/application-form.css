@@ -1,0 +1,450 @@
+.application-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 105px;
+    padding: 24px 40px;
+    background: #fff;
+}
+
+.application-header nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    color: var(--hf-text);
+    font-size: 0.875rem;
+}
+
+.application-header nav a,
+.section-heading-row > a,
+.application-empty-state a {
+    color: var(--hf-teal-dark);
+    font-weight: 750;
+}
+
+.application-main {
+    display: grid;
+    gap: 18px;
+    width: min(950px, 100%);
+    margin: 0 auto;
+    padding: 30px 40px 52px;
+}
+
+.application-title,
+.application-panel {
+    border: 1px solid var(--hf-border);
+    border-radius: 12px;
+    background: #fff;
+}
+
+.application-title {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 22px 26px;
+}
+
+.application-company-mark,
+.section-number,
+.resume-file-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.application-company-mark {
+    flex: 0 0 58px;
+    width: 58px;
+    height: 58px;
+    border-radius: 12px;
+    background: #e2f3f1;
+    color: var(--hf-teal-dark);
+    font-weight: 800;
+}
+
+.application-title p,
+.application-title h1,
+.application-title span,
+.application-panel h2,
+.application-panel h3,
+.application-panel p {
+    margin: 0;
+}
+
+.application-title p,
+.application-step {
+    color: var(--hf-teal-dark);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.application-title h1 {
+    margin-top: 3px;
+    font-size: clamp(1.35rem, 3vw, 1.75rem);
+}
+
+.application-title div > span {
+    display: block;
+    margin-top: 5px;
+    color: var(--hf-text);
+    font-size: 0.875rem;
+}
+
+.application-panel {
+    padding: 30px;
+}
+
+.application-panel > header {
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--hf-border);
+}
+
+.application-panel > header h2 {
+    margin-top: 5px;
+    font-size: 1.45rem;
+}
+
+.application-panel > header > p:last-child,
+.application-field > p {
+    margin-top: 8px;
+    color: var(--hf-text);
+    font-size: 0.8125rem;
+}
+
+.application-section {
+    padding: 26px 0;
+    border-bottom: 1px solid var(--hf-border);
+}
+
+.section-heading-row,
+.section-heading-row > div,
+.application-actions {
+    display: flex;
+    align-items: center;
+}
+
+.section-heading-row {
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.section-heading-row > div {
+    gap: 11px;
+}
+
+.section-heading-row > a {
+    font-size: 0.8125rem;
+}
+
+.section-number {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--hf-teal-dark);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 800;
+}
+
+.section-heading-row h3 {
+    font-size: 1rem;
+}
+
+.optional-label,
+.resume-ready {
+    padding: 6px 10px;
+    border-radius: 20px;
+    background: #e2f3f1;
+    color: var(--hf-teal-dark);
+    font-size: 0.72rem;
+    font-weight: 750;
+}
+
+.selected-resume-card {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    margin-top: 18px;
+    padding: 16px;
+    border: 1px solid #9fd8cc;
+    border-radius: 10px;
+    background: #f2fbf9;
+}
+
+.resume-file-mark {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background: #fff;
+    color: var(--hf-teal-dark);
+    font-size: 0.7rem;
+    font-weight: 850;
+}
+
+.selected-resume-card strong,
+.selected-resume-card span,
+.selected-resume-card small {
+    display: block;
+}
+
+.selected-resume-card strong {
+    overflow-wrap: anywhere;
+    font-size: 0.875rem;
+}
+
+.selected-resume-card div span,
+.selected-resume-card small {
+    margin-top: 3px;
+    color: var(--hf-text);
+    font-size: 0.75rem;
+}
+
+.application-field {
+    margin-top: 18px;
+}
+
+.application-field > label {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--hf-navy);
+    font-size: 0.8125rem;
+    font-weight: 750;
+}
+
+.application-select,
+.application-textarea {
+    width: 100%;
+    border: 1px solid #bcccdc;
+    border-radius: 8px;
+    background: #fff;
+    color: var(--hf-navy);
+    font: inherit;
+    font-size: 0.875rem;
+}
+
+.application-select {
+    min-height: 44px;
+    padding: 9px 12px;
+}
+
+.application-textarea {
+    min-height: 120px;
+    padding: 12px;
+    resize: vertical;
+}
+
+.application-select:focus,
+.application-textarea:focus,
+.application-checkbox:focus-visible {
+    border-color: var(--hf-teal-dark);
+    outline: 3px solid rgba(22, 166, 161, 0.3);
+    outline-offset: 2px;
+}
+
+.application-field > p {
+    line-height: 1.5;
+}
+
+.consent-control {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-top: 18px;
+    padding: 16px;
+    border: 1px solid var(--hf-border);
+    border-radius: 10px;
+    background: #f7fafc;
+    cursor: pointer;
+}
+
+.application-checkbox {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    accent-color: var(--hf-teal-dark);
+}
+
+.consent-control strong,
+.consent-control small {
+    display: block;
+}
+
+.consent-control strong {
+    font-size: 0.85rem;
+}
+
+.consent-control small {
+    margin-top: 6px;
+    color: var(--hf-text);
+    font-size: 0.75rem;
+    line-height: 1.5;
+}
+
+.application-actions {
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 24px;
+}
+
+.application-cancel,
+.application-submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 750;
+}
+
+.application-cancel {
+    border: 1px solid var(--hf-border);
+    background: #fff;
+    color: var(--hf-navy) !important;
+}
+
+.application-submit {
+    border: 1px solid var(--hf-teal-dark);
+    background: var(--hf-teal-dark);
+    color: #fff;
+    cursor: pointer;
+}
+
+.application-submit:hover:not(:disabled) {
+    background: #0b625c;
+}
+
+.application-submit:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.application-privacy-note,
+.application-errors,
+.application-warning,
+.application-empty-state,
+.application-message {
+    margin-top: 18px !important;
+    padding: 13px 15px;
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+}
+
+.application-privacy-note {
+    background: #eaf4f8;
+    color: var(--hf-text);
+    font-size: 0.75rem;
+}
+
+.application-errors,
+.field-errors {
+    color: #8f2d2d;
+}
+
+.application-errors {
+    border: 1px solid #e3adad;
+    background: #fff2f2;
+}
+
+.application-errors ul,
+.field-errors ul {
+    margin: 6px 0 0;
+    padding-left: 20px;
+}
+
+.field-errors {
+    margin-top: 7px;
+    font-size: 0.78rem;
+}
+
+.application-warning {
+    border: 1px solid #e9cf89;
+    background: #fff9e8;
+    color: #725710;
+}
+
+.application-empty-state {
+    border: 1px dashed #9fb3c8;
+    background: #f7fafc;
+    color: var(--hf-text);
+}
+
+.application-empty-state p,
+.application-empty-state a {
+    margin-top: 6px;
+}
+
+.application-empty-state a {
+    display: inline-block;
+}
+
+.application-messages {
+    display: grid;
+    gap: 8px;
+}
+
+.application-message {
+    margin: 0 !important;
+    border: 1px solid #9fd8cc;
+    background: #edf9f7;
+    color: var(--hf-teal-dark);
+}
+
+@media (max-width: 860px) {
+    .application-header {
+        min-height: 94px;
+        padding: 20px 24px;
+    }
+
+    .application-main {
+        padding: 24px 24px 40px;
+    }
+}
+
+@media (max-width: 620px) {
+    .application-header .header-account {
+        display: none;
+    }
+
+    .application-main {
+        padding: 18px 16px 32px;
+    }
+
+    .application-title,
+    .application-panel {
+        padding: 20px;
+    }
+
+    .application-title {
+        align-items: flex-start;
+    }
+
+    .selected-resume-card {
+        grid-template-columns: 42px minmax(0, 1fr);
+    }
+
+    .selected-resume-card .resume-ready {
+        grid-column: 2;
+        width: fit-content;
+    }
+
+    .section-heading-row {
+        align-items: flex-start;
+    }
+
+    .application-actions {
+        flex-direction: column-reverse;
+    }
+
+    .application-cancel,
+    .application-submit {
+        width: 100%;
+    }
+}

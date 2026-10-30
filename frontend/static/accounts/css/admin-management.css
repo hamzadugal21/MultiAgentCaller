@@ -1,0 +1,309 @@
+.admin-management-main {
+    display: grid;
+    gap: 26px;
+    padding: 28px 40px 42px;
+}
+
+.admin-management-page .admin-top-actions {
+    margin-bottom: -6px;
+}
+
+.management-tabs {
+    display: flex;
+    gap: 30px;
+    min-height: 60px;
+    padding: 0 20px;
+    border: 1px solid #d9e2ec;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.management-tabs a {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    min-width: 120px;
+    color: #486581;
+    font-size: 0.875rem;
+}
+
+.management-tabs a.is-active {
+    color: #0f766e;
+    font-weight: 700;
+}
+
+.management-tabs a.is-active::after {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    border-radius: 3px;
+    background: #16a6a1;
+    content: "";
+}
+
+.management-filters {
+    display: grid;
+    grid-template-columns: minmax(240px, 2fr) minmax(180px, 0.7fr) auto;
+    gap: 16px;
+    align-items: center;
+    padding: 20px;
+    border: 1px solid #d9e2ec;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.management-filters input,
+.management-filters select {
+    width: 100%;
+    height: 47px;
+    padding: 0 14px;
+    border: 1px solid #d9e2ec;
+    border-radius: 9px;
+    background: #fff;
+    color: #627d98;
+    font: inherit;
+    font-size: 0.875rem;
+}
+
+.management-filters input:disabled,
+.management-filters select:disabled {
+    cursor: not-allowed;
+    opacity: 1;
+}
+
+.disabled-filter-action {
+    color: #829ab1;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.management-filters p {
+    grid-column: 1 / -1;
+    margin: -5px 0 0;
+    color: #829ab1;
+    font-size: 0.75rem;
+}
+
+.visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+.management-section {
+    min-width: 0;
+    scroll-margin-top: 18px;
+}
+
+.management-section-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 14px;
+}
+
+.management-section-heading h2 {
+    margin: 0;
+    font-size: 1.22rem;
+}
+
+.management-section-heading p {
+    margin: 6px 0 0;
+    color: #627d98;
+    font-size: 0.8rem;
+}
+
+.management-section-heading > a {
+    color: #0f766e;
+    font-size: 0.8rem;
+    font-weight: 750;
+}
+
+.management-table-wrap {
+    overflow-x: auto;
+    border: 1px solid #d9e2ec;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.management-table {
+    width: 100%;
+    min-width: 860px;
+    border-collapse: collapse;
+}
+
+.management-table th,
+.management-table td {
+    padding: 19px 20px;
+    border-bottom: 1px solid #d9e2ec;
+    color: #486581;
+    font-size: 0.78rem;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.management-table thead th {
+    padding-block: 16px;
+    background: #f7fafc;
+    color: #627d98;
+    font-size: 0.65rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.management-table tbody th {
+    color: #102a43;
+    font-weight: 700;
+}
+
+.management-table tbody tr:last-child th,
+.management-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.admin-status.is-disabled {
+    background: #f7fafc;
+    color: #627d98;
+}
+
+.recruiter-verification-list {
+    overflow: hidden;
+    border: 1px solid #d9e2ec;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.recruiter-verification-item {
+    display: grid;
+    grid-template-columns: 42px minmax(220px, 1fr) minmax(150px, 0.55fr) 120px;
+    gap: 14px;
+    align-items: center;
+    min-height: 76px;
+    padding: 12px 20px;
+    border-bottom: 1px solid #d9e2ec;
+}
+
+.recruiter-verification-item:last-child {
+    border-bottom: 0;
+}
+
+.management-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #eaf4f8;
+    color: #0f766e;
+    font-size: 0.72rem;
+    font-weight: 800;
+}
+
+.management-recruiter-identity h3,
+.management-recruiter-identity p {
+    margin: 0;
+}
+
+.management-recruiter-identity h3 {
+    font-size: 0.86rem;
+}
+
+.management-recruiter-identity p {
+    margin-top: 5px;
+    color: #486581;
+    font-size: 0.75rem;
+}
+
+.recruiter-verification-item .admin-row-link,
+.recruiter-verification-item .admin-muted {
+    justify-self: end;
+}
+
+@media (max-width: 800px) {
+    .admin-management-main {
+        padding: 24px;
+    }
+
+    .management-filters {
+        grid-template-columns: 1fr 0.65fr;
+    }
+
+    .disabled-filter-action {
+        grid-column: 1 / -1;
+    }
+
+    .recruiter-verification-item {
+        grid-template-columns: 42px minmax(0, 1fr) auto;
+    }
+
+    .recruiter-verification-item .admin-status {
+        grid-column: 2;
+        justify-self: start;
+    }
+
+    .recruiter-verification-item .admin-row-link,
+    .recruiter-verification-item .admin-muted {
+        grid-column: 3;
+        grid-row: 1 / span 2;
+    }
+}
+
+@media (max-width: 560px) {
+    .admin-management-main {
+        gap: 22px;
+        padding: 20px 16px 34px;
+    }
+
+    .admin-management-page .admin-top-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .management-tabs {
+        gap: 18px;
+        overflow-x: auto;
+    }
+
+    .management-tabs a {
+        min-width: 105px;
+    }
+
+    .management-filters {
+        grid-template-columns: 1fr;
+        padding: 16px;
+    }
+
+    .management-filters p,
+    .disabled-filter-action {
+        grid-column: 1;
+    }
+
+    .management-section-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .recruiter-verification-item {
+        grid-template-columns: 42px minmax(0, 1fr);
+        gap: 10px 12px;
+        padding: 16px;
+    }
+
+    .recruiter-verification-item .admin-status,
+    .recruiter-verification-item .admin-row-link,
+    .recruiter-verification-item .admin-muted {
+        grid-column: 2;
+        grid-row: auto;
+        justify-self: start;
+    }
+}

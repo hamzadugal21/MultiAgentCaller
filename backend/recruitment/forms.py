@@ -55,10 +55,30 @@ class JobFAQForm(forms.ModelForm):
         fields = ("question", "answer", "is_active")
 
 
+class CandidateResumeChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, resume):
+        return f"{resume.original_filename} - Ready"
+
+
 class JobApplicationForm(forms.Form):
-    resume = forms.ModelChoiceField(queryset=Resume.objects.none())
-    cover_note = forms.CharField(required=False, widget=forms.Textarea)
-    consent_to_ai_interview = forms.BooleanField(required=False)
+    resume = CandidateResumeChoiceField(
+        queryset=Resume.objects.none(),
+        widget=forms.Select(attrs={"class": "application-select"}),
+    )
+    cover_note = forms.CharField(
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "class": "application-textarea",
+                "placeholder": "Share a brief note about your interest in this role (optional).",
+                "rows": 5,
+            }
+        ),
+    )
+    consent_to_ai_interview = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "application-checkbox"}),
+    )
 
     def __init__(self, *args, candidate, **kwargs):
         super().__init__(*args, **kwargs)
