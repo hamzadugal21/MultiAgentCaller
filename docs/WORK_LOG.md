@@ -316,3 +316,241 @@ Milestone commit: `fd9a6e4` (`feat: add interview invitation and scheduling work
 - Known non-failing warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning. No blocker remains.
 - Week 3 is **100%** complete; overall four-week progress is **75%**.
 - Next: begin Week 4 deterministic advisory evaluation and authorized human-review design only after approval. Week 4 has not started.
+
+## 2026-10-29 — Figma homepage implementation
+
+- Branch: `feat/week-3-ai-interview-runtime`; documentation HEAD before the task: `5b37ca8`; latest validated Week 3 product checkpoint: `897aacc`.
+- Implemented the Figma `Home / Desktop 1440` frame (`7:2`) as the public `accounts:home` Django route with semantic HTML and a dedicated responsive stylesheet. The page covers the approved navigation, hero, candidate-dashboard preview, benefits, recruitment process, trust section, final CTA, and footer without embedding a design screenshot or adding JavaScript.
+- Added two homepage route/template/link tests. Validation reported 0 Django system-check issues, no migration drift, 39 focused account tests passed, 197 complete tests passed, no broken requirements, Ruff passed, and `git diff --check` passed.
+- The first complete-test attempt encountered a low-memory failure while the temporary development server was running; the server was stopped and the clean rerun passed. Known non-failing warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning.
+- The Figma file contains 16 approved desktop screens. One is now implemented to the route/responsive/check definition: **1/16 (6.25%)**. Week 3 backend/AI interview runtime remains **100%** at product checkpoint `897aacc`; conservative overall project progress remains **75%** because Week 4 product work has not started.
+- Changed implementation files: `backend/accounts/views.py`, `backend/accounts/urls.py`, `backend/accounts/tests.py`, `frontend/templates/accounts/home.html`, and `frontend/static/accounts/css/home.css`. This entry and `docs/AI_HANDOFF.md` are the documentation updates for the completed task.
+- Automated browser screenshot comparison was unavailable because the connected computer-use surface could not safely determine the active browser URL. No Figma file content was edited.
+- Next: implement the public **`How It Works`** desktop frame (`37:20`) as the second responsive routed Django screen.
+
+## 2026-10-29 — Figma How It Works implementation
+
+- Implemented the public Figma `How It Works` frame (`37:20`) at `accounts:how_it_works` with the approved hero, five-step workflow, three role cards, transparency section, CTA, footer, and responsive desktop/tablet/mobile behavior.
+- Reused the completed homepage's navigation, footer, color, button, focus, and mobile-menu styles. Updated the Home page's How It Works links to the real route without redesigning the completed screen.
+- Downloaded the single 8px Figma bullet SVG into `frontend/static/accounts/img/teal-bullet.svg`; no temporary Figma URL or screenshot is used at runtime.
+- Added two public route/template/link tests. Validation: Django check reported 0 issues; the page stylesheet and bullet asset were discoverable; 41 focused account tests passed; and `git diff --check` passed.
+- Known non-failing warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning. The latest complete-suite validation remains 197 passing tests from the preceding homepage task.
+- Figma Django frontend progress is **2/16 (12.5%)**. Week 3 backend/AI interview runtime remains **100%** at `897aacc`; conservative overall project progress remains **75%**.
+- Next: implement **`Login`** (`39:29`) using the existing authentication view/form without changing authentication behavior.
+
+## 2026-10-29 — Figma Login implementation
+
+- Implemented the Figma `Login` frame (`39:29`) on the existing public `accounts:login` route as a responsive split brand/sign-in layout using the real `EmailLoginForm`.
+- Preserved the existing `EmailLoginView`, django-axes throttling, authentication audit signals, CSRF token, validation errors, candidate/recruiter/administrator shared login, role-dashboard redirect, and candidate registration link.
+- Added a small accessible password-visibility script. The displayed `Forgot password?` text is intentionally disabled because no password-reset workflow exists; no fake route or business behavior was introduced.
+- Added a focused screen/form test. Validation: Django check reported 0 issues; `login.css` and `login.js` were discoverable; 42 focused account tests passed; and `git diff --check` passed.
+- Known non-failing warnings remain two Daphne Python 3.16 asyncio deprecations and one pytest-cache permission warning.
+- Figma Django frontend progress is **3/16 (18.75%)**. Week 3 backend/AI interview runtime remains **100%**; conservative overall progress remains **75%**.
+- Next: implement **`Candidate Signup`** (`43:32`) around the existing candidate-only form and security behavior.
+
+## 2026-10-30 — Figma Candidate Signup completion and context checkpoint
+
+- Branch: `feat/week-3-ai-interview-runtime`; HEAD: `5b37ca8`; latest validated backend/AI product checkpoint: `897aacc`; worktree contains only the uncommitted Figma frontend, focused tests, and required context documentation.
+- Completed Figma `Candidate Signup` (`43:32`) on the existing `accounts:signup` route with the real candidate-only form, accessible error handling, responsive layout, and an accurate verification-before-applying notice. No role, privilege, model, migration, or authentication behavior changed.
+- Changed Signup files: `frontend/templates/accounts/signup.html`, `frontend/static/accounts/css/signup.css`, and `backend/accounts/tests.py`. The cumulative frontend worktree also contains the completed Home, How It Works, and Login screen files recorded above.
+- Final validation: **201 complete tests passed**; Django check reported 0 issues; migration drift reported no changes; pip check found no broken requirements; Ruff passed across `backend`, `ai_system`, `ml`, and `tests`; and `git diff --check` passed.
+- Errors/blockers: none. Known warnings: two Daphne Windows asyncio deprecations for Python 3.16 and one pytest-cache permission warning.
+- Figma Django frontend progress is **4/16 (25%)**. Week 3 backend/AI interview runtime remains **100%**; conservative overall project progress remains **75%**.
+- Current task: begin Candidate Dashboard only after this checkpoint. Exact next screen: **`Candidate Dashboard` (`15:3`)** using the existing candidate-only route, real available data, and safe empty states.
+
+## 2026-10-30 — Figma Candidate Dashboard implementation
+
+- Implemented Figma `Candidate Dashboard` (`15:3`) on the existing candidate-only `accounts:candidate_dashboard` route without changing models, migrations, authorization rules, or interview/application business logic.
+- Added the approved responsive navy sidebar, welcome header, data-backed profile completion, application/interview/résumé summary cards, upcoming interview, recent applications, and helpful next-step cards. Candidate/profile/application/interview data is candidate-scoped; unavailable records use explicit safe empty states rather than sample business data.
+- Preserved role protection, POST/CSRF email-verification actions, POST-only logout, and existing candidate routes. Added responsive desktop/tablet/mobile behavior, keyboard focus styling, semantic landmarks/headings, and accessible status text.
+- Changed screen files: `backend/accounts/views.py`, `backend/accounts/tests.py`, `frontend/templates/accounts/candidate_dashboard.html`, and `frontend/static/accounts/css/candidate-dashboard.css`.
+- Validation: **46 focused account tests passed**; Django system check reported 0 issues; Ruff passed for `backend/accounts`; Django staticfiles found `accounts/css/candidate-dashboard.css`; and `git diff --check` passed. The latest complete-suite result remains **201 passing tests** from the immediately preceding Candidate Signup checkpoint.
+- Known non-failing warnings remain two Daphne Windows asyncio deprecations for Python 3.16 and one pytest-cache permission warning. No blocker remains; no commit was created.
+- Figma Django frontend progress is **5/16 (31.25%)**. Week 3 backend/AI interview runtime remains **100%**; conservative overall project progress remains **75%**.
+- Next: implement **`My Profile & AI Consent` (`16:10`)** around the existing candidate-only profile and deterministic consent workflows.
+
+## 2026-10-30 — Figma My Profile & AI Consent implementation
+
+- Implemented Figma `My Profile & AI Consent` (`16:10`) on the existing candidate-only `candidates:profile_edit` route with the shared candidate sidebar, responsive completion banner, personal-information fields, professional summary, persisted skills, consent status/details, and save/cancel actions.
+- Preserved the existing seven-field `CandidateProfileForm` allowlist, candidate-only role guard, candidate ownership lookup, transactional profile audit event, POST/CSRF consent route, current-policy resolver, immutable consent history, deterministic consent audit behavior, and fixed candidate data boundaries. Account name/email are displayed read-only rather than made mass assignable.
+- Consent controls use the real grant/revoke services and a fixed `return_to=profile` allowlist value. Current status is resolved from append-only history rather than trusting the Boolean cache alone. The Figma ON-state toggle asset is stored locally; no temporary Figma URL is used at runtime.
+- Skills are rendered from existing `CandidateSkill` records. Skill mutation is deliberately not invented because the project has no supported candidate skill-editing route; an explicit empty state is shown instead.
+- Changed screen files: `backend/candidates/views.py`, `backend/candidates/test_candidate_workflow.py`, `frontend/templates/candidates/profile_form.html`, `frontend/static/candidates/css/candidate-profile.css`, and `frontend/static/accounts/img/consent-toggle-on.svg`.
+- Validation: **20 candidate tests passed** initially; the final combined candidate/account run passed **66 tests**; Django system check reported 0 issues; Ruff passed for `backend/candidates`; static discovery found the profile stylesheet and consent-toggle SVG; and `git diff --check` passed. The latest complete-suite result remains **201 passing tests** from the Candidate Signup checkpoint and was not re-claimed as a post-profile full run.
+- Known non-failing warnings remain two Daphne Windows asyncio deprecations for Python 3.16 and one pytest-cache permission warning. No blocker remains; no commit was created.
+- Figma Django frontend progress is **6/16 (37.5%)**. Candidate Portal progress is **3/6 (50%)** per the tracked screen grouping. Week 3 backend/AI interview runtime remains **100%**; conservative overall project progress remains **75%**.
+- Next: implement **`My Résumé` (`20:13`)** using the existing protected upload, processing, replacement, list, and download workflows.
+
+## 2026-10-30 — Figma My Résumé implementation
+
+- Implemented Figma `My Résumé` (`20:13`) on the existing candidate-only `candidates:resume_list` route with the shared candidate sidebar, active résumé card, secure upload/replacement area, processing explanation, authorized previous-upload history, and privacy note.
+- Reused the existing `ResumeUploadForm`, candidate-only role guard, owner-scoped queries, protected download view, PDF/DOCX and 5 MB validation, randomized private storage, SHA-256 calculation, bounded local parsing, safe failure statuses, and successful-only active-résumé replacement. No model, migration, storage, or processing rule changed.
+- The list and upload routes now render one unified workspace. Only safe authorized metadata is displayed: original filename, file size, upload date, and processing/active state. Storage names, paths, checksums, extracted text, and other candidates' records are not exposed.
+- Added the Figma upload icon as a local 24×24 SVG and used a native accessible file input across the drag-and-drop visual target. No screenshot, mockup, or temporary Figma URL is used at runtime.
+- Changed screen files: `backend/candidates/views.py`, `backend/candidates/test_candidate_workflow.py`, `frontend/templates/candidates/resume_list.html`, `frontend/static/candidates/css/candidate-resume.css`, and `frontend/static/accounts/img/resume-upload.svg`.
+- Validation: **25 focused candidate tests passed**; Django system check reported 0 issues; Ruff passed for `backend/candidates`; static discovery found the résumé stylesheet and upload SVG; and `git diff --check` passed. The latest complete-suite result remains **201 passing tests** and was not re-claimed as a post-résumé full run.
+- Known non-failing warnings remain two Daphne Windows asyncio deprecations for Python 3.16 and one pytest-cache permission warning. Structural validation is not malware scanning. No blocker remains; no commit was created.
+- Figma Django frontend progress is **7/16 (43.75%)**. Candidate Portal progress is **4/6 (66.67%)**. Week 3 backend/AI interview runtime remains **100%**; conservative overall project progress remains **75%**.
+- Next: implement **`Browse Jobs` (`24:17`)** using the existing candidate-only open-job listing and real company/job data.
+
+## 2026-10-30 — Figma Browse Jobs implementation
+
+- Implemented Figma `Browse Jobs` (`24:17`) on the existing authenticated candidate view of `recruitment:job_list` with the shared responsive sidebar/header, real eligible-job cards, safe result count and empty state, authorized detail links, and profile helper.
+- Preserved the existing visibility boundary: candidates receive only open, unexpired jobs from active companies. Draft, expired, inactive-company, and unauthorized records remain excluded. Recruiter job-list behavior is preserved through a compatibility template.
+- Search, location/job-type/experience filters, sorting, and pagination are visibly disabled and explicitly described as unavailable because no existing backend support exists; no fake query behavior or business rule was added.
+- Changed screen files: `backend/recruitment/views.py`, `backend/recruitment/test_job_workflow.py`, `frontend/templates/recruitment/job_list.html`, `frontend/templates/recruitment/recruiter_job_list.html`, and `frontend/static/recruitment/css/job-list.css`.
+- Validation: **20 focused recruitment tests passed**; Django system check reported 0 issues; Ruff passed for `backend/recruitment`; Django staticfiles found `recruitment/css/job-list.css`; and `git diff --check` passed. The first focused run had one assertion mismatch caused by HTML around the result count; the assertion was corrected and both the targeted rerun and full recruitment suite passed.
+- Known non-failing warnings remain two Daphne Windows asyncio deprecations for Python 3.16 and one pytest-cache permission warning. The latest complete-suite result remains **201 passing tests** and was not rerun for this screen.
+- Figma Django frontend progress is **8/16 (50%)**. Candidate Portal progress is **5/6 (83.33%)**. Week 3 backend/AI interview runtime remains **100%**; conservative overall project progress remains **75%**. No commit was created.
+- Next: implement **`Job Details & Apply` (`26:24`)** using the existing secure detail/application routes and application eligibility rules.
+
+## 2026-10-30 — Automatic context checkpoint before Job Details
+
+- Branch: `feat/week-3-ai-interview-runtime`; HEAD: `5b37ca8`; latest validated backend/AI product checkpoint: `897aacc`; worktree: dirty only with the eight documented Figma screens, focused tests, and context updates.
+- Completed work: Home, How It Works, Login, Candidate Signup, Candidate Dashboard, My Profile & AI Consent, My Résumé, and Browse Jobs are implemented, focused-validated, and documented. Current changed files are the previously recorded account/candidate/recruitment views and tests, their templates/static assets, and these two context documents.
+- Latest exact validation: **201 complete tests passed** at the Candidate Signup checkpoint; the latest **20 focused recruitment tests passed** after Browse Jobs; Django check reported 0 issues; Ruff, static discovery, and `git diff --check` passed.
+- Errors/blockers: none. Known warnings: two Daphne Windows asyncio deprecations for Python 3.16 and one pytest-cache permission warning.
+- Current task: implement only the visual job-detail portion of `Job Details & Apply` (`26:24`); the application-form visual redesign remains the exact next small task afterward.
+- Week 3 remains **100%**; conservative overall project progress remains **75%**. No commit was created.
+
+## 2026-10-30 — Figma Job Details visual section
+
+- Implemented only the visual job-detail portion of Figma `Job Details & Apply` (`26:24`) on the existing candidate-authorized `recruitment:job_detail` route. The separate secure application form was not redesigned, so the screen is recorded as **partial**.
+- Added the shared candidate sidebar with Browse Jobs active, breadcrumb, real job/company hero details and badges, About the role, responsibilities, minimum/preferred requirements, skills, company summary, back link, and a clear Apply now link to the existing application route. Save Job is visibly disabled because no saved-jobs backend exists.
+- Preserved candidate visibility rules for open, unexpired jobs from active companies; draft, expired, and inactive-company detail requests remain hidden. No model, migration, route, application rule, service, API, JavaScript, or fake data was added. Recruiter detail rendering remains available through a compatibility template.
+- Changed screen files: `backend/recruitment/views.py`, `backend/recruitment/test_job_workflow.py`, `frontend/templates/recruitment/job_detail.html`, `frontend/templates/recruitment/recruiter_job_detail.html`, and `frontend/static/recruitment/css/job-detail.css`.
+- Validation: **1 focused Job Details route/access test passed**; Django system check reported 0 issues; Ruff passed for `backend/recruitment`; Django staticfiles found `recruitment/css/job-detail.css`; and `git diff --check` passed. The latest complete-suite result remains **201 passing tests** and was not rerun.
+- Known non-failing warnings remain two Daphne Windows asyncio deprecations for Python 3.16 and one pytest-cache permission warning. No blocker remains; no commit was created.
+- Fully completed frontend progress remains **8/16 (50%)**. `Job Details & Apply` is partial. Week 3 backend/AI interview runtime remains **100%**; conservative overall project progress remains **75%**.
+- Next small task: style the existing secure application form and complete `Job Details & Apply` (`26:24`) without changing application business rules.
+
+## 2026-10-30 — Figma Job Details & Apply completion
+
+- Completed the application-form portion of Figma `Job Details & Apply` (`26:24`) on the existing candidate-only `recruitment:application_create` route. The previously completed job-detail section was preserved, so the full screen is now complete.
+- Added a responsive application panel with the candidate sidebar, breadcrumb, real job summary, candidate-owned active résumé information and selector, existing cover-note field, existing optional AI-interview consent control, visible field/service errors, secure submit and back actions, and privacy/human-decision guidance.
+- Preserved CSRF, candidate-only authorization, verified-email enforcement, candidate-owned active processed résumé checks, duplicate prevention, allowlisted fields, deterministic application auditing, and append-only consent history. No model, migration, route, service, or application business rule changed.
+- Changed task files: `backend/recruitment/forms.py`, `backend/recruitment/views.py`, `backend/recruitment/test_application_workflow.py`, `frontend/templates/recruitment/application_form.html`, and `frontend/static/recruitment/css/application-form.css`.
+- Validation: **10 focused application-workflow tests passed**; Django system check reported 0 issues; Ruff passed for the changed recruitment Python files; static discovery found `recruitment/css/application-form.css`; and `git diff --check` passed. The latest complete-suite result remains **201 passing tests** and was not rerun for this focused screen task.
+- Known non-failing warnings remain two Daphne Windows asyncio deprecations for Python 3.16 and one pytest-cache permission warning. No blocker remains; no commit was created.
+- Figma Django frontend progress is **9/16 (56.25%)**. The tracked Candidate Portal grouping is **6/6 (100%)**. Week 3 backend/AI interview runtime remains **100%**; conservative overall project progress remains **75%**.
+- Next: implement **`My Applications & AI Interview` (`27:27`)** using the existing candidate-scoped application, scheduling, consent, and call-session behavior.
+
+## 2026-10-30 — Figma My Applications & AI Interview implementation
+
+- Implemented Figma `My Applications & AI Interview` (`27:27`) on the existing `recruitment:application_list` route with the shared responsive candidate sidebar, real summary counts, candidate-owned application rows, secure detail links, one featured confirmed future interview, readiness indicators, preparation guidance, and safe empty states.
+- The interview card is built only from the signed-in candidate's current confirmed schedule, current-policy general/application consent, verified-email state, active processed résumé, and existing call-session state. It links only to the existing authorized candidate session and reschedule routes. It does not render answers, transcripts, private résumé data, invitation tokens, storage paths, or other candidates' records.
+- Preserved recruiter functionality through a company-scoped compatibility template; recruiters do not receive the candidate-facing dashboard, and administrators remain denied by the existing role guard. No model, migration, scheduling rule, call-session rule, AI behavior, route, or service changed.
+- Changed screen files: `backend/recruitment/views.py`, `backend/recruitment/test_application_workflow.py`, `frontend/templates/recruitment/application_list.html`, `frontend/templates/recruitment/recruiter_application_list.html`, and `frontend/static/recruitment/css/application-list.css`.
+- Validation: **12 focused application-workflow tests passed**, followed by **12 focused interview-scheduling/candidate-call-session tests**; Django system check reported 0 issues; Ruff passed for the changed recruitment Python files; static discovery found `recruitment/css/application-list.css`; and `git diff --check` passed. The latest complete-suite result remains **201 passing tests** and was not rerun.
+- Known non-failing warnings remain two Daphne Windows asyncio deprecations for Python 3.16 and one pytest-cache permission warning. No blocker remains; no commit was created.
+- Figma Django frontend progress is **10/16 (62.5%)**. The tracked Candidate Portal grouping remains **6/6 (100%)**. Week 3 backend/AI interview runtime remains **100%**; conservative overall project progress remains **75%**.
+- Next: implement **`Recruiter Dashboard` (`28:3`)** using existing recruiter-only, company-scoped data and permissions.
+
+## 2026-10-30 — Figma Recruiter Dashboard implementation
+
+- Implemented Figma `Recruiter Dashboard` (`28:3`) on the existing `accounts:recruiter_dashboard` route with the responsive recruiter sidebar/header, four real company metrics, recent applications, upcoming interviews, active job cards, safe empty states, and human-decision responsibility note.
+- Strengthened the page boundary to require the persisted recruiter user to be active and in the recruiter role, the recruiter profile to be verified, the company to be active, and at least one recruiter capability. Jobs, applications, candidates, and schedules are queried only through the recruiter's company; actions are capability-gated and unsupported company-profile functionality is visibly unavailable.
+- Candidate display uses a persisted name or the generic label `Candidate`, never an email fallback. No résumé content, answers, transcripts, invitation tokens, storage paths, audit metadata, internal identifiers, or other-company records are rendered.
+- Changed task files: `backend/accounts/views.py`, `backend/accounts/tests.py`, `frontend/templates/accounts/recruiter_dashboard.html`, and `frontend/static/accounts/css/recruiter-dashboard.css`.
+- Validation: **29 account tests passed**, followed by **31 focused recruitment/interview tests**; Django system check reported 0 issues; Ruff passed for the changed account Python files; static discovery found `accounts/css/recruiter-dashboard.css`; and `git diff --check` passed. The latest complete-suite result remains **201 passing tests** and was not rerun for this focused screen.
+- Known non-failing warnings remain two Daphne Windows asyncio deprecations for Python 3.16 and one pytest-cache permission warning. No blocker remains; no commit was created.
+- Figma Django frontend progress is **11/16 (68.75%)**. Candidate Portal remains **6/6 (100%)**; Recruiter Portal is **1/4 (25%)**; Admin Portal is **0/2 (0%)**. Week 3 backend/AI interview runtime remains **100%**; conservative overall project progress remains **75%**.
+- Next: implement **`Manage Jobs` (`28:136`)** using the existing company-scoped job management routes and deterministic transitions.
+
+## 2026-10-30 — Automatic context checkpoint before Manage Jobs
+
+- Branch: `feat/week-3-ai-interview-runtime`; HEAD: `5b37ca8`; latest validated backend/AI product checkpoint: `897aacc`; worktree: dirty only with the eleven documented Figma screens, their focused tests, static assets, and context updates.
+- Completed work: Home, How It Works, Login, Candidate Signup, all six tracked candidate-portal screens, and Recruiter Dashboard are implemented, focused-validated, and documented. Current changed files are the previously recorded account/candidate/recruitment views, forms, tests, templates, static assets, and these context documents.
+- Latest exact validation: **201 complete tests passed** at the latest full-suite checkpoint; Recruiter Dashboard validation passed **29 account tests** and **31 focused recruitment/interview tests**; Django check reported 0 issues; Ruff, static discovery, and `git diff --check` passed.
+- Errors/blockers: none. Known warnings: two Daphne Windows asyncio deprecations for Python 3.16 and one pytest-cache permission warning.
+- Current task: implement only **`Manage Jobs` (`28:136`)** using existing verified-recruiter, capability, company-scope, and deterministic transition boundaries.
+- Week 3 remains **100%**; Figma Django frontend progress is **11/16 (68.75%)**; conservative overall project progress remains **75%**. No commit was created.
+
+## 2026-10-30 — Figma Manage Jobs implementation
+
+- Implemented Figma `Manage Jobs` (`28:136`) on the recruiter branch of the existing `recruitment:job_list` route with the responsive recruiter shell, Manage Jobs active state, real Published/Drafts/Closed summaries, company-scoped job table, applicant counts, safe empty state, job-writing helper, and publishing note.
+- Reused the existing persisted recruiter authorization in `recruiter_jobs()`: the recruiter user must be active, the profile verified, the company active, and `can_manage_jobs` enabled. Candidates continue to receive the separate Browse Jobs template from the shared route; administrators and ineligible recruiters remain denied.
+- Reused the existing create/edit routes and deterministic POST/CSRF job-state route. Publish, reopen, and close controls are rendered only for states where the existing transition table permits them. No model, migration, workflow rule, API, or fake record was added.
+- Search/filter/sort controls are visibly disabled with an honest unavailable note. Department cells say `Not specified` because the current `JobPosting` schema has no department field; no unsupported filter or department behavior is simulated.
+- Changed task files: `backend/recruitment/views.py`, `backend/recruitment/test_job_workflow.py`, `frontend/templates/recruitment/recruiter_job_list.html`, and `frontend/static/recruitment/css/manage-jobs.css`.
+- Validation: **13 focused job-workflow tests passed**, followed by **3 deterministic recruitment-transition tests**; Django system check reported 0 issues; Ruff passed for the changed recruitment Python files; static discovery found `recruitment/css/manage-jobs.css`; and `git diff --check` passed. The latest complete-suite result remains **201 passing tests** and was not rerun.
+- Known non-failing warnings remain two Daphne Windows asyncio deprecations for Python 3.16 and one pytest-cache permission warning. No blocker remains; no commit was created.
+- Figma Django frontend progress is **12/16 (75%)**. Candidate Portal remains **6/6 (100%)**; Recruiter Portal is **2/4 (50%)**; Admin Portal is **0/2 (0%)**. Week 3 backend/AI interview runtime remains **100%**; conservative overall project progress remains **75%**.
+- Next: implement **`Applicants & Application Details` (`29:5`)** using existing company-scoped application review routes and permissions.
+
+## 2026-10-30 — Figma Applicants list stage
+
+- Implemented only the left applicant-list workspace from Figma `Applicants & Application Details` (`29:5`) on the recruiter branch of the existing `recruitment:application_list` route. The full screen remains **partial** because the right-side authorized application-detail panel has not been redesigned.
+- Added the responsive recruiter shell with Applications active, header controls, visibly disabled search/job/status filters, applicant count, real company-scoped application cards, safe candidate initials/names, job title, applied date, persisted status, existing Review links, privacy note, and honest empty state.
+- Preserved `recruiter_applications()` authorization: the persisted recruiter must be active, verified, and have `can_review_candidates`; returned applications remain restricted to the recruiter's company. Candidate names use a generic fallback rather than email, and the list renders no résumé filename/content, transcript/answer, invitation token, storage path, audit metadata, or other-company record.
+- No selected row was invented because the existing list route has no selected-application context. The existing detail route and its résumé/interview/history behavior were not redesigned or changed.
+- Changed task files: `backend/recruitment/views.py`, `backend/recruitment/test_application_workflow.py`, `frontend/templates/recruitment/recruiter_application_list.html`, and `frontend/static/recruitment/css/recruiter-applications.css`.
+- Validation: **14 focused application-workflow tests passed**; Django system check reported 0 issues; Ruff passed for the changed recruitment Python files; static discovery found `recruitment/css/recruiter-applications.css`; and `git diff --check` passed. The latest complete-suite result remains **201 passing tests** and was not rerun.
+- Known non-failing warnings remain two Daphne Windows asyncio deprecations for Python 3.16 and one pytest-cache permission warning. No blocker remains; no commit was created.
+- Fully completed Figma Django frontend progress remains **12/16 (75%)**. `Applicants & Application Details` is partial at the applicant-list stage; Recruiter Portal remains **2/4 complete plus 1 partial**. Week 3 backend/AI interview runtime remains **100%**; conservative overall project progress remains **75%**.
+- Next small task: implement the **right-side authorized application-detail panel** for `Applicants & Application Details` (`29:5`).
+
+## 2026-10-30 — Figma Applicants & Application Details completion
+
+- Confirmed the documented Stage A applicant-list workspace was already complete, then implemented only the remaining right-side authorized detail panel for Figma `Applicants & Application Details` (`29:5`) on the existing recruiter application-detail route.
+- Reused the company-scoped `recruiter_applications()` authorization and existing list shell. The selected detail shows safe candidate identity, location, experience, persisted skills, verified-email state, current-policy processing/interview consent, résumé filename and processing status, application status, current interview schedule, permitted scheduling/session actions, and audit-derived application history. The selected row appears only when the existing detail route supplies selected-application context; the two-column workspace stacks on narrower screens.
+- Kept recruiter résumé viewing visibly unavailable because no recruiter-authorized download route exists. No résumé text, storage path, checksum, interview answer/transcript, invitation credential, private audit metadata, other-company data, model, migration, route, API, or business rule was added or exposed.
+- Changed task files: `backend/recruitment/views.py`, `backend/recruitment/test_application_workflow.py`, `frontend/templates/recruitment/recruiter_application_list.html`, `frontend/static/recruitment/css/recruiter-applications.css`, `docs/AI_HANDOFF.md`, and `docs/WORK_LOG.md`.
+- Validation: **25 focused application and interview-scheduling tests passed**; Django system check reported 0 issues; Ruff passed for the changed recruitment Python files; Django staticfiles found `recruitment/css/recruiter-applications.css`; and `git diff --check` passed. The complete suite was not run for this focused task; the latest verified full-suite result remains **201 passing tests**.
+- Known non-failing warnings: two Daphne Windows asyncio deprecations and one pytest-cache permission warning. No blocker remains; no commit was created and `.env` was untouched.
+- Figma Django frontend progress is **13/16 (81.25%)**. Candidate Portal remains **6/6 (100%)**; Recruiter Portal is **3/4 (75%)**; Admin Portal is **0/2 (0%)**. Week 3 backend/AI interview runtime remains **100%**; conservative overall project progress remains **75%**.
+- Next: implement **Interview Management** (`30:8`) using existing recruiter-scoped scheduling and call-session routes.
+
+## 2026-10-30 — Figma Interview Management implementation
+
+- Implemented Figma `Interview Management` (`30:8`) on the existing `calling:recruiter_session_list` route with the shared responsive recruiter shell, Interviews active state, real schedule summaries, honest disabled status filters, responsive upcoming-interview rows, selected schedule details, invitation/confirmation state, current-policy readiness indicators, supported schedule/session actions, company-scoped reschedule review, safe empty states, and the human-decision privacy note.
+- The page now uses current company schedules rather than only schedules that already have call sessions. Access is limited to persisted active recruiters with a verified profile, active company, and `can_review_candidates`; candidates and administrators are denied this recruiter screen. Existing administrator call-session review services and detail authorization were not changed.
+- Reused the existing application-selection route for the Schedule Interview entry point, call-session detail route when a session exists, invitation retry and schedule cancellation POST/CSRF actions, and reschedule approval/decline POST/CSRF actions. Recruiter-initiated rescheduling and tabs remain visibly unavailable because the backend has no corresponding recruiter route or filter behavior.
+- No invitation token, private delivery error, résumé data, answer/transcript content, audit metadata, internal display identifier, other-company record, model, migration, API, business rule, or fake interview was added or exposed.
+- Changed task files: `backend/calling/views.py`, `backend/calling/test_call_session_services.py`, `frontend/templates/calling/recruiter_session_list.html`, `frontend/static/calling/css/recruiter-interviews.css`, `docs/AI_HANDOFF.md`, and `docs/WORK_LOG.md`.
+- Validation: the first four-test run reported three failures from a missing `django.utils.timezone` import in the new view; the import was added and the same run passed **4 tests**. Final focused validation passed **59 calling, interview-scheduling, and application tests**; Django system check reported 0 issues; Ruff passed for the changed calling Python files; Django staticfiles found `calling/css/recruiter-interviews.css`; and `git diff --check` passed. The complete suite was not run; the latest verified full-suite result remains **201 passing tests**.
+- Known non-failing warnings: two Daphne Windows asyncio deprecations and one pytest-cache permission warning. No blocker remains; no commit was created and `.env` was untouched.
+- Figma Django frontend progress is **14/16 (87.5%)**. Candidate Portal remains **6/6 (100%)**; Recruiter Portal is **4/4 (100%)**; Admin Portal is **0/2 (0%)**. Week 3 backend/AI interview runtime remains **100%**; conservative overall project progress remains **75%**.
+- Next: implement **Admin Dashboard** (`32:3`) using the existing administrator-only route and trusted provisioning boundaries.
+
+## 2026-10-30 — Automatic context checkpoint before Admin Dashboard
+
+- Branch: `feat/week-3-ai-interview-runtime`; HEAD: `5b37ca8`; worktree: dirty only with the fourteen documented Figma screen implementations, their focused tests/static assets, and context updates.
+- Completed work: Home, How It Works, Login, Candidate Signup, all six candidate-portal screens, and all four recruiter-portal screens are implemented, focused-validated, and documented. The current task is **Admin Dashboard** (`32:3`); no Admin Dashboard changes have started at this checkpoint.
+- Current changed files are the previously documented account, candidate, recruitment, calling, and interview-facing views/forms/tests/templates/static assets plus `docs/AI_HANDOFF.md` and `docs/WORK_LOG.md`; no migration, model, deployment, or environment file is part of the worktree.
+- Exact latest validation: **59 calling, interview-scheduling, and application tests passed** for Interview Management; Django system check reported 0 issues; Ruff, static discovery, and `git diff --check` passed. The latest complete-suite checkpoint remains **201 passing tests**.
+- Errors/blockers: the prior missing `django.utils.timezone` import was corrected and its failing tests were rerun successfully; no blocker remains. Known warnings are two Daphne Windows asyncio deprecations and one pytest-cache permission warning.
+- Week 3 backend/AI interview runtime remains **100%**; Figma Django frontend progress is **14/16 (87.5%)**; conservative overall project progress remains **75%**.
+- Exact next task: implement and focused-validate **Admin Dashboard** (`32:3`) without changing provisioning rules, models, migrations, or unrelated screens.
+
+## 2026-10-30 — Figma Admin Dashboard implementation
+
+- Implemented Figma `Admin Dashboard` (`32:3`) on the existing administrator-only `accounts:admin_dashboard` route with the responsive navy administrator shell, Dashboard active state, real platform metrics, recent company activity, recruiter verification state, privacy-safe platform activity, honest empty states, existing trusted provisioning links, and the administrative accountability/human-control note.
+- Preserved the administrator role boundary and existing Django admin/provisioning services. Staff administrators receive existing Django admin Add Company, Add Recruiter, company-management, and recruiter-review links; role administrators without staff access receive honest disabled controls. No provisioning, approval, deletion, notification, audit-browser, model, migration, API, or business workflow was invented.
+- Platform activity is restricted to an explicit event-type allowlist and fixed display labels. The page never renders audit metadata, descriptions, resource identifiers, actor email snapshots, or stored action prose; recruiter display falls back to a generic label rather than email.
+- Changed task files: `backend/accounts/views.py`, `backend/accounts/tests.py`, `frontend/templates/accounts/admin_dashboard.html`, `frontend/static/accounts/css/admin-dashboard.css`, `docs/AI_HANDOFF.md`, and `docs/WORK_LOG.md`.
+- Validation: **57 account tests passed**, followed by **141 focused account, recruitment-administration, and audit tests**; Django system check reported 0 issues; Ruff passed for `backend/accounts`; Django staticfiles found `accounts/css/admin-dashboard.css`; and `git diff --check` passed. The first sandboxed command could not launch the virtual environment's base Python because of managed filesystem permission; the identical validation was rerun successfully with approved execution permission. The complete suite was not run; the latest verified full-suite result remains **201 passing tests**.
+- Known non-failing warnings: two Daphne Windows asyncio deprecations and one pytest-cache permission warning. No product blocker remains; no commit was created and `.env` was untouched.
+- Figma Django frontend progress is **15/16 (93.75%)**. Candidate Portal remains **6/6 (100%)**; Recruiter Portal is **4/4 (100%)**; Admin Portal is **1/2 (50%)**. Week 3 backend/AI interview runtime remains **100%**; conservative overall project progress remains **75%**.
+- Next: implement **Companies & Recruiters Management** (`33:4`) using existing trusted provisioning and Django admin boundaries.
+
+## 2026-10-30 — Figma Companies & Recruiters Management completion
+
+- Implemented the final approved Figma desktop screen, `Companies & Recruiters Management` (`33:4`), through the existing administrator-only `accounts:admin_dashboard` route using the explicit `?section=management` presentation state. The default Admin Dashboard remains intact and now links to the management overview.
+- Added the responsive administrator shell with Companies active, safe company/recruiter sections, real recruiter and open-job counts, company/access status, creation/update context, initials and name fallbacks, existing Django admin Add/Manage/Review links for staff administrators, honest disabled search/filter controls, responsive overflow/card behavior, empty states, and the access/accountability note.
+- Preserved role checks and trusted provisioning boundaries. Non-administrators remain denied; role administrators without Django staff access receive read-only data and disabled mutation controls. No model, migration, API, verification rule, deletion workflow, fake record, AI behavior, or management business rule was added. No email address, phone number, candidate private data, résumé, answer/transcript, token, storage path, secret, or raw audit metadata is displayed.
+- Changed task files: `backend/accounts/views.py`, `backend/accounts/tests.py`, `frontend/templates/accounts/admin_dashboard.html`, `frontend/templates/accounts/admin_management.html`, `frontend/static/accounts/css/admin-management.css`, `docs/AI_HANDOFF.md`, and `docs/WORK_LOG.md`. The ignored local prompt counter was incremented to `1` according to `AGENTS.md`.
+- Validation: **57 focused account tests passed**; **141 focused account, recruitment-administration, and audit tests passed**; and the complete suite passed **243 tests** with `OPENBLAS_NUM_THREADS=1`. Django system check reported 0 issues; migration drift reported no changes; pip check found no broken requirements; Ruff passed across `backend`, `ai_system`, `ml`, and `tests`; Django staticfiles found `accounts/css/admin-management.css`; and `git diff --check` passed.
+- Known non-failing warnings: two Daphne Windows asyncio deprecations and one pytest-cache permission warning. No blocker remains; no commit was created and `.env` was untouched.
+- All **16/16 Figma desktop screens are implemented, focused/full-suite validated, and documented**. Candidate Portal is **6/6**, Recruiter Portal is **4/4**, and Admin Portal is **2/2**. Week 3 backend/AI interview runtime remains **100%**. Conservative overall project progress remains **75%** because Week 4 manual QA, evaluation, production readiness, deployment, and final documentation remain incomplete.
+- Exact next task: perform a final manual UI/QA review, inspect the cumulative frontend diff, and create one reviewed frontend commit only after approval.
+
+## 2026-10-30 — Reviewed Figma frontend checkpoint
+
+- Branch: `feat/week-3-ai-interview-runtime`; reviewed frontend product commit: `00c601a` (`feat: implement responsive Figma frontend`). The commit contains only the documented frontend-facing account/candidate/recruitment/calling views and forms, their focused tests, all responsive templates, local CSS/JavaScript/SVG assets, and no context documents or private/runtime files.
+- Pre-commit review inspected Git status, diff statistics, whitespace, changed names, substantive backend-facing diffs, test additions, template mutation/CSRF patterns, and all untracked static assets. No unrelated user changes, remote Figma URLs, credentials, private candidate data, generated runtime output, or temporary assets were found. The three SVG files are intentional small local interface assets.
+- Final pre-commit validation passed **243 complete tests** with `OPENBLAS_NUM_THREADS=1`; Django system check reported 0 issues; migration drift reported no changes; pip check found no broken requirements; Ruff passed across `backend`, `ai_system`, `ml`, and `tests`; and `git diff --check` plus `git diff --cached --check` passed.
+- Known non-failing warnings remain two Daphne Windows asyncio deprecations and one pytest-cache permission warning. Initial staging was blocked by managed `.git/index.lock` permissions; the identical explicit staging operation succeeded with approved Git metadata write permission and did not alter the intended file set.
+- No push, merge, rebase, amend, deployment, environment access, or branch change occurred. The ignored local context counter remains outside Git.
+- All **16/16 Figma desktop screens remain implemented and validated**, but the project remains **75% overall** because Week 4 evaluation, production readiness, deployment, final documentation, and hands-on cross-browser/UI QA remain incomplete.
+- Exact next task: conduct hands-on desktop/tablet/mobile and keyboard-accessibility UI QA against the committed screens, then proceed only with an approved Week 4 scope.
