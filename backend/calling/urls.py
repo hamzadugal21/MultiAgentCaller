@@ -5,6 +5,7 @@ from calling import views
 app_name = "calling"
 
 urlpatterns = [
+    path("review/bulk-schedule/", views.bulk_schedule_view, name="bulk_schedule"),
     path("", views.candidate_session_list, name="candidate_session_list"),
     path(
         "schedules/<uuid:schedule_id>/prepare/",
@@ -30,6 +31,16 @@ urlpatterns = [
         "sessions/<uuid:session_id>/answer/",
         views.submit_answer,
         name="submit_answer",
+    ),
+    path(
+        "sessions/<uuid:session_id>/transcribe/",
+        views.transcribe_answer,
+        name="transcribe_answer",
+    ),
+    path(
+        "sessions/<uuid:session_id>/speak-question/",
+        views.speak_question,
+        name="speak_question",
     ),
     path(
         "sessions/<uuid:session_id>/cancel/",

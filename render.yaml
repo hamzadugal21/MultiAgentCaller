@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: multiagent-recruitment-caller-demo
+    runtime: python
+    plan: free
+    buildCommand: bash build.sh
+    startCommand: >-
+      cd backend && daphne --access-log /dev/null --no-server-name
+      --websocket-max-message-size 16384 -b 0.0.0.0 -p $PORT
+      config.asgi:application
+    healthCheckPath: /health/
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.14.7
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings_production
+      - key: DJANGO_READ_DOT_ENV
+        value: "False"
+      - key: DEBUG
+        value: "False"
+      - key: DJANGO_TRUST_PROXY_HEADERS
+        value: "True"
+      - key: SECURE_SSL_REDIRECT
+        value: "True"
+      - key: SECURE_HSTS_SECONDS
+        value: "0"
+      - key: SECURE_HSTS_INCLUDE_SUBDOMAINS
+        value: "False"
+      - key: SECURE_HSTS_PRELOAD
+        value: "False"
+      - key: DATABASE_SSLMODE
+        value: require
+      - key: DJANGO_SECRET_KEY
+        sync: false
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false

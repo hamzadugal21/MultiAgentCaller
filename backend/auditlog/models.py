@@ -431,10 +431,42 @@ class DataRetentionRecord(models.Model):
         RETAINED = "retained", "Retention extended"
         FAILED = "failed", "Retention action failed"
 
+    class ExecutionMode(models.TextChoices):
+        LEGACY = "legacy", "Legacy record"
+        DRY_RUN = "dry_run", "Dry run"
+        APPLY = "apply", "Applied mutation"
+
+    class Result(models.TextChoices):
+        LEGACY = "legacy", "Legacy result"
+        PREVIEWED = "previewed", "Previewed"
+        APPLIED = "applied", "Applied"
+        NOOP = "noop", "No eligible records"
+        FAILED = "failed", "Failed"
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
         editable=False,
+    )
+    run_id = models.UUIDField(
+        null=True,
+        blank=True,
+        unique=True,
+        editable=False,
+    )
+    policy_version = models.CharField(
+        max_length=100,
+        default="legacy-unversioned",
+    )
+    execution_mode = models.CharField(
+        max_length=20,
+        choices=ExecutionMode.choices,
+        default=ExecutionMode.LEGACY,
+    )
+    result = models.CharField(
+        max_length=20,
+        choices=Result.choices,
+        default=Result.LEGACY,
     )
     data_category = models.CharField(max_length=100)
     resource_type = models.CharField(max_length=120)
@@ -444,6 +476,10 @@ class DataRetentionRecord(models.Model):
         choices=Action.choices,
         db_index=True,
     )
+    retention_days = models.PositiveIntegerField(default=0)
+    batch_size = models.PositiveIntegerField(default=0)
+    eligible_count = models.PositiveIntegerField(default=0)
+    processed_count = models.PositiveIntegerField(default=0)
     reason = models.TextField()
     performed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -460,6 +496,21 @@ class DataRetentionRecord(models.Model):
         null=True,
         blank=True,
     )
+    cutoff_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+    audit_event = models.ForeignKey(
+        AuditEvent,
+        on_delete=models.PROTECT,
+        related_name="retention_records",
+        null=True,
+        blank=True,
+    )
     metadata = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -468,6 +519,30 @@ class DataRetentionRecord(models.Model):
         indexes = [
             models.Index(fields=("action", "created_at")),
             models.Index(fields=("resource_type", "resource_identifier_hash")),
+            models.Index(
+                fields=("data_category", "policy_version", "cutoff_at"),
+                name="ret_category_policy_cutoff",
+            ),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(processed_count__lte=F("eligible_count")),
+                name="retention_processed_lte_eligible",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    ~Q(execution_mode="apply")
+                    | Q(
+                        audit_event__isnull=False,
+                        batch_size__gte=1,
+                        completed_at__isnull=False,
+                        cutoff_at__isnull=False,
+                        retention_days__gte=1,
+                        run_id__isnull=False,
+                    )
+                ),
+                name="retention_apply_has_evidence",
+            ),
         ]
 
     def __str__(self):

@@ -1,4 +1,5 @@
 import pytest
+from django.contrib.messages import get_messages
 from django.urls import reverse
 from django.utils import timezone
 
@@ -204,6 +205,8 @@ def test_recruiter_manage_jobs_screen_is_company_scoped_with_safe_actions(client
     assert reverse("recruitment:job_create") in content
     assert reverse("recruitment:job_edit", args=(published_job.pk,)) in content
     assert reverse("recruitment:job_state", args=(published_job.pk,)) in content
+    assert '<input type="hidden" name="status" value="open">' in content
+    assert '<input type="hidden" name="status" value="closed">' in content
     assert reverse("recruitment:job_edit", args=(other_job.pk,)) not in content
     assert "Search, filtering, sorting, and department data are not available" in content
     assert "Only published jobs are visible to eligible candidates" in content
@@ -251,6 +254,20 @@ def test_recruiter_cannot_access_other_company_job(client):
     )
 
 
+def test_job_edit_state_form_keeps_distinct_submitter_status_values(client):
+    company = Company.objects.create(name="Job State Form Company")
+    user, recruiter = _recruiter(company)
+    job = _job(company, recruiter, title="State Form Job")
+    client.force_login(user)
+
+    response = client.get(reverse("recruitment:job_edit", args=(job.pk,)))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    for status in ("open", "paused", "closed", "archived"):
+        assert f'name="status" value="{status}"' in content
+
+
 def test_recruiter_adds_skill_question_faq_and_publishes(client):
     company = Company.objects.create(name="Configured Job Company")
     user, recruiter = _recruiter(company)
@@ -293,6 +310,30 @@ def test_recruiter_adds_skill_question_faq_and_publishes(client):
     assert JobFAQ.objects.filter(job=job).exists()
     job.refresh_from_db()
     assert job.status == JobPosting.Status.OPEN
+
+
+def test_expired_draft_publish_explains_required_deadline_and_preserves_state(client):
+    company = Company.objects.create(name="QA Deadline Company")
+    user, recruiter = _recruiter(company)
+    job = _job(
+        company,
+        recruiter,
+        application_deadline=timezone.now() - timezone.timedelta(days=1),
+    )
+    client.force_login(user)
+
+    response = client.post(
+        reverse("recruitment:job_state", args=(job.pk,)), {"status": "open"}
+    )
+
+    assert response.status_code == 302
+    assert any(
+        "Set a future application deadline" in str(message)
+        for message in get_messages(response.wsgi_request)
+    )
+    job.refresh_from_db()
+    assert job.status == JobPosting.Status.DRAFT
+    assert not AuditEvent.objects.filter(event_type="job.published", resource_id=str(job.pk)).exists()
 
 
 def test_candidate_browses_only_open_eligible_jobs(client):
@@ -343,7 +384,9 @@ def test_candidate_browses_only_open_eligible_jobs(client):
     assert "Inactive Company Role" not in content
     assert "Browse Jobs" in content
     assert 'aria-current="page"' in content
-    assert "Search, filters, and sorting are not available yet" in content
+    assert "Search and filters are coming soon. All available jobs are listed below." in content
+    assert 'type="search"' in content and 'type="button" disabled>Search' in content
+    assert content.count("<select disabled>") >= 4
 
 
 def test_candidate_job_list_has_safe_empty_state(client):

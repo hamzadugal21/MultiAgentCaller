@@ -1,0 +1,11 @@
+<style>
+.hf-loading-overlay[hidden] { display: none !important; }
+</style>
+{% load static %}
+<div class="hf-loading-overlay" data-page-loader hidden aria-hidden="true">
+    <div class="hf-loading-dialog" role="status" aria-live="polite" aria-label="Loading">
+        <span class="hf-loading-spinner" aria-hidden="true"></span>
+        <span data-page-loader-message>Loading…</span>
+    </div>
+</div>
+<script src="{% static 'accounts/js/loading.js' %}" defer></script>

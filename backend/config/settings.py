@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 import environ
@@ -6,12 +7,15 @@ BACKEND_ROOT = Path(__file__).resolve().parent.parent
 PROJECT_ROOT = BACKEND_ROOT.parent
 FRONTEND_ROOT = PROJECT_ROOT / "frontend"
 BASE_DIR = BACKEND_ROOT
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 env = environ.Env(
     DEBUG=(bool, True),
 )
 
-environ.Env.read_env(PROJECT_ROOT / ".env")
+if env.bool("DJANGO_READ_DOT_ENV", default=True):
+    environ.Env.read_env(PROJECT_ROOT / ".env")
 
 
 SECRET_KEY = env("DJANGO_SECRET_KEY")
@@ -78,17 +82,24 @@ WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": env("DB_NAME"),
-        "USER": env("DB_USER"),
-        "PASSWORD": env("DB_PASSWORD"),
-        "HOST": env("DB_HOST", default="localhost"),
-        "PORT": env("DB_PORT", default="5432"),
-        "CONN_MAX_AGE": 60,
+_database_url = env("DATABASE_URL", default="")
+if _database_url:
+    DATABASES = {
+        "default": env.db_url_config(_database_url)
     }
-}
+    DATABASES["default"]["CONN_MAX_AGE"] = 60
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": env("DB_NAME"),
+            "USER": env("DB_USER"),
+            "PASSWORD": env("DB_PASSWORD"),
+            "HOST": env("DB_HOST", default="localhost"),
+            "PORT": env("DB_PORT", default="5432"),
+            "CONN_MAX_AGE": 60,
+        }
+    }
 
 
 AUTH_USER_MODEL = "accounts.User"
@@ -208,3 +219,34 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 2_621_440
 FILE_UPLOAD_PERMISSIONS = 0o600
 FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o700
+
+# Optional local-only browser microphone transcription. Model downloads are explicit.
+WHISPER_MODEL_PATH = env(
+    "WHISPER_MODEL_PATH",
+    default=str(PROJECT_ROOT / "var" / "models" / "whisper" / "base"),
+)
+WHISPER_DEVICE = env("WHISPER_DEVICE", default="cpu")
+WHISPER_COMPUTE_TYPE = env("WHISPER_COMPUTE_TYPE", default="int8")
+WHISPER_LANGUAGE = env("WHISPER_LANGUAGE", default="en")
+WHISPER_MAX_AUDIO_SECONDS = env.int("WHISPER_MAX_AUDIO_SECONDS", default=60)
+WHISPER_MAX_UPLOAD_BYTES = env.int("WHISPER_MAX_UPLOAD_BYTES", default=2 * 1024 * 1024)
+WHISPER_TRANSCRIPTION_RATE_LIMIT = env.int("WHISPER_TRANSCRIPTION_RATE_LIMIT", default=5)
+WHISPER_TRANSCRIPTION_RATE_WINDOW_SECONDS = env.int(
+    "WHISPER_TRANSCRIPTION_RATE_WINDOW_SECONDS", default=300
+)
+# Development keeps optional local speech available. Production settings force
+# this off so no browser request can initialize a local speech adapter there.
+SPEECH_FEATURE_ENABLED = env.bool("SPEECH_FEATURE_ENABLED", default=True)
+PIPER_MODEL_PATH = env(
+    "PIPER_MODEL_PATH",
+    default=str(
+        PROJECT_ROOT
+        / "var"
+        / "models"
+        / "piper"
+        / "tsukuyomi-zs-v1"
+        / "releases"
+        / "zs-v1"
+        / "tsukuyomi.onnx"
+    ),
+)

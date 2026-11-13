@@ -1,0 +1,10 @@
+{% extends "admin/change_form.html" %}
+{% block submit_buttons_bottom %}
+{{ block.super }}
+<div class="submit-row">
+    <strong>Account status: {{ account_status }}</strong>
+    {% if can_block_account %}<button type="submit" formaction="{% url 'admin:accounts_user_block' original.pk %}" formmethod="post" class="deletelink" onclick="return confirm('Block this account? The user will not be able to log in.');">Block account</button>{% endif %}
+    {% if can_unblock_account %}<button type="submit" formaction="{% url 'admin:accounts_user_unblock' original.pk %}" formmethod="post" class="default" onclick="return confirm('Unblock this account and clear temporary login lockouts?');">Unblock account</button>{% endif %}
+    {% if can_unlock_login %}<button type="submit" formaction="{% url 'admin:accounts_user_unlock_login' original.pk %}" formmethod="post" name="confirm_shared" value="yes" class="default" onclick="return confirm('Unlock login attempts? If this is a shared IP lockout, other accounts from this address may also be unlocked.');">Unlock login attempts</button>{% endif %}
+</div>
+{% endblock %}

@@ -146,11 +146,8 @@ def _eligible_schedule(schedule, *, policy_version, now):
         schedule.status != InterviewSchedule.Status.CONFIRMED
         or not schedule.is_current
         or schedule.confirmed_at is None
-        or schedule.invitation_expires_at is None
-        or schedule.confirmed_at > schedule.invitation_expires_at
         or schedule.scheduled_end <= now
         or application.status != JobApplication.Status.INVITED
-        or not application.candidate.user.email_verified
     ):
         raise CallSessionServiceError("The interview is not eligible for a call session.")
     if not has_effective_general_ai_processing_consent(

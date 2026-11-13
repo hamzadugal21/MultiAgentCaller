@@ -11,13 +11,13 @@ def validate_resume_file(uploaded_file):
     extension = Path(uploaded_file.name).suffix.lower()
 
     if extension not in ALLOWED_EXTENSIONS:
-        raise ValidationError("Only PDF and DOCX résumé files are allowed.")
+        raise ValidationError("Only PDF and DOCX resume files are allowed.")
 
     if uploaded_file.size <= 0:
-        raise ValidationError("The uploaded résumé is empty.")
+        raise ValidationError("The uploaded resume is empty.")
 
     if uploaded_file.size > MAX_RESUME_SIZE:
-        raise ValidationError("The résumé must not be larger than 5 MB.")
+        raise ValidationError("The resume must not be larger than 5 MB.")
 
     original_position = uploaded_file.tell()
 

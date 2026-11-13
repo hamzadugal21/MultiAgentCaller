@@ -1,6 +1,6 @@
 # Render Deployment Plan
 
-This document records the approved future deployment plan. It is planning material only: no hosting account, cloud service, repository connection, environment configuration, or deployment has been created.
+This document records the approved future deployment plan and the tracked repository-side deployment boundary. No hosting account, cloud service, repository connection, private environment configuration, or deployment has been created.
 
 ## Deployment purpose
 
@@ -36,40 +36,51 @@ Do not create accounts or connect any of these services until the final deployme
 - A future portfolio demonstration may include a recorded video showing the real local pipeline.
 - The hosted simulation must preserve the same human-review, privacy, consent, authorization, and audit boundaries expected of the real workflow.
 
-## Future Week 4 tasks
+## Tracked deployment preparation
 
-The following work is required during the final deployment milestone, but none of it is implemented by this document:
+The repository now provides:
 
-- Add `render.yaml`.
-- Add `build.sh`.
-- Add `.python-version` after selecting the exact supported Python patch version.
-- Add a minimal `/health/` endpoint.
-- Configure private Render environment variables.
-- Validate production operation with `DEBUG=False`.
-- Configure Render `ALLOWED_HOSTS`.
-- Configure `CSRF_TRUSTED_ORIGINS`.
-- Validate HTTPS redirects and secure-cookie behavior.
-- Run `collectstatic` as part of the approved build process.
-- Define and execute the approved database-migration strategy.
-- Configure Neon PostgreSQL.
-- Configure Upstash Redis for the Channels layer.
+- `render.yaml` with a free Python web-service blueprint, fixed health path, private environment-variable placeholders, and the Daphne ASGI start command.
+- `build.sh`, which installs only `requirements/render.txt` and collects static files. It deliberately does not run migrations.
+- `.python-version`, currently pinned to the project's validated Python 3.14.7 patch version; provider support must be rechecked before deployment.
+- A fixed unauthenticated `/health/` response for GET/HEAD. It contains no dependency, database, cache, version, or configuration details and is not a database-readiness probe.
+- Fail-closed production settings for `DEBUG`, signing-key quality, hosts, CSRF origins, PostgreSQL/SSL, Redis/TLS, HTTPS, cookies, proxy trust, staged HSTS, security headers, WhiteNoise, and privacy-safe Django request/security logging.
+- A [production preflight checklist](PRODUCTION_PREFLIGHT.md).
+
+`build.sh` runs `collectstatic`. The selected start command changes into `backend/`, disables Daphne access-request logging so token-bearing paths are not emitted, and starts `config.asgi:application` on the provider port. Django application/security logs remain available in privacy-safe form.
+
+## Required private environment variables
+
+Configure these values only through Render's private environment controls. Values must not be placed in `render.yaml`, Git, logs, or documentation.
+
+- `DJANGO_SECRET_KEY`: unique high-entropy value of at least 50 characters.
+- `ALLOWED_HOSTS`: explicit comma-separated deployment hostnames; wildcards are rejected.
+- `CSRF_TRUSTED_ORIGINS`: explicit comma-separated HTTPS origins.
+- `DATABASE_URL`: private Neon PostgreSQL URL.
+- `REDIS_URL`: private Upstash TLS URL using `rediss://`.
+
+The blueprint fixes non-secret controls: production settings module, no `.env` loading, `DEBUG=False`, trusted reverse-proxy handling, HTTPS redirect, PostgreSQL `sslmode=require`, and an initial HSTS duration of zero. Increase HSTS gradually only after HTTPS is verified; subdomain/preload flags remain off initially.
+
+## Remaining deployment work
+
+- Create and privately configure the approved Render, Neon, and Upstash services.
+- Reconfirm that Render supports the pinned Python patch and the free-service blueprint.
+- Define, review, and execute the database-migration strategy separately from the build.
 - Configure external protected media storage; never rely on Render's ephemeral filesystem for persistent uploads.
-- Create synthetic demonstration accounts and data.
-- Run deployment-specific security checks.
-- Run production settings validation with `python backend/manage.py check --deploy`.
-- Run a post-deployment smoke test.
-- Add the CV-ready public URL to the README after successful validation.
+- Select and test an email provider.
+- Create synthetic demonstration accounts/data and decide whether visitor signup is allowed.
+- Execute the production preflight, provider security review, post-deployment smoke test, and backup/restore rehearsal.
+- Add a CV-ready public URL to the README only after successful validation.
 
 ## Explicitly deferred decisions
 
 - Object-storage provider and its Python dependency.
-- Final Render start command.
 - Database-migration execution strategy.
 - Email provider.
 - Custom domain.
 - Whether new visitors may register through the public demonstration.
 - Synthetic demo-data reset strategy.
-- Exact Python patch version.
+- Whether Python 3.14.7 remains supported by Render at deployment time.
 
 These decisions require evidence from the final application, current free-plan limits, and an explicit deployment review. Do not guess or silently select them earlier.
 

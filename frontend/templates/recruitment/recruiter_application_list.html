@@ -150,7 +150,6 @@
                                 </div>
                             </div>
                             <div class="candidate-readiness-badges" aria-label="Candidate readiness">
-                                <span class="{% if application.candidate.user.email_verified %}is-ready{% else %}is-unavailable{% endif %}">Email {% if application.candidate.user.email_verified %}verified{% else %}not verified{% endif %}</span>
                                 <span class="{% if general_consent_active %}is-ready{% else %}is-unavailable{% endif %}">AI processing consent {% if general_consent_active %}active{% else %}inactive{% endif %}</span>
                                 <span class="{% if interview_consent_active %}is-ready{% else %}is-unavailable{% endif %}">AI interview consent {% if interview_consent_active %}active{% else %}inactive{% endif %}</span>
                             </div>
@@ -158,15 +157,15 @@
 
                         <section class="application-detail-card resume-readiness-card" aria-labelledby="resume-readiness-heading">
                             <div>
-                                <h3 id="resume-readiness-heading">Résumé</h3>
+                                <h3 id="resume-readiness-heading">Resume</h3>
                                 {% if application.resume %}
                                     <strong>{{ application.resume.original_filename }}</strong>
                                     <span class="{% if resume_ready %}is-ready{% else %}is-unavailable{% endif %}">{{ application.resume.get_processing_status_display }}</span>
                                 {% else %}
-                                    <p>No résumé is attached to this application.</p>
+                                    <p>No resume is attached to this application.</p>
                                 {% endif %}
                             </div>
-                            <button class="detail-secondary-action" type="button" disabled title="Recruiter résumé viewing is not available in the current backend">View résumé unavailable</button>
+                            <button class="detail-secondary-action" type="button" disabled title="Recruiter resume viewing is not available in the current backend">View resume unavailable</button>
                         </section>
 
                         <section class="application-detail-card" aria-labelledby="application-details-heading">
@@ -175,7 +174,7 @@
                                 <div><dt>Applied</dt><dd>{{ application.applied_at|date:"d M Y" }}</dd></div>
                                 <div><dt>Status</dt><dd>{{ application.get_status_display }}</dd></div>
                             </dl>
-                            <p>Candidate profile and résumé readiness are shown from the submitted application record.</p>
+                            <p>Candidate profile and resume readiness are shown from the submitted application record.</p>
                         </section>
 
                         <section id="interview-management" class="application-detail-card interview-detail-card" aria-labelledby="interview-heading">
@@ -183,7 +182,7 @@
                             {% if schedule %}
                                 <dl class="application-metadata-grid">
                                     <div><dt>Date</dt><dd>{{ schedule.scheduled_start|date:"d M Y" }}</dd></div>
-                                    <div><dt>Time</dt><dd>{{ schedule.scheduled_start|time:"H:i" }} ({{ schedule.timezone }})</dd></div>
+                                    <div><dt>Time</dt><dd>{{ schedule.scheduled_start|time:"H:i" }} (Asia/Karachi)</dd></div>
                                     <div><dt>Format</dt><dd>Structured online interview</dd></div>
                                     <div><dt>Status</dt><dd>{{ schedule.get_status_display }}</dd></div>
                                 </dl>
@@ -194,7 +193,7 @@
                                         <span class="detail-disabled-note">A call session has not been prepared.</span>
                                     {% endif %}
                                     {% if schedule.status == "pending" %}
-                                        <form method="post" action="{% url 'interviews:invitation_resend' schedule.id %}">{% csrf_token %}<button class="detail-secondary-action" type="submit">Retry invitation</button></form>
+                                        <form method="post" action="{% url 'interviews:pending_activate' schedule.id %}">{% csrf_token %}<button class="detail-secondary-action" type="submit">Activate pending interview</button></form>
                                     {% endif %}
                                     {% if schedule.status == "pending" or schedule.status == "confirmed" %}
                                         <form method="post" action="{% url 'interviews:schedule_cancel' schedule.id %}">{% csrf_token %}<button class="detail-secondary-action" type="submit">Cancel interview</button></form>
@@ -202,7 +201,7 @@
                                 </div>
                                 {% for reschedule in pending_reschedules %}
                                     <div class="pending-reschedule">
-                                        <p>Reschedule requested for {{ reschedule.proposed_start|date:"d M Y, H:i" }} ({{ reschedule.timezone }}).</p>
+                                        <p>Reschedule requested for {{ reschedule.proposed_start|date:"d M Y, H:i" }} (Asia/Karachi).</p>
                                         <form method="post" action="{% url 'interviews:reschedule_review' reschedule.id %}">
                                             {% csrf_token %}
                                             <button class="detail-primary-action" name="decision" value="approve" type="submit">Approve</button>
@@ -210,12 +209,42 @@
                                         </form>
                                     </div>
                                 {% endfor %}
-                            {% elif application.candidate.user.email_verified and general_consent_active and interview_consent_active %}
+                            {% elif general_consent_active and interview_consent_active %}
                                 <p>No interview has been scheduled.</p>
-                                <a class="detail-primary-action" href="{% url 'interviews:invitation_create' application.id %}">Invite to interview</a>
+                                <a class="detail-primary-action" href="{% url 'interviews:invitation_create' application.id %}">Schedule interview</a>
                             {% else %}
-                                <p>No interview has been scheduled. Current verified email and AI consent are required before an invitation can be created.</p>
-                                <button class="detail-primary-action" type="button" disabled>Manage interview unavailable</button>
+                                <p>No interview has been scheduled. Current AI consent is required before scheduling.</p>
+                                <span class="detail-disabled-note">Interview management becomes available after AI consent is recorded.</span>
+                            {% endif %}
+                        </section>
+
+                        <section id="human-evaluation" class="application-detail-card evaluation-summary-card" aria-labelledby="human-evaluation-heading">
+                            <div class="evaluation-card-heading">
+                                <div>
+                                    <h3 id="human-evaluation-heading">Evaluation &amp; human review</h3>
+                                    <p>Rubric scores are advisory evidence. An authorized recruiter must explicitly finalize every outcome.</p>
+                                </div>
+                                {% if evaluation %}
+                                    <span class="evaluation-state{% if evaluation.is_final %} is-final{% endif %}">{{ evaluation.get_status_display }}</span>
+                                {% endif %}
+                            </div>
+                            {% if evaluation %}
+                                <dl class="evaluation-summary-grid">
+                                    <div><dt>Rubric</dt><dd>{{ evaluation.rubric.name }} v{{ evaluation.rubric.version }}</dd></div>
+                                    <div><dt>Score</dt><dd>{% if evaluation.overall_score is not None %}{{ evaluation.overall_score }} / 100{% else %}Not scored{% endif %}</dd></div>
+                                    <div><dt>Advisory recommendation</dt><dd>{{ evaluation.get_recommendation_display|default:"Pending" }}</dd></div>
+                                    <div><dt>Human outcome</dt><dd>{{ evaluation.get_review_outcome_display|default:"Not finalized" }}</dd></div>
+                                </dl>
+                                <a class="detail-primary-action" href="{% url 'interviews:evaluation_review' evaluation.id %}">{% if evaluation.is_final %}View final review{% else %}Continue human review{% endif %}</a>
+                            {% elif evaluation_available %}
+                                <p>The interview is complete and an approved rubric is available.</p>
+                                <form method="post" action="{% url 'interviews:evaluation_start' application.id %}">
+                                    {% csrf_token %}
+                                    <button class="detail-primary-action" type="submit">Begin human review</button>
+                                </form>
+                            {% else %}
+                                <p>Human review becomes available after a completed interview and an active, fully weighted job rubric.</p>
+                                <button class="detail-primary-action" type="button" disabled>Evaluation unavailable</button>
                             {% endif %}
                         </section>
 
@@ -242,5 +271,6 @@
             </main>
         </div>
     </div>
+    {% include "includes/loading.html" %}
 </body>
 </html>

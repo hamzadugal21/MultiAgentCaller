@@ -60,10 +60,10 @@
             <header class="recruiter-header">
                 <div>
                     <h1>Interview management</h1>
-                    <p>Schedule, confirm, and manage candidate interviews.</p>
+                    <p>Schedule and manage candidate interviews in the portal.</p>
                 </div>
                 <div class="recruiter-header-actions">
-                    <a class="recruiter-button recruiter-button-primary" href="{% url 'recruitment:application_list' %}">Schedule interview</a>
+                    <a class="recruiter-button recruiter-button-primary" href="{% url 'calling:bulk_schedule' %}">Schedule interviews with AI</a>
                     <span class="header-notification" aria-label="No new notifications">♧</span>
                     <span class="recruiter-avatar recruiter-avatar-light" aria-hidden="true">{{ initials }}</span>
                 </div>
@@ -72,14 +72,14 @@
             <main id="interview-management-main" class="interview-management-main">
                 <section class="interview-summary-grid" aria-label="Interview summary">
                     <article><p>Upcoming interviews</p><strong>{{ upcoming_interview_count|stringformat:"02d" }}</strong></article>
-                    <article><p>Awaiting confirmation</p><strong>{{ awaiting_confirmation_count|stringformat:"02d" }}</strong></article>
+                    <article><p>Pending activation</p><strong>{{ awaiting_confirmation_count|stringformat:"02d" }}</strong></article>
                     <article><p>Reschedule requests</p><strong>{{ reschedule_request_count|stringformat:"02d" }}</strong></article>
                 </section>
 
                 <section class="interview-tabs" aria-labelledby="interview-tabs-heading">
                     <h2 id="interview-tabs-heading" class="visually-hidden">Interview status filters</h2>
                     <button class="is-active" type="button" disabled>Upcoming</button>
-                    <button type="button" disabled>Awaiting confirmation</button>
+                    <button type="button" disabled>Pending activation</button>
                     <button type="button" disabled>Reschedule requests</button>
                     <button type="button" disabled>Past interviews</button>
                     <p>Status filtering is not available in the current backend.</p>
@@ -130,34 +130,23 @@
                             </article>
                             <article>
                                 <strong>Date: {{ selected_entry.display_start|date:"d M Y" }}</strong>
-                                <span>Time: {{ selected_entry.display_start|time:"H:i" }} ({{ selected_entry.schedule.timezone }})</span>
-                                <span>Candidate email: {% if selected_entry.schedule.application.candidate.user.email_verified %}Verified{% else %}Not verified{% endif %}</span>
+                                <span>Time: {{ selected_entry.display_start|time:"H:i" }} (Asia/Karachi)</span>
                                 <span>AI processing consent: {% if general_consent_active %}Active{% else %}Inactive{% endif %}</span>
                                 <span>AI interview consent: {% if interview_consent_active %}Active{% else %}Inactive{% endif %}</span>
                             </article>
                         </div>
-                        <p class="invitation-delivery-status">
-                            {% if selected_entry.schedule.status == "confirmed" %}
-                                Invitation delivered and candidate confirmation received.
-                            {% elif selected_entry.schedule.invitation_delivery_status == "sent" %}
-                                Invitation delivered; candidate confirmation is pending.
-                            {% elif selected_entry.schedule.invitation_delivery_status == "failed" %}
-                                Invitation delivery failed safely. Retry is available below while the invitation remains valid.
-                            {% else %}
-                                Invitation delivery is pending.
-                            {% endif %}
-                        </p>
+                        <p class="invitation-delivery-status">{% if selected_entry.schedule.status == "confirmed" %}Scheduled in the candidate portal. No email confirmation is required.{% else %}This older pending schedule needs activation by the recruiter.{% endif %}</p>
                         <div class="selected-interview-actions">
                             {% if selected_entry.session %}
                                 <a class="interview-primary-action" href="{% url 'calling:recruiter_session_detail' selected_entry.session.id %}">View interview status</a>
                             {% else %}
-                                <button class="interview-primary-action" type="button" disabled>Interview status unavailable</button>
+                                <span class="detail-disabled-note">Interview status is available after a call session is prepared.</span>
                             {% endif %}
-                            <button class="interview-secondary-action" type="button" disabled title="Candidates request rescheduling through their authorized workflow">Reschedule unavailable</button>
+                            <span class="detail-disabled-note">The scheduled date and time cannot be changed.</span>
                             {% if selected_entry.schedule.status == "pending" %}
-                                <form method="post" action="{% url 'interviews:invitation_resend' selected_entry.schedule.id %}">
+                                <form method="post" action="{% url 'interviews:pending_activate' selected_entry.schedule.id %}">
                                     {% csrf_token %}
-                                    <button class="interview-secondary-action" type="submit">Retry invitation</button>
+                                    <button class="interview-secondary-action" type="submit">Activate pending interview</button>
                                 </form>
                             {% endif %}
                             {% if selected_entry.schedule.status == "pending" or selected_entry.schedule.status == "confirmed" %}
@@ -180,7 +169,7 @@
                                 <span class="interview-status status-pending">Awaiting recruiter decision</span>
                             </div>
                             <p><strong>Candidate:</strong> {{ reschedule.schedule.application.candidate.user.get_full_name|default:"Candidate" }}</p>
-                            <p>Requested new time: {{ reschedule.proposed_start|date:"d M Y, H:i" }} ({{ reschedule.timezone }})</p>
+                            <p>Requested new time: {{ reschedule.proposed_start|date:"d M Y, H:i" }} (Asia/Karachi)</p>
                             <form method="post" action="{% url 'interviews:reschedule_review' reschedule.id %}">
                                 {% csrf_token %}
                                 <button class="interview-primary-action" name="decision" value="approve" type="submit">Approve</button>
@@ -196,5 +185,6 @@
             </main>
         </div>
     </div>
+    {% include "includes/loading.html" %}
 </body>
 </html>

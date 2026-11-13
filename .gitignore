@@ -1,5 +1,7 @@
 .env
 .venv/
+.venv*/
+.venv_windows_backup/
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -17,10 +19,19 @@ htmlcov/
 *.pth
 *.onnx
 *.bin
+*.gguf
 *.ckpt
 *.safetensors
 *.joblib
 *.pkl
+*.wav
+*.mp3
+*.ogg
+*.webm
+*.flac
+*.sql
+*.dump
+*.backup
 model-cache/
 /artifacts/
 
@@ -33,12 +44,18 @@ model-cache/
 
 /var/media/*
 !/var/media/.gitkeep
+/var/qa-media/*
+!/var/qa-media/.gitkeep
 /var/static/*
 !/var/static/.gitkeep
 /var/logs/*
 !/var/logs/.gitkeep
+/var/models/*
+!/var/models/.gitkeep
 /var/agent-state/*
 !/var/agent-state/.gitkeep
 .idea/
+.DS_Store
+Thumbs.db
 test-results/
 coverage.xml

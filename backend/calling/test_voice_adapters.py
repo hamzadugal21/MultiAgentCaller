@@ -77,6 +77,25 @@ def test_whisper_adapter_is_lazy_bounded_and_fails_safely():
     assert "private" not in str(failed)
 
 
+def test_whisper_adapter_resamples_non_16khz_audio_before_inference():
+    observed = []
+
+    class Model:
+        def transcribe(self, samples, **kwargs):
+            observed.append(samples)
+            return iter([SimpleNamespace(text=" synthetic answer text ")]), SimpleNamespace(
+                language="en"
+            )
+
+    adapter = FasterWhisperAdapter(model_loader=lambda *_args, **_kwargs: Model())
+    frame = AudioFrame(pcm_s16le=b"\x00\x00" * 8000, sample_rate_hz=8000)
+
+    result = adapter.transcribe(frame)
+
+    assert result.status == AdapterStatus.SUCCESS
+    assert observed[0].shape == (16000,)
+
+
 def test_piper_adapter_requires_local_model_and_returns_safe_results(tmp_path):
     missing = PiperTtsAdapter(model_path=tmp_path / "missing.onnx")
     assert missing.synthesize("Synthetic question").status == AdapterStatus.UNAVAILABLE

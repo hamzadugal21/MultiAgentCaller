@@ -9,9 +9,12 @@ urlpatterns = [
     path("consent/", views.general_consent_view, name="general_consent"),
     path("resumes/", views.resume_list_view, name="resume_list"),
     path("resumes/upload/", views.resume_upload_view, name="resume_upload"),
+    path("resumes/analyze/", views.resume_analyze_view, name="resume_analyze"),
+    path("resumes/apply-profile/", views.resume_apply_profile_view, name="resume_apply_profile"),
     path(
         "resumes/<uuid:resume_id>/download/",
         views.resume_download_view,
         name="resume_download",
     ),
+    path("help/", views.faq_view, name="faq"),
 ]

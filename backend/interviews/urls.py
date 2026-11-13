@@ -6,19 +6,24 @@ app_name = "interviews"
 
 urlpatterns = [
     path(
+        "applications/<uuid:application_id>/evaluation/start/",
+        views.evaluation_start_view,
+        name="evaluation_start",
+    ),
+    path(
+        "evaluations/<uuid:evaluation_id>/review/",
+        views.evaluation_review_view,
+        name="evaluation_review",
+    ),
+    path(
         "applications/<uuid:application_id>/invite/",
         views.invitation_create_view,
         name="invitation_create",
     ),
     path(
-        "confirm/<str:token>/",
-        views.invitation_confirm_view,
-        name="invitation_confirm",
-    ),
-    path(
-        "schedules/<uuid:schedule_id>/resend/",
-        views.invitation_resend_view,
-        name="invitation_resend",
+        "schedules/<uuid:schedule_id>/activate/",
+        views.pending_activate_view,
+        name="pending_activate",
     ),
     path(
         "schedules/<uuid:schedule_id>/reschedule/",

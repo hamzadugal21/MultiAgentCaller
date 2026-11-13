@@ -1,0 +1,21 @@
+.candidate-interviews-main { display:grid; gap:18px; width:min(1188px,100%); margin:0 auto; padding:24px 40px 48px; }
+.interview-summary-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+.interview-summary-grid article,.interview-panel,.interview-help { background:#fff; border:1px solid var(--hf-border); border-radius:12px; padding:18px; }
+.interview-summary-grid article { display:grid; gap:5px; }
+.interview-summary-grid span,.interview-summary-grid small { color:#627d98; font-size:.78rem; }
+.interview-summary-grid strong { color:var(--hf-teal-dark); font-size:1.8rem; }
+.interview-panel-heading { display:flex; justify-content:space-between; margin-bottom:14px; }
+.interview-panel h2,.interview-panel h3,.interview-panel p { margin:0; }
+.interview-panel-heading p,.interview-card p,.interview-history-list p,.interview-help p { color:#627d98; font-size:.86rem; margin-top:4px; }
+.interview-list,.interview-history-list { display:grid; gap:10px; }
+.interview-card,.interview-history-list article { display:flex; align-items:center; justify-content:space-between; gap:18px; padding:14px; border:1px solid var(--hf-border); border-radius:10px; }
+.interview-card-main { display:flex; align-items:center; gap:14px; min-width:0; }
+.interview-date { display:grid; place-items:center; flex:0 0 58px; height:58px; border-radius:10px; background:#e2f3f1; color:var(--hf-teal-dark); font-weight:800; }
+.interview-card time { color:var(--hf-text); font-size:.85rem; }
+.interview-card-actions { display:flex; align-items:center; gap:12px; flex-wrap:wrap; justify-content:flex-end; }
+.interview-status { display:inline-flex; padding:5px 9px; border-radius:999px; background:#eef2f6; color:#52606d; font-size:.75rem; font-weight:700; }
+.status-confirmed { background:#d9f3ea; color:#12634f; }.status-pending { background:#fff4d6; color:#805b00; }.status-completed { background:#e5e7eb; color:#374151; }
+.interview-note { max-width:260px; font-size:.75rem!important; }
+.interview-empty { padding:18px 0; color:#627d98; }
+.interview-help { background:#eef8f7; border-color:#b8e1dc; }.interview-help strong { color:var(--hf-teal-dark); }
+@media (max-width:800px) { .candidate-interviews-main { padding:18px; }.interview-summary-grid { grid-template-columns:repeat(2,1fr); }.interview-card,.interview-history-list article { align-items:flex-start; flex-direction:column; }.interview-card-actions { justify-content:flex-start; } }

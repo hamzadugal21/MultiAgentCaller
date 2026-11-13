@@ -367,6 +367,19 @@
     min-width: 142px;
 }
 
+.profile-actions .profile-clear-button {
+    color: #a33a3a;
+    border-color: #d9a4a4;
+    background: transparent;
+}
+
+.profile-actions .profile-clear-button:hover,
+.profile-actions .profile-clear-button:focus-visible {
+    color: #7f2525;
+    border-color: #b86c6c;
+    background: #fff5f5;
+}
+
 @media (max-width: 1080px) {
     .candidate-profile-main {
         padding-right: 28px;

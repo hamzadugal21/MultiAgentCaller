@@ -1,4 +1,5 @@
 from django import forms
+from django.utils import timezone
 
 from candidates.models import Resume
 from recruitment.models import InterviewQuestion, JobFAQ, JobPosting
@@ -96,7 +97,14 @@ class InterviewInvitationForm(forms.Form):
     scheduled_end = forms.DateTimeField(
         widget=forms.DateTimeInput(attrs={"type": "datetime-local"})
     )
-    timezone = forms.CharField(max_length=64, initial="Asia/Karachi")
+
+    def clean(self):
+        cleaned = super().clean()
+        for field in ("scheduled_start", "scheduled_end"):
+            value = cleaned.get(field)
+            if value is not None and timezone.is_naive(value):
+                cleaned[field] = timezone.make_aware(value, timezone.get_current_timezone())
+        return cleaned
 
 
 class InterviewRescheduleForm(InterviewInvitationForm):

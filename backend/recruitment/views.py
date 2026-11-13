@@ -1,5 +1,4 @@
 import uuid
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from django.conf import settings
 from django.contrib import messages
@@ -18,8 +17,9 @@ from auditlog.consent_services import (
     revoke_application_ai_interview_consent,
 )
 from auditlog.models import AuditEvent
+from calling.models import CallSession
 from candidates.models import CandidateProfile, Resume
-from interviews.models import InterviewSchedule
+from interviews.models import CandidateEvaluation, EvaluationRubric, InterviewSchedule
 from recruitment.application_services import (
     ApplicationServiceError,
     change_application_interview_consent,
@@ -44,7 +44,11 @@ from recruitment.job_services import (
     update_job,
 )
 from recruitment.models import JobApplication, JobPosting
-from recruitment.transition_services import WorkflowTransitionError, transition_job
+from recruitment.transition_services import (
+    InvalidWorkflowTransitionError,
+    WorkflowTransitionError,
+    transition_job,
+)
 
 
 @role_required(User.Role.RECRUITER, User.Role.CANDIDATE)
@@ -200,6 +204,8 @@ def job_state_view(request, job_id):
             target_status=request.POST.get("status"),
             actor=request.user,
         )
+    except InvalidWorkflowTransitionError as error:
+        messages.error(request, str(error))
     except WorkflowTransitionError:
         messages.error(request, "The requested job state change is not allowed.")
     return redirect("recruitment:job_edit", job_id=job.pk)
@@ -377,13 +383,9 @@ def application_list_view(request):
         if upcoming_schedule is not None:
             sessions = list(upcoming_schedule.call_sessions.all())
             upcoming_session = sessions[0] if sessions else None
-            try:
-                display_timezone = ZoneInfo(upcoming_schedule.timezone)
-            except ZoneInfoNotFoundError:
-                display_timezone = timezone.get_default_timezone()
             upcoming_local_start = timezone.localtime(
                 upcoming_schedule.scheduled_start,
-                display_timezone,
+                timezone.get_default_timezone(),
             )
             policy_version = settings.CURRENT_AI_CONSENT_POLICY_VERSION
             general_consent = has_effective_general_ai_processing_consent(
@@ -399,7 +401,6 @@ def application_list_view(request):
                 processing_status=Resume.ProcessingStatus.COMPLETED,
             ).exists()
             readiness_checks = (
-                ("Email verified", request.user.email_verified),
                 ("Resume ready", active_resume_ready),
                 (
                     "Interview consent active",
@@ -503,6 +504,21 @@ def application_detail_view(request, application_id):
             application=application,
             policy_version=settings.CURRENT_AI_CONSENT_POLICY_VERSION,
         )
+        evaluation = (
+            CandidateEvaluation.objects.filter(application=application)
+            .select_related("rubric", "reviewed_by")
+            .order_by("-is_final", "-created_at")
+            .first()
+        )
+        completed_session_exists = CallSession.objects.filter(
+            schedule__application=application,
+            status=CallSession.Status.COMPLETED,
+        ).exists()
+        active_rubric_exists = EvaluationRubric.objects.filter(
+            job=application.job,
+            is_active=True,
+            criteria__isnull=False,
+        ).exists()
         context = _recruiter_application_page_context(request, applications)
         context.update(
             {
@@ -511,6 +527,17 @@ def application_detail_view(request, application_id):
                 "candidate_name": candidate_name,
                 "candidate_skills": application.candidate.candidate_skills.select_related(
                     "skill"
+                ),
+                "evaluation": evaluation,
+                "evaluation_available": (
+                    evaluation is None
+                    and completed_session_exists
+                    and active_rubric_exists
+                    and application.status
+                    in {
+                        JobApplication.Status.INVITED,
+                        JobApplication.Status.INTERVIEWED,
+                    }
                 ),
                 "general_consent_active": general_consent_active,
                 "history": history,

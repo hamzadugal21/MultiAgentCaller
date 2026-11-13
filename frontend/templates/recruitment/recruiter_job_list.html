@@ -131,14 +131,14 @@
                                             <div class="managed-job-actions">
                                                 <a href="{% url 'recruitment:job_edit' job.id %}">Manage</a>
                                                 {% if job.status == "draft" %}
-                                                    <form method="post" action="{% url 'recruitment:job_state' job.id %}">{% csrf_token %}<button name="status" value="open" type="submit">Publish</button></form>
+                                                    <form method="post" action="{% url 'recruitment:job_state' job.id %}">{% csrf_token %}<input type="hidden" name="status" value="open"><button type="submit">Publish</button></form>
                                                 {% elif job.status == "open" %}
-                                                    <form method="post" action="{% url 'recruitment:job_state' job.id %}">{% csrf_token %}<button name="status" value="closed" type="submit">Close</button></form>
+                                                    <form method="post" action="{% url 'recruitment:job_state' job.id %}">{% csrf_token %}<input type="hidden" name="status" value="closed"><button type="submit">Close</button></form>
                                                 {% elif job.status == "paused" %}
-                                                    <form method="post" action="{% url 'recruitment:job_state' job.id %}">{% csrf_token %}<button name="status" value="open" type="submit">Reopen</button></form>
-                                                    <form method="post" action="{% url 'recruitment:job_state' job.id %}">{% csrf_token %}<button name="status" value="closed" type="submit">Close</button></form>
+                                                    <form method="post" action="{% url 'recruitment:job_state' job.id %}">{% csrf_token %}<input type="hidden" name="status" value="open"><button type="submit">Reopen</button></form>
+                                                    <form method="post" action="{% url 'recruitment:job_state' job.id %}">{% csrf_token %}<input type="hidden" name="status" value="closed"><button type="submit">Close</button></form>
                                                 {% elif job.status == "closed" %}
-                                                    <form method="post" action="{% url 'recruitment:job_state' job.id %}">{% csrf_token %}<button name="status" value="open" type="submit">Reopen</button></form>
+                                                    <form method="post" action="{% url 'recruitment:job_state' job.id %}">{% csrf_token %}<input type="hidden" name="status" value="open"><button type="submit">Reopen</button></form>
                                                 {% endif %}
                                             </div>
                                         </td>
@@ -169,5 +169,6 @@
             </main>
         </div>
     </div>
+    {% include "includes/loading.html" %}
 </body>
 </html>

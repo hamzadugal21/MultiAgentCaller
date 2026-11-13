@@ -417,6 +417,61 @@
     margin-top: 10px;
 }
 
+.evaluation-card-heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.evaluation-card-heading p {
+    margin-top: 5px;
+}
+
+.evaluation-state {
+    flex: 0 0 auto;
+    padding: 6px 9px;
+    border-radius: 999px;
+    background: #fff4d6;
+    color: #8a6116;
+    font-size: 0.67rem;
+    font-weight: 800;
+}
+
+.evaluation-state.is-final {
+    background: #e6f5f2;
+    color: #0f766e;
+}
+
+.evaluation-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 12px 0;
+}
+
+.evaluation-summary-grid div {
+    padding: 9px;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.evaluation-summary-grid dt,
+.evaluation-summary-grid dd {
+    margin: 0;
+}
+
+.evaluation-summary-grid dd {
+    margin-top: 3px;
+    color: #102a43;
+    font-weight: 750;
+}
+
+.evaluation-summary-card > form,
+.evaluation-summary-card > .detail-primary-action {
+    margin-top: 12px;
+}
+
 .detail-primary-action,
 .detail-secondary-action {
     display: inline-flex;
@@ -582,8 +637,13 @@ button.detail-secondary-action:disabled {
     }
 
     .candidate-summary-grid,
-    .application-metadata-grid {
+    .application-metadata-grid,
+    .evaluation-summary-grid {
         grid-template-columns: 1fr;
+    }
+
+    .evaluation-card-heading {
+        flex-direction: column;
     }
 
     .resume-readiness-card {

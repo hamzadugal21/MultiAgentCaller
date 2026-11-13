@@ -8,7 +8,7 @@
     <p>Status: {{ application.get_status_display }}</p>
     {% if request.user.role == "recruiter" %}
         <p>Candidate: {{ application.candidate.user.get_full_name|default:"Candidate" }}</p>
-        {% if not schedule and application.consent_to_ai_interview %}<p><a href="{% url 'interviews:invitation_create' application.id %}">Invite to interview</a></p>{% endif %}
+        {% if not schedule and application.consent_to_ai_interview %}<p><a href="{% url 'interviews:invitation_create' application.id %}">Schedule interview</a></p>{% endif %}
     {% else %}
         {% if application.status != "withdrawn" and application.status != "rejected" %}
             <form method="post" action="{% url 'recruitment:application_withdraw' application.id %}">{% csrf_token %}<button type="submit">Withdraw application</button></form>
@@ -23,12 +23,12 @@
     {% endif %}
     {% if schedule %}
         <h2>Interview schedule</h2>
-        <p>{{ schedule.scheduled_start }} to {{ schedule.scheduled_end }} ({{ schedule.timezone }}) — {{ schedule.get_status_display }}</p>
+        <p>{{ schedule.scheduled_start }} to {{ schedule.scheduled_end }} (Asia/Karachi) — {{ schedule.get_status_display }}</p>
         {% if request.user.role == "candidate" and schedule.status != "cancelled" and schedule.status != "expired" %}
-            <p><a href="{% url 'interviews:reschedule_request' schedule.id %}">Request a different time</a></p>
+            <p>Interview date and time are locked after scheduling.</p>
         {% endif %}
         {% if request.user.role == "recruiter" %}
-            {% if schedule.status == "pending" %}<form method="post" action="{% url 'interviews:invitation_resend' schedule.id %}">{% csrf_token %}<button type="submit">Retry invitation delivery</button></form>{% endif %}
+            {% if schedule.status == "pending" %}<form method="post" action="{% url 'interviews:pending_activate' schedule.id %}">{% csrf_token %}<button type="submit">Activate pending interview</button></form>{% endif %}
             {% if schedule.status == "pending" or schedule.status == "confirmed" %}<form method="post" action="{% url 'interviews:schedule_cancel' schedule.id %}">{% csrf_token %}<button type="submit">Cancel interview</button></form>{% endif %}
             {% for reschedule in pending_reschedules %}
                 <p>Requested: {{ reschedule.proposed_start }} to {{ reschedule.proposed_end }}</p>

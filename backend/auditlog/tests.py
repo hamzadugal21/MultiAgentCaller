@@ -277,6 +277,9 @@ def test_persistence_errors_do_not_expose_internal_details(actor, monkeypatch):
 
 def test_event_registry_contains_exact_expected_event_types():
     assert set(EVENT_SPECS) == {
+        "account.blocked",
+        "account.login_attempts_unlocked",
+        "account.unblocked",
         "application.created",
         "application.status_changed",
         "application.withdrawn",
@@ -291,6 +294,7 @@ def test_event_registry_contains_exact_expected_event_types():
         "call_session.ready",
         "call_session.resumed",
         "call_session.started",
+            "call_session.transcription_succeeded",
         "company.created",
         "company.updated",
         "consent.granted",
@@ -299,6 +303,9 @@ def test_event_registry_contains_exact_expected_event_types():
         "email_verification.invalidated",
         "email_verification.requested",
         "email_verification.succeeded",
+        "evaluation.finalized",
+        "evaluation.scored",
+        "evaluation.started",
         "interview.cancelled",
         "interview.completed",
         "interview.invitation_delivery_failed",
@@ -324,11 +331,15 @@ def test_event_registry_contains_exact_expected_event_types():
         "resume.processing_started",
         "resume.processing_succeeded",
         "resume.uploaded",
+        "retention.applied",
     }
 
 
 def test_event_registry_has_exact_required_metadata_rules():
     expected = {
+        "account.blocked": set(),
+        "account.login_attempts_unlocked": set(),
+        "account.unblocked": set(),
         "application.created": {"job_id", "resume_id"},
         "application.status_changed": {"status_from", "status_to"},
         "application.withdrawn": {"status_from", "status_to"},
@@ -403,6 +414,13 @@ def test_event_registry_has_exact_required_metadata_rules():
             "status_from",
             "status_to",
         },
+            "call_session.transcription_succeeded": {
+                "application_id",
+                "duration_bucket",
+                "interview_schedule_id",
+                "question_id",
+                "question_index",
+            },
         "company.created": set(),
         "company.updated": {"changed_fields"},
         "consent.granted": {
@@ -421,6 +439,33 @@ def test_event_registry_has_exact_required_metadata_rules():
         "email_verification.invalidated": {"reason_code"},
         "email_verification.requested": {"delivery_channel"},
         "email_verification.succeeded": set(),
+        "evaluation.finalized": {
+            "application_id",
+            "application_status_from",
+            "application_status_to",
+            "call_session_id",
+            "criterion_count",
+            "recommendation",
+            "review_outcome",
+            "rubric_id",
+            "status_from",
+            "status_to",
+        },
+        "evaluation.scored": {
+            "application_id",
+            "call_session_id",
+            "criterion_count",
+            "recommendation",
+            "rubric_id",
+            "status_from",
+            "status_to",
+        },
+        "evaluation.started": {
+            "application_id",
+            "call_session_id",
+            "rubric_id",
+            "status_to",
+        },
         "interview.cancelled": {
             "application_id",
             "reason_code",
@@ -456,6 +501,13 @@ def test_event_registry_has_exact_required_metadata_rules():
         "resume.processing_started": {"parser"},
         "resume.processing_succeeded": {"extracted_character_count", "parser"},
         "resume.uploaded": {"checksum", "file_type", "size_bytes"},
+        "retention.applied": {
+            "eligible_count",
+            "policy_version",
+            "processed_count",
+            "retention_category",
+            "retention_result",
+        },
     }
 
     assert {

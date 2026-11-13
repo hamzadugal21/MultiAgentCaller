@@ -63,15 +63,15 @@ def application_data(db):
     }
 
 
-def test_application_requires_verified_email(application_data):
+def test_application_does_not_require_email_verification(application_data):
     application_data["candidate_user"].email_verified = False
     application_data["candidate_user"].save(update_fields=("email_verified",))
-    with pytest.raises(ApplicationServiceError, match="Email verification"):
-        create_application(
-            actor=application_data["candidate_user"],
-            job=application_data["job"],
-            resume=application_data["resume"],
-        )
+    application = create_application(
+        actor=application_data["candidate_user"],
+        job=application_data["job"],
+        resume=application_data["resume"],
+    )
+    assert application.candidate == application_data["candidate"]
 
 
 def test_application_requires_owned_active_resume(application_data):
@@ -242,6 +242,36 @@ def test_candidate_application_list_access_and_empty_state(client, application_d
     assert "No confirmed upcoming interview is currently available." in content
 
 
+def test_candidate_application_list_uses_the_standard_icon_sidebar(client, application_data):
+    client.force_login(application_data["candidate_user"])
+
+    response = client.get(reverse("recruitment:application_list"))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    primary_nav = content.split('<nav class="sidebar-nav"', 1)[1].split("</nav>", 1)[0]
+    for icon, label in (
+        ("▦", "Dashboard"),
+        ("○", "My Profile"),
+        ("▤", "My Resume"),
+        ("⌕", "Browse Jobs"),
+        ("☷", "My Applications"),
+        ("▣", "Interviews"),
+    ):
+        assert f'<span aria-hidden="true">{icon}</span> {label}' in primary_nav
+    for placeholder in ("D", "P", "R", "J", "A", "I"):
+        assert f'<span aria-hidden="true">{placeholder}</span>' not in primary_nav
+
+    assert primary_nav.count('class="is-active"') == 1
+    assert (
+        'class="is-active" aria-current="page" '
+        'href="/recruitment/applications/">'
+        '<span aria-hidden="true">☷</span> My Applications'
+    ) in primary_nav
+    assert "accounts/css/candidate-dashboard.css" in content
+    assert "accounts/js/loading.js" in content
+
+
 def test_recruiter_application_list_denies_ineligible_recruiters(
     client, application_data
 ):
@@ -408,7 +438,7 @@ def test_recruiter_application_detail_renders_safe_authorized_workspace(
     assert "AI processing consent active" in content
     assert "AI interview consent active" in content
     assert resume.original_filename in content
-    assert "View résumé unavailable" in content
+    assert "View resume unavailable" in content
     assert reverse("candidates:resume_download", args=(resume.pk,)) not in content
     assert reverse("calling:recruiter_session_detail", args=(session.pk,)) in content
     assert "Application history" in content
@@ -433,7 +463,7 @@ def test_recruiter_application_detail_restricts_review_and_interview_actions(
 
     assert response.status_code == 200
     content = response.content.decode()
-    assert "Manage interview unavailable" in content
+    assert "Interview management becomes available after verified email" in content
     assert (
         reverse("interviews:invitation_create", args=(application.pk,)) not in content
     )
@@ -524,7 +554,7 @@ def test_candidate_application_list_is_owned_and_shows_safe_interview_actions(
     assert application_data["company"].name in content
     assert reverse("recruitment:application_detail", args=(application.pk,)) in content
     assert reverse("calling:candidate_session_detail", args=(session.pk,)) in content
-    assert reverse("interviews:reschedule_request", args=(schedule.pk,)) in content
+    assert "Interview time locked" in content
     assert "Email verified" in content
     assert "Resume ready" in content
     assert "Interview consent active" in content

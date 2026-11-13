@@ -14,47 +14,7 @@
     <a class="skip-link" href="#profile-main">Skip to profile content</a>
 
     <div class="candidate-shell">
-        <aside class="candidate-sidebar" aria-label="Candidate navigation">
-            <div class="sidebar-brand-row">
-                <a class="sidebar-brand" href="{% url 'accounts:candidate_dashboard' %}" aria-label="HireFlow AI candidate dashboard">
-                    HireFlow <strong>AI</strong>
-                </a>
-                <details class="candidate-mobile-menu">
-                    <summary>Menu</summary>
-                    <nav aria-label="Candidate mobile navigation">
-                        <a href="{% url 'accounts:candidate_dashboard' %}">Dashboard</a>
-                        <a aria-current="page" href="{% url 'candidates:profile_edit' %}">My Profile</a>
-                        <a href="{% url 'candidates:resume_list' %}">My Résumé</a>
-                        <a href="{% url 'recruitment:job_list' %}">Browse Jobs</a>
-                        <a href="{% url 'recruitment:application_list' %}">My Applications</a>
-                        <a href="{% url 'calling:candidate_session_list' %}">Interviews</a>
-                    </nav>
-                </details>
-            </div>
-
-            <nav class="sidebar-nav" aria-label="Candidate primary navigation">
-                <a href="{% url 'accounts:candidate_dashboard' %}"><span aria-hidden="true">▦</span> Dashboard</a>
-                <a class="is-active" aria-current="page" href="{% url 'candidates:profile_edit' %}">
-                    <span aria-hidden="true">○</span> My Profile
-                </a>
-                <a href="{% url 'candidates:resume_list' %}"><span aria-hidden="true">▤</span> My Résumé</a>
-                <a href="{% url 'recruitment:job_list' %}"><span aria-hidden="true">⌕</span> Browse Jobs</a>
-                <a href="{% url 'recruitment:application_list' %}"><span aria-hidden="true">☷</span> My Applications</a>
-                <a href="{% url 'calling:candidate_session_list' %}"><span aria-hidden="true">▣</span> Interviews</a>
-            </nav>
-
-            <div class="sidebar-footer">
-                <a class="sidebar-help" href="#consent-section"><span aria-hidden="true">?</span> Help &amp; Support</a>
-                <div class="sidebar-account">
-                    <span class="candidate-avatar" aria-hidden="true">{{ initials }}</span>
-                    <span><strong>{{ display_name }}</strong><small>Candidate</small></span>
-                </div>
-                <form method="post" action="{% url 'accounts:logout' %}">
-                    {% csrf_token %}
-                    <button class="sidebar-logout" type="submit"><span aria-hidden="true">↪</span> Log out</button>
-                </form>
-            </div>
-        </aside>
+        {% include "includes/candidate_sidebar.html" with active_candidate_nav="profile" sidebar_help_target="consent-section" %}
 
         <div class="candidate-workspace">
             <header class="dashboard-header">
@@ -110,11 +70,6 @@
                                 <span class="profile-field-label">Email</span>
                                 <output>
                                     <span>{{ request.user.email }}</span>
-                                    {% if request.user.email_verified %}
-                                        <span class="profile-status-badge is-verified">Verified</span>
-                                    {% else %}
-                                        <span class="profile-status-badge">Not verified</span>
-                                    {% endif %}
                                 </output>
                                 <small>Email changes use the secure account workflow.</small>
                             </div>
@@ -133,11 +88,6 @@
                                 {{ form.country_code }}
                                 {% if form.country_code.errors %}<div class="profile-field-errors">{{ form.country_code.errors }}</div>{% endif %}
                             </div>
-                            <div class="profile-field">
-                                <label for="{{ form.timezone.id_for_label }}">Timezone</label>
-                                {{ form.timezone }}
-                                {% if form.timezone.errors %}<div class="profile-field-errors">{{ form.timezone.errors }}</div>{% endif %}
-                            </div>
                         </div>
                     </section>
 
@@ -151,12 +101,17 @@
                         </div>
 
                         <div class="skills-field" aria-labelledby="skills-heading">
-                            <span id="skills-heading" class="profile-field-label">Skills</span>
+                            <label for="{{ form.skills.id_for_label }}" id="skills-heading">Skills</label>
+                            <input type="hidden" name="skills" id="id_skills" value="{{ skill_names|join:', ' }}">
+                            <div class="profile-skill-tags" id="profile-skill-tags" aria-live="polite">{% for name in skill_names %}<span class="skill-chip" data-skill="{{ name }}">{{ name }} <button type="button" class="skill-remove" aria-label="Remove {{ name }}">×</button></span>{% endfor %}</div>
+                            <div class="skill-entry-row"><label class="sr-only" for="skill-entry">Add a skill</label><input id="skill-entry" type="text" maxlength="100" placeholder="Add a skill…"><button type="button" id="skill-add">Add</button></div>
+                            <small>Add skills individually. Duplicate names are ignored.</small>
+                            {% if form.skills.errors %}<div class="profile-field-errors">{{ form.skills.errors }}</div>{% endif %}
                             <div class="skill-list">
                                 {% for candidate_skill in skills %}
                                     <span class="skill-chip">{{ candidate_skill.skill.name }}</span>
                                 {% empty %}
-                                    <p class="profile-empty-state">No skills are recorded yet. Skill editing is not available on this screen.</p>
+                                    <p class="profile-empty-state">No skills are recorded yet. Add at least two skills above.</p>
                                 {% endfor %}
                             </div>
                         </div>
@@ -198,12 +153,14 @@
                         {% csrf_token %}
                         <input type="hidden" name="return_to" value="profile">
                         {% if consent_active %}
-                            <button type="submit" name="action" value="revoke" class="consent-control" aria-label="Revoke AI-assisted recruitment processing consent">
+                            <input type="hidden" name="action" value="revoke">
+                            <button type="submit" class="consent-control" aria-label="Revoke AI-assisted recruitment processing consent">
                                 <img src="{% static 'accounts/img/consent-toggle-on.svg' %}" alt="" width="58" height="30">
                                 <span>Allow AI-assisted recruitment processing</span>
                             </button>
                         {% else %}
-                            <button type="submit" name="action" value="grant" class="consent-control" aria-label="Grant AI-assisted recruitment processing consent">
+                            <input type="hidden" name="action" value="grant">
+                            <button type="submit" class="consent-control" aria-label="Grant AI-assisted recruitment processing consent">
                                 <span class="consent-toggle-off" aria-hidden="true"><i></i></span>
                                 <span>Allow AI-assisted recruitment processing</span>
                             </button>
@@ -223,10 +180,16 @@
 
                 <div class="profile-actions">
                     <button class="dashboard-button dashboard-button-primary" type="submit" form="profile-form">Save changes</button>
+                    <button class="dashboard-button dashboard-button-secondary profile-clear-button" type="button" id="clear-profile">Clear all</button>
                     <a class="dashboard-button dashboard-button-secondary" href="{% url 'accounts:candidate_dashboard' %}">Cancel</a>
                 </div>
             </main>
         </div>
     </div>
+    {% include "includes/loading.html" %}
+    <script>
+    (() => { const hidden=document.getElementById("id_skills"), tags=document.getElementById("profile-skill-tags"), entry=document.getElementById("skill-entry"), add=document.getElementById("skill-add"); if(!hidden||!tags||!entry||!add)return; let names=hidden.value.split(",").map(x=>x.trim()).filter(Boolean); const sync=()=>{hidden.value=names.join(", "); tags.replaceChildren(...names.map(name=>{const tag=document.createElement("span");tag.className="skill-chip";tag.dataset.skill=name;tag.append(document.createTextNode(name+" "));const button=document.createElement("button");button.type="button";button.className="skill-remove";button.setAttribute("aria-label",`Remove ${name}`);button.textContent="×";button.addEventListener("click",()=>{names=names.filter(x=>x.toLowerCase()!==name.toLowerCase());sync()});tag.append(button);return tag}))}; const addSkill=()=>{const name=entry.value.trim();if(name&&!names.some(x=>x.toLowerCase()===name.toLowerCase()))names.push(name);entry.value="";sync()}; add.addEventListener("click",addSkill);entry.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addSkill()}});sync(); })();
+    (() => { const clear=document.getElementById("clear-profile"), form=document.getElementById("profile-form"); if(!clear||!form)return; clear.addEventListener("click",()=>{ if(!window.confirm("Clear all editable profile information? Changes will only be saved when you click Save Changes."))return; ["id_phone_number","id_city","id_professional_summary"].forEach(id=>{const field=document.getElementById(id);if(field)field.value="";}); const years=document.getElementById("id_years_of_experience");if(years)years.value="0"; const availability=document.getElementById("id_availability");if(availability){const defaultOption=[...availability.options].find(option=>option.value==="available")||availability.options[0];if(defaultOption)availability.value=defaultOption.value;} const hidden=document.getElementById("id_skills"),tags=document.getElementById("profile-skill-tags");if(hidden)hidden.value="";if(tags)tags.replaceChildren();}); })();
+    </script>
 </body>
 </html>

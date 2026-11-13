@@ -21,9 +21,11 @@ UUID_METADATA_KEYS = frozenset(
         "candidate_id",
         "call_session_id",
         "company_id",
+        "evaluation_id",
         "interview_schedule_id",
         "job_id",
         "question_id",
+        "rubric_id",
         "replaced_resume_id",
         "replacement_schedule_id",
         "replaces_resume_id",
@@ -33,7 +35,14 @@ UUID_METADATA_KEYS = frozenset(
 )
 IDENTIFIER_LIST_METADATA_KEYS = frozenset({"capabilities", "changed_fields"})
 INTEGER_METADATA_KEYS = frozenset(
-    {"extracted_character_count", "question_index", "size_bytes"}
+    {
+        "criterion_count",
+        "eligible_count",
+        "extracted_character_count",
+        "processed_count",
+        "question_index",
+        "size_bytes",
+    }
 )
 BOOLEAN_METADATA_KEYS = frozenset({"is_verified", "simulated_mode"})
 TIMESTAMP_METADATA_KEYS = frozenset({"invitation_expires_at"})
@@ -42,14 +51,21 @@ CODE_METADATA_KEYS = frozenset(
         "collection_source",
         "consent_type",
         "delivery_channel",
+        "duration_bucket",
         "escalation_category",
         "escalation_severity",
         "failure_code",
         "file_type",
         "parser",
         "policy_version",
+        "recommendation",
         "request_kind",
+        "retention_category",
+        "retention_result",
         "reason_code",
+        "review_outcome",
+        "application_status_from",
+        "application_status_to",
         "status_from",
         "status_to",
     }
@@ -133,6 +149,29 @@ def _spec(
 
 EVENT_SPECS = MappingProxyType(
     {
+    "account.blocked": _spec(
+        AuditEvent.Category.ADMINISTRATION,
+        "accounts.User",
+        "Account blocked",
+        {"request_kind"},
+        actor_required=True,
+        resource_id_required=False,
+    ),
+    "account.unblocked": _spec(
+        AuditEvent.Category.ADMINISTRATION,
+        "accounts.User",
+        "Account unblocked",
+        {"request_kind"},
+        actor_required=True,
+        resource_id_required=False,
+    ),
+    "account.login_attempts_unlocked": _spec(
+        AuditEvent.Category.SECURITY,
+        "accounts.User",
+        "Login attempts unlocked",
+        {"request_kind"},
+        resource_id_required=False,
+    ),
     # Candidate profile
     "profile.updated": _spec(
         AuditEvent.Category.DATA_CHANGE,
@@ -357,7 +396,7 @@ EVENT_SPECS = MappingProxyType(
     "interview.invited": _spec(
         AuditEvent.Category.INTERVIEW,
         "interviews.InterviewSchedule",
-        "Interview invitation sent",
+        "Interview scheduled",
         {"application_id", "invitation_expires_at"},
         required_metadata={"application_id", "invitation_expires_at"},
     ),
@@ -365,7 +404,7 @@ EVENT_SPECS = MappingProxyType(
         AuditEvent.Category.INTERVIEW,
         "interviews.InterviewSchedule",
         "Interview confirmed",
-        {"application_id", "status_from", "status_to"},
+        {"application_id", "status_from", "status_to", "reason_code"},
         required_metadata={"application_id", "status_from", "status_to"},
     ),
     "interview.reschedule_requested": _spec(
@@ -591,6 +630,25 @@ EVENT_SPECS = MappingProxyType(
             "question_index",
         },
     ),
+    "call_session.transcription_succeeded": _spec(
+        AuditEvent.Category.INTERVIEW,
+        "calling.CallSession",
+        "Candidate answer transcribed locally",
+        {
+            "application_id",
+            "interview_schedule_id",
+            "question_id",
+            "question_index",
+            "duration_bucket",
+        },
+        required_metadata={
+            "application_id",
+            "interview_schedule_id",
+            "question_id",
+            "question_index",
+            "duration_bucket",
+        },
+    ),
     "call_session.escalated": _spec(
         AuditEvent.Category.SECURITY,
         "agents.AgentEscalation",
@@ -608,6 +666,97 @@ EVENT_SPECS = MappingProxyType(
             "escalation_category",
             "escalation_severity",
             "reason_code",
+        },
+        actor_required=False,
+    ),
+    # Human-reviewed evaluation
+    "evaluation.started": _spec(
+        AuditEvent.Category.INTERVIEW,
+        "interviews.CandidateEvaluation",
+        "Candidate evaluation review started",
+        {
+            "application_id",
+            "call_session_id",
+            "rubric_id",
+            "status_to",
+        },
+        required_metadata={
+            "application_id",
+            "call_session_id",
+            "rubric_id",
+            "status_to",
+        },
+    ),
+    "evaluation.scored": _spec(
+        AuditEvent.Category.INTERVIEW,
+        "interviews.CandidateEvaluation",
+        "Candidate evaluation scores saved",
+        {
+            "application_id",
+            "call_session_id",
+            "criterion_count",
+            "recommendation",
+            "rubric_id",
+            "status_from",
+            "status_to",
+        },
+        required_metadata={
+            "application_id",
+            "call_session_id",
+            "criterion_count",
+            "recommendation",
+            "rubric_id",
+            "status_from",
+            "status_to",
+        },
+    ),
+    "evaluation.finalized": _spec(
+        AuditEvent.Category.INTERVIEW,
+        "interviews.CandidateEvaluation",
+        "Human evaluation review finalized",
+        {
+            "application_id",
+            "application_status_from",
+            "application_status_to",
+            "call_session_id",
+            "criterion_count",
+            "recommendation",
+            "review_outcome",
+            "rubric_id",
+            "status_from",
+            "status_to",
+        },
+        required_metadata={
+            "application_id",
+            "application_status_from",
+            "application_status_to",
+            "call_session_id",
+            "criterion_count",
+            "recommendation",
+            "review_outcome",
+            "rubric_id",
+            "status_from",
+            "status_to",
+        },
+    ),
+    # Retention execution
+    "retention.applied": _spec(
+        AuditEvent.Category.SYSTEM,
+        "auditlog.DataRetentionRecord",
+        "Retention policy applied",
+        {
+            "eligible_count",
+            "policy_version",
+            "processed_count",
+            "retention_category",
+            "retention_result",
+        },
+        required_metadata={
+            "eligible_count",
+            "policy_version",
+            "processed_count",
+            "retention_category",
+            "retention_result",
         },
         actor_required=False,
     ),

@@ -44,8 +44,6 @@ def create_application(
 ):
     with transaction.atomic():
         actor, candidate = _candidate_actor(actor)
-        if not actor.email_verified:
-            raise ApplicationServiceError("Email verification is required.")
         try:
             job = JobPosting.objects.select_for_update().get(
                 pk=job.pk,

@@ -44,6 +44,14 @@ def test_homepage_links_to_existing_account_and_job_routes(client):
     assert reverse("recruitment:job_list") in content
 
 
+def test_public_page_includes_the_shared_accessible_loading_boundary(client):
+    response = client.get(reverse("accounts:home"))
+
+    content = response.content.decode()
+    assert 'data-page-loader' in content
+    assert 'accounts/js/loading.js' in content
+
+
 def test_how_it_works_page_is_public_and_uses_focused_template(client):
     response = client.get(reverse("accounts:how_it_works"))
 
@@ -213,7 +221,7 @@ def test_candidate_dashboard_uses_real_empty_states(client):
     assert "Welcome back, Ayesha" in content
     assert "No upcoming interviews are scheduled." in content
     assert "No applications yet" in content
-    assert "No active résumé" in content
+    assert "No active resume" in content
 
 
 def test_candidate_dashboard_displays_scoped_application_and_interview(client):
@@ -510,6 +518,19 @@ def test_administrator_can_access_administrator_dashboard(client):
     assert reverse("admin:recruitment_company_add") in content
     assert reverse("admin:accounts_user_add") in content
 
+
+def test_active_superuser_can_access_agent_demo(client):
+    user = User.objects.create_superuser(
+        email="qa-agent-demo-superuser@example.test",
+        password="TestingOnly!9384",
+    )
+    client.force_login(user)
+
+    response = client.get(reverse("accounts:agent_demo"))
+
+    assert response.status_code == 200
+    assert b"AI Agent Demonstration" in response.content
+
     management_response = client.get(
         f'{reverse("accounts:admin_dashboard")}?section=management'
     )
@@ -703,3 +724,50 @@ def test_superuser_is_forced_to_administrator_role():
     assert user.role == User.Role.ADMIN
     assert user.is_staff is True
     assert user.is_superuser is True
+
+
+def test_admin_can_block_and_unblock_user_with_audit(client):
+    admin_user = User.objects.create_superuser(email="admin-controls@example.com", password="TestingOnly!9384")
+    target = User.objects.create_user(email="qa-block-target@example.com", password="TestingOnly!9384")
+    client.force_login(admin_user)
+
+    response = client.post(reverse("admin:accounts_user_block", args=[target.pk]))
+    target.refresh_from_db()
+    assert response.status_code == 302
+    assert target.is_active is False
+    assert AuditEvent.objects.filter(event_type="account.blocked").exists()
+
+    response = client.post(reverse("admin:accounts_user_unblock", args=[target.pk]))
+    target.refresh_from_db()
+    assert response.status_code == 302
+    assert target.is_active is True
+    assert AuditEvent.objects.filter(event_type="account.unblocked").exists()
+
+
+def test_admin_cannot_block_self_or_other_roles_cannot_use_controls(client):
+    admin_user = User.objects.create_superuser(email="admin-self@example.com", password="TestingOnly!9384")
+    client.force_login(admin_user)
+    response = client.post(reverse("admin:accounts_user_block", args=[admin_user.pk]))
+    assert response.status_code == 302
+    admin_user.refresh_from_db()
+    assert admin_user.is_active is True
+
+    candidate = User.objects.create_user(email="qa-non-admin@example.com", password="TestingOnly!9384")
+    client.force_login(candidate)
+    response = client.post(reverse("admin:accounts_user_block", args=[admin_user.pk]))
+    assert response.status_code in (302, 403)
+
+
+def test_admin_unlocks_shared_axes_login_attempts_with_explicit_confirmation(client):
+    from axes.models import AccessAttempt
+
+    admin_user = User.objects.create_superuser(email="admin-unlock@example.com", password="TestingOnly!9384")
+    target = User.objects.create_user(email="qa-unlock-target@example.com", password="TestingOnly!9384")
+    AccessAttempt.objects.create(username=None, ip_address="127.0.0.1", failures_since_start=5)
+    client.force_login(admin_user)
+
+    response = client.post(reverse("admin:accounts_user_unlock_login", args=[target.pk]), {"confirm_shared": "yes"})
+
+    assert response.status_code == 302
+    assert not AccessAttempt.objects.filter(ip_address="127.0.0.1").exists()
+    assert AuditEvent.objects.filter(event_type="account.login_attempts_unlocked").exists()

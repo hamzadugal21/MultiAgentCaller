@@ -4,63 +4,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Manage your protected HireFlow AI résumé uploads.">
-    <title>My Résumé — HireFlow AI</title>
+    <meta name="description" content="Manage your protected HireFlow AI resume uploads.">
+    <title>My Resume — HireFlow AI</title>
     <link rel="stylesheet" href="{% static 'accounts/css/home.css' %}">
     <link rel="stylesheet" href="{% static 'accounts/css/candidate-dashboard.css' %}">
     <link rel="stylesheet" href="{% static 'candidates/css/candidate-resume.css' %}">
 </head>
 <body class="candidate-dashboard-page candidate-resume-page">
-    <a class="skip-link" href="#resume-main">Skip to résumé content</a>
+    <a class="skip-link" href="#resume-main">Skip to resume content</a>
 
     <div class="candidate-shell">
-        <aside class="candidate-sidebar" aria-label="Candidate navigation">
-            <div class="sidebar-brand-row">
-                <a class="sidebar-brand" href="{% url 'accounts:candidate_dashboard' %}" aria-label="HireFlow AI candidate dashboard">
-                    HireFlow <strong>AI</strong>
-                </a>
-                <details class="candidate-mobile-menu">
-                    <summary>Menu</summary>
-                    <nav aria-label="Candidate mobile navigation">
-                        <a href="{% url 'accounts:candidate_dashboard' %}">Dashboard</a>
-                        <a href="{% url 'candidates:profile_edit' %}">My Profile</a>
-                        <a aria-current="page" href="{% url 'candidates:resume_list' %}">My Résumé</a>
-                        <a href="{% url 'recruitment:job_list' %}">Browse Jobs</a>
-                        <a href="{% url 'recruitment:application_list' %}">My Applications</a>
-                        <a href="{% url 'calling:candidate_session_list' %}">Interviews</a>
-                    </nav>
-                </details>
-            </div>
-
-            <nav class="sidebar-nav" aria-label="Candidate primary navigation">
-                <a href="{% url 'accounts:candidate_dashboard' %}"><span aria-hidden="true">▦</span> Dashboard</a>
-                <a href="{% url 'candidates:profile_edit' %}"><span aria-hidden="true">○</span> My Profile</a>
-                <a class="is-active" aria-current="page" href="{% url 'candidates:resume_list' %}">
-                    <span aria-hidden="true">▤</span> My Résumé
-                </a>
-                <a href="{% url 'recruitment:job_list' %}"><span aria-hidden="true">⌕</span> Browse Jobs</a>
-                <a href="{% url 'recruitment:application_list' %}"><span aria-hidden="true">☷</span> My Applications</a>
-                <a href="{% url 'calling:candidate_session_list' %}"><span aria-hidden="true">▣</span> Interviews</a>
-            </nav>
-
-            <div class="sidebar-footer">
-                <a class="sidebar-help" href="#resume-help"><span aria-hidden="true">?</span> Help &amp; Support</a>
-                <div class="sidebar-account">
-                    <span class="candidate-avatar" aria-hidden="true">{{ initials }}</span>
-                    <span><strong>{{ display_name }}</strong><small>Candidate</small></span>
-                </div>
-                <form method="post" action="{% url 'accounts:logout' %}">
-                    {% csrf_token %}
-                    <button class="sidebar-logout" type="submit"><span aria-hidden="true">↪</span> Log out</button>
-                </form>
-            </div>
-        </aside>
+        {% include "includes/candidate_sidebar.html" with active_candidate_nav="resume" sidebar_help_target="resume-help" %}
 
         <div class="candidate-workspace">
             <header class="dashboard-header">
                 <div>
-                    <h1>My Résumé</h1>
-                    <p>Keep an up-to-date résumé ready for your job applications.</p>
+                    <h1>My Resume</h1>
+                    <p>Keep an up-to-date resume ready for your job applications.</p>
                 </div>
                 <div class="header-account" aria-label="Signed in as {{ display_name }}">
                     <span class="notification-mark" aria-label="No new notifications">♧</span>
@@ -78,7 +38,7 @@
                 {% endif %}
 
                 <section class="dashboard-panel active-resume-card" aria-labelledby="active-resume-heading">
-                    <h2 id="active-resume-heading">Active résumé</h2>
+                    <h2 id="active-resume-heading">Active resume</h2>
                     {% if active_resume %}
                         <div class="active-resume-row">
                             <span class="resume-file-type" aria-hidden="true">{{ active_resume_file_type }}</span>
@@ -88,24 +48,27 @@
                             </div>
                             <span class="resume-status is-ready">Ready</span>
                         </div>
-                        <p class="active-resume-note">This résumé is used for your active job applications.</p>
+                        <p class="active-resume-note">This resume is used for your active job applications.</p>
                         <div class="resume-actions">
                             <a class="dashboard-button dashboard-button-secondary" href="{% url 'candidates:resume_download' active_resume.id %}">Download</a>
-                            <a class="dashboard-button dashboard-button-secondary" href="#resume-upload">Replace résumé</a>
+                            <a class="dashboard-button dashboard-button-secondary" href="#resume-upload">Replace resume</a>
+                            <form method="post" action="{% url 'candidates:resume_analyze' %}">
+                                {% csrf_token %}<input type="hidden" name="resume_id" value="{{ active_resume.id }}"><button class="dashboard-button dashboard-button-secondary" type="submit" data-loading-text="Analyzing your resume…"><span aria-hidden="true">✦</span> Auto-Fill Profile with AI</button>
+                            </form>
                         </div>
                     {% else %}
                         <div class="resume-empty-state">
-                            <h3>No active résumé</h3>
-                            <p>Upload a PDF or DOCX file below to prepare a résumé for future applications.</p>
+                            <h3>No active resume</h3>
+                            <p>Upload a PDF or DOCX file below to prepare a resume for future applications.</p>
                         </div>
                     {% endif %}
                 </section>
 
                 <section id="resume-upload" class="dashboard-panel resume-upload-card" aria-labelledby="upload-heading">
-                    <h2 id="upload-heading">{% if active_resume %}Upload a new résumé{% else %}Upload your résumé{% endif %}</h2>
+                    <h2 id="upload-heading">{% if active_resume %}Upload a new resume{% else %}Upload your resume{% endif %}</h2>
                     <p>
                         Upload a PDF or DOCX file up to 5 MB.
-                        {% if active_resume %}Your current résumé stays active until the new file is processed successfully.{% endif %}
+                        {% if active_resume %}Your current resume stays active until the new file is processed successfully.{% endif %}
                     </p>
                     <form method="post" action="{% url 'candidates:resume_upload' %}" enctype="multipart/form-data" class="resume-upload-form">
                         {% csrf_token %}
@@ -114,7 +77,7 @@
                                 <span class="upload-icon-shell" aria-hidden="true">
                                     <img src="{% static 'accounts/img/resume-upload.svg' %}" alt="" width="24" height="24">
                                 </span>
-                                <strong>Drag and drop your résumé here</strong>
+                                <strong>Drag and drop your resume here</strong>
                                 <small>PDF or DOCX, maximum 5 MB</small>
                                 <span class="dashboard-button dashboard-button-secondary">Choose file</span>
                             </label>
@@ -131,11 +94,11 @@
                 </section>
 
                 <section class="dashboard-panel resume-process-card" aria-labelledby="process-heading">
-                    <h2 id="process-heading">How résumé updates work</h2>
+                    <h2 id="process-heading">How resume updates work</h2>
                     <ol class="resume-process-steps">
                         <li><span>1</span><strong>Upload document</strong></li>
                         <li><span>2</span><strong>We validate and process it</strong></li>
-                        <li><span>3</span><strong>Your new résumé becomes active after successful processing</strong></li>
+                        <li><span>3</span><strong>Your new resume becomes active after successful processing</strong></li>
                     </ol>
                     <p>Structural PDF/DOCX checks and bounded text extraction are used. These checks are not malware scanning.</p>
                 </section>
@@ -160,17 +123,18 @@
                         {% empty %}
                             <div class="resume-empty-state previous-empty-state">
                                 <h3>No previous uploads</h3>
-                                <p>Earlier résumé versions and safe processing statuses will appear here.</p>
+                                <p>Earlier resume versions and safe processing statuses will appear here.</p>
                             </div>
                         {% endfor %}
                     </div>
                 </section>
 
                 <aside id="resume-help" class="resume-help-note">
-                    <strong>Privacy note:</strong> Résumés are protected and available only through authorized recruitment workflows and owner-protected downloads.
+                    <strong>Privacy note:</strong> Resumes are protected and available only through authorized recruitment workflows and owner-protected downloads.
                 </aside>
             </main>
         </div>
     </div>
+    {% include "includes/loading.html" %}
 </body>
 </html>

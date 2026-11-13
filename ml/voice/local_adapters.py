@@ -76,8 +76,19 @@ class SileroVadAdapter:
 
 
 class FasterWhisperAdapter:
-    def __init__(self, *, model_identifier="small.en", model_loader=None):
+    def __init__(
+        self,
+        *,
+        model_identifier="base",
+        device="cpu",
+        compute_type="int8",
+        language="en",
+        model_loader=None,
+    ):
         self._model_identifier = model_identifier
+        self._device = device
+        self._compute_type = compute_type
+        self._language = language
         self._model_loader = model_loader
         self._model = None
 
@@ -89,7 +100,8 @@ class FasterWhisperAdapter:
                 self._model_loader = WhisperModel
             self._model = self._model_loader(
                 self._model_identifier,
-                device="auto",
+                device=self._device,
+                compute_type=self._compute_type,
                 local_files_only=True,
             )
         return self._model
@@ -101,10 +113,22 @@ class FasterWhisperAdapter:
             samples = numpy.frombuffer(audio.pcm_s16le, dtype=numpy.int16).astype(
                 numpy.float32
             )
+            if audio.sample_rate_hz != 16000:
+                source_positions = numpy.arange(len(samples), dtype=numpy.float32)
+                target_length = round(len(samples) * 16000 / audio.sample_rate_hz)
+                target_positions = numpy.linspace(
+                    0,
+                    max(len(samples) - 1, 0),
+                    num=max(target_length, 1),
+                    dtype=numpy.float32,
+                )
+                samples = numpy.interp(target_positions, source_positions, samples).astype(
+                    numpy.float32
+                )
             model = self._load_model()
             segments, info = model.transcribe(
                 samples / 32768.0,
-                language="en",
+                language=self._language or None,
                 beam_size=1,
             )
             text = " ".join(segment.text.strip() for segment in segments).strip()

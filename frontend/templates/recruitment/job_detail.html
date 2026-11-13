@@ -14,47 +14,7 @@
     <a class="skip-link" href="#job-detail-main">Skip to job details</a>
 
     <div class="candidate-shell">
-        <aside class="candidate-sidebar" aria-label="Candidate navigation">
-            <div class="sidebar-brand-row">
-                <a class="sidebar-brand" href="{% url 'accounts:candidate_dashboard' %}" aria-label="HireFlow AI candidate dashboard">
-                    HireFlow <strong>AI</strong>
-                </a>
-                <details class="candidate-mobile-menu">
-                    <summary>Menu</summary>
-                    <nav aria-label="Candidate mobile navigation">
-                        <a href="{% url 'accounts:candidate_dashboard' %}">Dashboard</a>
-                        <a href="{% url 'candidates:profile_edit' %}">My Profile</a>
-                        <a href="{% url 'candidates:resume_list' %}">My Résumé</a>
-                        <a aria-current="page" href="{% url 'recruitment:job_list' %}">Browse Jobs</a>
-                        <a href="{% url 'recruitment:application_list' %}">My Applications</a>
-                        <a href="{% url 'calling:candidate_session_list' %}">Interviews</a>
-                    </nav>
-                </details>
-            </div>
-
-            <nav class="sidebar-nav" aria-label="Candidate primary navigation">
-                <a href="{% url 'accounts:candidate_dashboard' %}"><span aria-hidden="true">▦</span> Dashboard</a>
-                <a href="{% url 'candidates:profile_edit' %}"><span aria-hidden="true">○</span> My Profile</a>
-                <a href="{% url 'candidates:resume_list' %}"><span aria-hidden="true">▤</span> My Résumé</a>
-                <a class="is-active" aria-current="page" href="{% url 'recruitment:job_list' %}">
-                    <span aria-hidden="true">⌕</span> Browse Jobs
-                </a>
-                <a href="{% url 'recruitment:application_list' %}"><span aria-hidden="true">☷</span> My Applications</a>
-                <a href="{% url 'calling:candidate_session_list' %}"><span aria-hidden="true">▣</span> Interviews</a>
-            </nav>
-
-            <div class="sidebar-footer">
-                <a class="sidebar-help" href="#application-actions"><span aria-hidden="true">?</span> Help &amp; Support</a>
-                <div class="sidebar-account">
-                    <span class="candidate-avatar" aria-hidden="true">{{ initials }}</span>
-                    <span><strong>{{ display_name }}</strong><small>Candidate</small></span>
-                </div>
-                <form method="post" action="{% url 'accounts:logout' %}">
-                    {% csrf_token %}
-                    <button class="sidebar-logout" type="submit"><span aria-hidden="true">↪</span> Log out</button>
-                </form>
-            </div>
-        </aside>
+        {% include "includes/candidate_sidebar.html" with active_candidate_nav="jobs" sidebar_help_target="application-actions" %}
 
         <div class="candidate-workspace">
             <header class="job-detail-header">
@@ -152,7 +112,7 @@
 
                     <aside id="application-actions" class="job-application-card" aria-labelledby="apply-heading">
                         <h2 id="apply-heading">Apply for this role</h2>
-                        <p>Continue to the secure application form to choose your active résumé and review application details.</p>
+                        <p>Continue to the secure application form to choose your active resume and review application details.</p>
                         <a class="job-apply-button" href="{% url 'recruitment:application_create' job.id %}">Apply now</a>
                         <button class="job-save-secondary" type="button" disabled>Save job — unavailable</button>
                         <p class="application-consent-note">Applying does not automatically grant interview consent. You can review that choice in the secure application workflow.</p>
@@ -161,5 +121,6 @@
             </main>
         </div>
     </div>
+    {% include "includes/loading.html" %}
 </body>
 </html>

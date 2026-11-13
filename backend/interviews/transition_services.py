@@ -105,7 +105,10 @@ def transition_interview(
             raise InterviewTransitionError("The interview transition is not allowed.")
 
         if target_status == InterviewSchedule.Status.CONFIRMED:
-            persisted_actor = _authorize_candidate(actor, locked)
+            if reason_code == "recruiter_scheduled":
+                persisted_actor = _authorize_recruiter(actor, locked)
+            else:
+                persisted_actor = _authorize_candidate(actor, locked)
         elif target_status == InterviewSchedule.Status.EXPIRED:
             if actor is not None:
                 raise InterviewAuthorizationError(
@@ -121,6 +124,8 @@ def transition_interview(
             "status_from": status_from,
             "status_to": target_status,
         }
+        if target_status == InterviewSchedule.Status.CONFIRMED and reason_code == "recruiter_scheduled":
+            metadata["reason_code"] = reason_code
         event_type = {
             InterviewSchedule.Status.CONFIRMED: "interview.confirmed",
             InterviewSchedule.Status.COMPLETED: "interview.completed",

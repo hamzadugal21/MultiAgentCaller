@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Simulated interview{% endblock %}
 
@@ -26,6 +27,26 @@
         <form method="post" action="{% url 'calling:submit_answer' state.session.id %}">
             {% csrf_token %}
             {{ answer_form.as_p }}
+            {% if speech_feature_enabled %}
+                <section
+                    class="transcription-controls"
+                    data-transcription-url="{% url 'calling:transcribe_answer' state.session.id %}"
+                    data-playback-url="{% url 'calling:speak_question' state.session.id %}"
+                    data-max-seconds="{{ whisper_max_audio_seconds }}"
+                >
+                    <p id="transcription-status" role="status" aria-live="polite">
+                        You may record up to {{ whisper_max_audio_seconds }} seconds. Review and edit any transcript before submitting your answer.
+                    </p>
+                    {% if piper_playback_enabled %}
+                        <button type="button" data-play-question>Play question with Piper</button>
+                    {% endif %}
+                    <button type="button" data-record-answer>Record answer</button>
+                    <button type="button" data-stop-recording disabled>Stop recording</button>
+                    <button type="button" data-transcribe disabled>Transcribe</button>
+                </section>
+            {% else %}
+                <p class="transcription-unavailable" role="status">Speech input is unavailable on this deployment. Type your answer below.</p>
+            {% endif %}
             <button type="submit">Submit answer</button>
         </form>
         <form method="post" action="{% url 'calling:pause_session' state.session.id %}">
@@ -55,4 +76,7 @@
         </form>
     {% endif %}
 </section>
+{% if speech_feature_enabled %}
+    <script src="{% static 'calling/js/transcription.js' %}" defer></script>
+{% endif %}
 {% endblock %}

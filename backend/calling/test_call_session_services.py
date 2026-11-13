@@ -15,6 +15,7 @@ from channels.layers import get_channel_layer
 from channels.testing import WebsocketCommunicator
 from django.conf import settings
 from django.db import IntegrityError, transaction
+from django.template.loader import render_to_string
 from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
@@ -48,6 +49,7 @@ from calling.services import (
     submit_simulated_answer,
     transition_call_session,
 )
+from calling.views import _parse_bulk_interval
 from candidates.models import CandidateProfile, Resume
 from config.asgi import application as asgi_application
 from interviews.models import InterviewRescheduleRequest, InterviewSchedule
@@ -60,6 +62,49 @@ from recruitment.models import (
 )
 
 pytestmark = pytest.mark.django_db
+
+
+def test_bulk_interval_parser_accepts_multiple_and_single_digit_hours():
+    first = _parse_bulk_interval(date_text="2026-11-16", raw="09:00-11:00")
+    second = _parse_bulk_interval(date_text="2026-11-16", raw="13:00-16:00")
+    single = _parse_bulk_interval(date_text="2026-11-16", raw="9:00-11:00")
+
+    assert first[0].strftime("%H:%M") == "09:00"
+    assert second[1].strftime("%H:%M") == "16:00"
+    assert single[0].strftime("%H:%M") == "09:00"
+
+
+def test_bulk_interval_parser_rejects_truncated_or_invalid_values():
+    with pytest.raises(ValueError, match="HH:MM-HH:MM"):
+        _parse_bulk_interval(date_text="2026-11-16", raw="9")
+    with pytest.raises(ValueError, match="valid 24-hour"):
+        _parse_bulk_interval(date_text="2026-11-16", raw="25:00-26:00")
+
+
+def test_bulk_schedule_preview_binds_configuration_and_separates_confirmation_form():
+    content = render_to_string(
+        "calling/bulk_schedule.html",
+        {
+            "applications": [],
+            "preview": {
+                "allocations": [{"candidate": "QA Candidate", "job": "QA Role", "start": "16 Nov 2026 09:00", "end": "09:30"}],
+                "unscheduled": 0,
+                "ai_fallback": False,
+                "configuration": {
+                    "date": "2026-11-16",
+                    "intervals": ["09:00-11:00", "13:00-16:00"],
+                    "duration": "30",
+                    "break_minutes": "5",
+                    "application_ids": [],
+                },
+            },
+        },
+    )
+    assert 'value="2026-11-16"' in content
+    assert 'value="09:00-11:00"' in content
+    assert 'value="13:00-16:00"' in content
+    assert content.count('name="action" value="confirm"') == 1
+    assert "AI-generated schedule preview" in content
 POLICY_VERSION = "ai-processing-v1"
 
 
@@ -151,6 +196,21 @@ def _create(data, **overrides):
     }
     values.update(overrides)
     return create_call_session(**values)
+
+
+def test_candidate_interview_dashboard_uses_portal_layout_and_permitted_schedule(
+    client, call_data
+):
+    client.force_login(call_data["candidate_user"])
+
+    response = client.get(reverse("calling:candidate_session_list"))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Interviews" in content
+    assert call_data["schedule"].application.job.title in content
+    assert "Secure, human-reviewed interviews" in content
+    assert "MultiAgent Recruitment Caller" not in content
 
 
 def test_call_session_model_lifecycle_schema_and_indexes(call_data):
@@ -535,6 +595,21 @@ def test_simulated_preparation_requires_an_approved_question(call_data):
     assert not CallSession.objects.exists()
 
 
+def test_candidate_prepare_surfaces_missing_question_prerequisite(call_data):
+    client = Client()
+    client.force_login(call_data["candidate_user"])
+
+    response = client.post(
+        reverse("calling:prepare_session", args=(call_data["schedule"].pk,)),
+        {"idempotency_key": uuid.uuid4()},
+    )
+
+    assert response.status_code == 302
+    dashboard = client.get(reverse("calling:candidate_session_list"))
+    assert b"No approved interview questions are available." in dashboard.content
+    assert not CallSession.objects.exists()
+
+
 def test_candidate_http_simulated_lifecycle_is_post_only_and_owned(call_data):
     _questions(call_data)
     client = Client()
@@ -755,16 +830,16 @@ def test_recruiter_interview_management_is_company_scoped_and_safe(
     content = response.content.decode()
     assert "Ayesha Khan" in content
     assert call_data["application"].job.title in content
-    assert "Candidate email: Verified" in content
+    assert "Candidate email:" not in content
     assert "AI processing consent: Active" in content
     assert "AI interview consent: Active" in content
-    assert "Invitation delivered and candidate confirmation received." in content
+    assert "No email confirmation is required." in content
     assert reverse("calling:recruiter_session_detail", args=(session.pk,)) in content
     assert reverse(
         "interviews:schedule_cancel", args=(call_data["schedule"].pk,)
     ) in content
     assert reverse("interviews:reschedule_review", args=(reschedule.pk,)) in content
-    assert "Reschedule unavailable" in content
+    assert "The scheduled date and time cannot be changed." in content
     assert "Private Candidate" not in content
     assert "Private Company Role" not in content
     assert call_data["candidate_user"].email not in content
@@ -785,10 +860,10 @@ def test_recruiter_interview_management_shows_only_supported_pending_actions(
 
     assert response.status_code == 200
     content = response.content.decode()
-    assert "Awaiting confirmation" in content
-    assert "Interview status unavailable" in content
+    assert "Awaiting confirmation" not in content
+    assert "Interview status is available after a call session is prepared." in content
     assert reverse(
-        "interviews:invitation_resend", args=(call_data["schedule"].pk,)
+        "interviews:pending_activate", args=(call_data["schedule"].pk,)
     ) in content
     assert reverse(
         "interviews:schedule_cancel", args=(call_data["schedule"].pk,)

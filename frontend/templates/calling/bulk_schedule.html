@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Schedule interviews with AI{% endblock %}
+{% block content %}
+<section>
+  <h1>Schedule interviews with AI</h1>
+  <p>Times use Asia/Karachi. AI validates the proposed authorized slots; Django controls persistence and conflict checks.</p>
+  <h2>Scheduling configuration</h2>
+  <form method="post">
+    {% csrf_token %}
+    <label>Date <input type="date" name="date" value="{% if preview %}{{ preview.configuration.date }}{% endif %}" required></label>
+    <fieldset><legend>Eligible candidates</legend>
+      {% for entry in applications %}<label><input type="checkbox" name="application_ids" value="{{ entry.application.pk }}"{% if entry.selected %} checked{% endif %}> {{ entry.application.candidate.user.get_full_name|default:"Candidate" }} — {{ entry.application.job.title }}</label><br>
+      {% empty %}<p>No eligible applications.</p>{% endfor %}
+    </fieldset>
+    <label>Interview duration <select name="duration">
+      <option value="15"{% if preview and preview.configuration.duration == "15" %} selected{% elif not preview %}{% endif %}>15</option>
+      <option value="30"{% if not preview or preview.configuration.duration == "30" %} selected{% endif %}>30</option>
+      <option value="45"{% if preview and preview.configuration.duration == "45" %} selected{% endif %}>45</option>
+      <option value="60"{% if preview and preview.configuration.duration == "60" %} selected{% endif %}>60</option>
+    </select> minutes</label>
+    <label>Break <select name="break_minutes">
+      <option value="0"{% if not preview or preview.configuration.break_minutes == "0" %} selected{% endif %}>0</option>
+      <option value="5"{% if preview and preview.configuration.break_minutes == "5" %} selected{% endif %}>5</option>
+      <option value="10"{% if preview and preview.configuration.break_minutes == "10" %} selected{% endif %}>10</option>
+      <option value="15"{% if preview and preview.configuration.break_minutes == "15" %} selected{% endif %}>15</option>
+    </select> minutes</label>
+    <p>Availability intervals (Asia/Karachi):</p>
+    <div id="intervals">{% if preview %}{% for interval in preview.configuration.intervals %}<input name="intervals" value="{{ interval }}" placeholder="09:00-11:00" required>{% endfor %}{% else %}<input name="intervals" placeholder="09:00-11:00" required>{% endif %}</div>
+    <button type="button" id="add-interval">Add interval</button>
+    <button type="submit" name="action" value="preview">Generate schedule with AI</button>
+  </form>
+  {% if preview %}
+    <h2>AI-generated schedule preview</h2>
+    <p>{{ preview.allocations|length }} allocated; {{ preview.unscheduled }} unscheduled. Timezone: Asia/Karachi.</p>
+    {% if preview.ai_fallback %}<p role="alert">AI validation was unavailable. Generate a new preview before confirming.</p>{% else %}<p>AI validation completed. Review the assignments before confirming.</p>{% endif %}
+    <table><thead><tr><th>Candidate</th><th>Job</th><th>Date</th><th>Start</th><th>End</th></tr></thead><tbody>{% for item in preview.allocations %}<tr><td>{{ item.candidate }}</td><td>{{ item.job }}</td><td>{{ item.start }}</td><td>{{ item.start|slice:"-5:" }}</td><td>{{ item.end }}</td></tr>{% endfor %}</tbody></table>
+    {% if not preview.ai_fallback %}<h2>Confirmation</h2><form method="post">{% csrf_token %}<button type="submit" name="action" value="confirm" onclick="return confirm('Confirm this reviewed schedule?');">Confirm schedule</button></form>{% endif %}
+  {% endif %}
+</section>
+<script>
+  document.getElementById('add-interval').addEventListener('click', function () { const input = document.createElement('input'); input.name = 'intervals'; input.placeholder = '13:00-16:00'; input.required = true; document.getElementById('intervals').appendChild(input); });
+</script>
+{% endblock %}

@@ -48,11 +48,26 @@
     font: inherit;
 }
 
+.job-search-field:has(input:disabled),
 .job-search-field input:disabled,
 .job-discovery-controls select:disabled,
-.job-search-button:disabled {
+.job-search-button:disabled,
+.clear-filter-placeholder {
     cursor: not-allowed;
+}
+
+.job-search-field:has(input:disabled),
+.job-discovery-controls select:disabled,
+.job-search-button:disabled {
+    border-color: #cbd5e1;
+    background: #f1f5f9;
+    color: #64748b;
     opacity: 1;
+}
+
+.job-search-field input:disabled {
+    color: #64748b;
+    cursor: not-allowed;
 }
 
 .job-search-field input::placeholder {
@@ -69,6 +84,12 @@
     font: inherit;
     font-size: 0.875rem;
     font-weight: 750;
+}
+
+.job-search-button:disabled {
+    border: 1px solid #cbd5e1;
+    background: #e2e8f0;
+    color: #64748b;
 }
 
 .job-filter-row {
@@ -96,7 +117,7 @@
 
 .clear-filter-placeholder {
     min-width: 106px;
-    color: var(--hf-teal-dark);
+    color: #94a3b8;
     font-size: 0.8125rem;
     font-weight: 750;
 }

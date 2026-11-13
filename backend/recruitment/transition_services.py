@@ -136,7 +136,9 @@ def transition_job(*, job, target_status, actor, request_id=None, correlation_id
             if locked.created_by.company_id != locked.company_id:
                 raise InvalidWorkflowTransitionError("The job cannot be published.")
             if locked.application_deadline and locked.application_deadline <= timezone.now():
-                raise InvalidWorkflowTransitionError("The job cannot be published.")
+                raise InvalidWorkflowTransitionError(
+                    "Set a future application deadline before publishing this job."
+                )
 
         status_from = locked.status
         locked.status = target_status

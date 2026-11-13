@@ -1,8 +1,8 @@
 import uuid
 
 import pytest
-from django.core import mail
-from django.test import override_settings
+from django.test import Client
+from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import User
@@ -12,16 +12,16 @@ from auditlog.consent_services import (
 )
 from auditlog.models import AuditEvent, ConsentRecord
 from candidates.models import CandidateProfile, Resume
-from interviews.models import InterviewRescheduleRequest, InterviewSchedule
+from interviews.models import InterviewSchedule
 from interviews.scheduling_services import (
     SchedulingServiceError,
     cancel_interview,
     confirm_interview_invitation,
+    create_confirmed_interview,
     create_interview_invitation,
     deliver_interview_invitation,
     expire_interview_invitation,
     request_interview_reschedule,
-    review_reschedule_request,
 )
 from recruitment.application_services import create_application
 from recruitment.models import Company, JobPosting, RecruiterProfile
@@ -114,36 +114,50 @@ def test_invitation_is_hmac_only_expiring_and_idempotent(scheduling_data):
     assert InterviewSchedule.objects.count() == 1
 
 
-@override_settings(
-    MAILERS={"default": {"BACKEND": "django.core.mail.backends.locmem.EmailBackend"}}
-)
-def test_invitation_delivery_is_idempotent_after_success(scheduling_data):
+def test_email_delivery_is_disabled(scheduling_data):
     issued = _invite(scheduling_data)
-    assert deliver_interview_invitation(
-        issued=issued, confirmation_url=f"https://example.test/{issued.token}"
-    )
-    issued.schedule.refresh_from_db()
-    assert issued.schedule.invitation_delivery_status == "sent"
-    assert deliver_interview_invitation(
-        issued=issued, confirmation_url=f"https://example.test/{issued.token}"
-    )
-    assert len(mail.outbox) == 1
+    with pytest.raises(SchedulingServiceError, match="disabled"):
+        deliver_interview_invitation(
+            issued=issued, confirmation_url="https://example.test/confirm"
+        )
 
 
-def test_delivery_failure_is_safe_and_audited(monkeypatch, scheduling_data):
+def test_recruiter_scheduling_confirms_without_email_or_candidate_click(scheduling_data):
+    key = uuid.uuid4()
+    start = timezone.now() + timezone.timedelta(days=3)
+    kwargs = {
+        "application": scheduling_data["application"],
+        "actor": scheduling_data["recruiter_user"],
+        "scheduled_start": start,
+        "scheduled_end": start + timezone.timedelta(hours=1),
+        "timezone_name": "Asia/Karachi",
+        "policy_version": POLICY,
+        "idempotency_key": key,
+    }
+    schedule = create_confirmed_interview(**kwargs)
+    assert schedule.status == InterviewSchedule.Status.CONFIRMED
+    assert schedule.confirmed_at is not None
+    assert create_confirmed_interview(**kwargs).pk == schedule.pk
+    assert InterviewSchedule.objects.count() == 1
+    assert AuditEvent.objects.filter(
+        event_type="interview.confirmed", resource_id=schedule.pk
+    ).count() == 1
+
+
+def test_recruiter_can_activate_legacy_pending_schedule_without_email(scheduling_data):
     issued = _invite(scheduling_data)
+    issued.schedule.invitation_expires_at = timezone.now() - timezone.timedelta(minutes=1)
+    issued.schedule.save(update_fields=("invitation_expires_at",))
+    client = Client()
+    client.force_login(scheduling_data["recruiter_user"])
 
-    def fail_delivery(*args, **kwargs):
-        raise OSError("private mail failure detail")
+    response = client.post(
+        reverse("interviews:pending_activate", args=(issued.schedule.pk,))
+    )
 
-    monkeypatch.setattr("interviews.scheduling_services.send_mail", fail_delivery)
-    assert deliver_interview_invitation(
-        issued=issued, confirmation_url="https://example.test/confirm"
-    ) is False
+    assert response.status_code == 302
     issued.schedule.refresh_from_db()
-    assert issued.schedule.invitation_last_error_code == "email_delivery_failed"
-    event = AuditEvent.objects.get(event_type="interview.invitation_delivery_failed")
-    assert "private" not in str(event.metadata)
+    assert issued.schedule.status == InterviewSchedule.Status.CONFIRMED
 
 
 def test_candidate_confirmation_is_single_use_and_schedule_links_consent(scheduling_data):
@@ -156,13 +170,14 @@ def test_candidate_confirmation_is_single_use_and_schedule_links_consent(schedul
     )
     assert schedule.status == InterviewSchedule.Status.CONFIRMED
     assert ConsentRecord.objects.filter(interview_schedule=schedule).exists()
-    with pytest.raises(SchedulingServiceError):
-        confirm_interview_invitation(
-            token=issued.token,
-            actor=scheduling_data["candidate_user"],
-            policy_version=POLICY,
-            consent_idempotency_key=uuid.uuid4(),
-        )
+    replay = confirm_interview_invitation(
+        token=issued.token,
+        actor=scheduling_data["candidate_user"],
+        policy_version=POLICY,
+        consent_idempotency_key=uuid.uuid4(),
+    )
+    assert replay.pk == schedule.pk
+    assert replay.status == InterviewSchedule.Status.CONFIRMED
 
 
 def test_revoked_general_consent_blocks_invitation(scheduling_data):
@@ -176,15 +191,15 @@ def test_revoked_general_consent_blocks_invitation(scheduling_data):
         _invite(scheduling_data)
 
 
-def test_invalid_timezone_and_cross_company_recruiter_are_denied(scheduling_data):
+def test_non_pakistan_timezone_and_cross_company_recruiter_are_denied(scheduling_data):
     start = timezone.now() + timezone.timedelta(days=2)
-    with pytest.raises(SchedulingServiceError, match="IANA"):
+    with pytest.raises(SchedulingServiceError, match="Pakistan"):
         create_interview_invitation(
             application=scheduling_data["application"],
             actor=scheduling_data["recruiter_user"],
             scheduled_start=start,
             scheduled_end=start + timezone.timedelta(hours=1),
-            timezone_name="Not/A_Zone",
+            timezone_name="UTC",
             policy_version=POLICY,
             idempotency_key=uuid.uuid4(),
         )
@@ -203,7 +218,7 @@ def test_invalid_timezone_and_cross_company_recruiter_are_denied(scheduling_data
             actor=other_user,
             scheduled_start=start,
             scheduled_end=start + timezone.timedelta(hours=1),
-            timezone_name="UTC",
+            timezone_name="Asia/Karachi",
             policy_version=POLICY,
             idempotency_key=uuid.uuid4(),
         )
@@ -212,47 +227,30 @@ def test_invalid_timezone_and_cross_company_recruiter_are_denied(scheduling_data
 def test_reschedule_request_rejection_preserves_schedule(scheduling_data):
     issued = _invite(scheduling_data)
     start = timezone.now() + timezone.timedelta(days=5)
-    request = request_interview_reschedule(
-        schedule=issued.schedule,
-        actor=scheduling_data["candidate_user"],
-        proposed_start=start,
-        proposed_end=start + timezone.timedelta(hours=1),
-        timezone_name="UTC",
-        reason="Conflict",
-    )
-    reviewed, replacement = review_reschedule_request(
-        reschedule_request=request,
-        actor=scheduling_data["recruiter_user"],
-        approve=False,
-    )
+    with pytest.raises(SchedulingServiceError, match="locked"):
+        request_interview_reschedule(
+            schedule=issued.schedule,
+            actor=scheduling_data["candidate_user"],
+            proposed_start=start,
+            proposed_end=start + timezone.timedelta(hours=1),
+            timezone_name="Asia/Karachi",
+            reason="Conflict",
+        )
     issued.schedule.refresh_from_db()
-    assert reviewed.status == InterviewRescheduleRequest.Status.REJECTED
-    assert replacement is None
     assert issued.schedule.is_current is True
 
 
 def test_reschedule_approval_replaces_schedule_and_issues_new_token(scheduling_data):
     issued = _invite(scheduling_data)
     start = timezone.now() + timezone.timedelta(days=5)
-    request = request_interview_reschedule(
-        schedule=issued.schedule,
-        actor=scheduling_data["candidate_user"],
-        proposed_start=start,
-        proposed_end=start + timezone.timedelta(hours=1),
-        timezone_name="UTC",
-    )
-    reviewed, replacement_issued = review_reschedule_request(
-        reschedule_request=request,
-        actor=scheduling_data["recruiter_user"],
-        approve=True,
-        invitation_idempotency_key=uuid.uuid4(),
-    )
-    issued.schedule.refresh_from_db()
-    assert reviewed.status == InterviewRescheduleRequest.Status.APPROVED
-    assert issued.schedule.status == InterviewSchedule.Status.RESCHEDULED
-    assert replacement_issued.schedule.is_current is True
-    assert replacement_issued.schedule.status == InterviewSchedule.Status.PENDING
-    assert replacement_issued.token not in replacement_issued.schedule.access_token_hash
+    with pytest.raises(SchedulingServiceError, match="locked"):
+        request_interview_reschedule(
+            schedule=issued.schedule,
+            actor=scheduling_data["candidate_user"],
+            proposed_start=start,
+            proposed_end=start + timezone.timedelta(hours=1),
+            timezone_name="Asia/Karachi",
+        )
 
 
 def test_recruiter_can_cancel_and_expire_only_due_invitation(scheduling_data):

@@ -1,0 +1,129 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Complete an authorized, rubric-based candidate review in HireFlow AI.">
+    <title>Human evaluation review — HireFlow AI</title>
+    <link rel="stylesheet" href="{% static 'accounts/css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'accounts/css/recruiter-dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'recruitment/css/recruiter-applications.css' %}">
+    <link rel="stylesheet" href="{% static 'interviews/css/evaluation-review.css' %}">
+</head>
+<body class="recruiter-dashboard-page evaluation-review-page">
+    <a class="skip-link" href="#evaluation-review-main">Skip to evaluation</a>
+    <div class="recruiter-shell">
+        <aside class="recruiter-sidebar" aria-label="Recruiter navigation">
+            <div class="recruiter-brand-row">
+                <a class="recruiter-brand" href="{% url 'accounts:recruiter_dashboard' %}" aria-label="HireFlow AI recruiter dashboard">HireFlow <strong>AI</strong></a>
+            </div>
+            <nav class="recruiter-nav" aria-label="Recruiter primary navigation">
+                <a href="{% url 'accounts:recruiter_dashboard' %}"><span aria-hidden="true">◦</span> Dashboard</a>
+                {% if recruiter.can_manage_jobs %}<a href="{% url 'recruitment:job_list' %}"><span aria-hidden="true">▤</span> Manage Jobs</a>{% endif %}
+                <a class="is-active" aria-current="page" href="{% url 'recruitment:application_list' %}"><span aria-hidden="true">◎</span> Applications</a>
+                <a href="{% url 'calling:recruiter_session_list' %}"><span aria-hidden="true">□</span> Interviews</a>
+            </nav>
+            <div class="recruiter-sidebar-footer">
+                <div class="recruiter-profile-card">
+                    <span class="recruiter-avatar" aria-hidden="true">{{ initials }}</span>
+                    <span><strong>{{ display_name }}</strong><small>{{ recruiter.job_title|default:"Recruiter" }} · {{ recruiter.company.name }}</small></span>
+                </div>
+                <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button class="recruiter-logout" type="submit">Log out</button></form>
+            </div>
+        </aside>
+
+        <div class="recruiter-workspace">
+            <header class="recruiter-header">
+                <div>
+                    <a class="evaluation-back-link" href="{% url 'recruitment:application_detail' evaluation.application_id %}">← Back to application</a>
+                    <h1>Human evaluation review</h1>
+                    <p>{{ candidate_name }} · {{ evaluation.application.job.title }}</p>
+                </div>
+                <span class="evaluation-state{% if evaluation.is_final %} is-final{% endif %}">{{ evaluation.get_status_display }}</span>
+            </header>
+
+            <main id="evaluation-review-main" class="evaluation-review-main">
+                {% if messages %}<div class="evaluation-messages" aria-live="polite">{% for message in messages %}<p>{{ message }}</p>{% endfor %}</div>{% endif %}
+
+                <section class="evaluation-intro-card" aria-labelledby="evaluation-rubric-heading">
+                    <div>
+                        <span class="evaluation-eyebrow">Approved rubric</span>
+                        <h2 id="evaluation-rubric-heading">{{ evaluation.rubric.name }} <small>v{{ evaluation.rubric.version }}</small></h2>
+                        <p>{{ evaluation.rubric.description|default:"Score only the published job criteria and record concise evidence." }}</p>
+                    </div>
+                    <dl>
+                        <div><dt>Passing score</dt><dd>{{ evaluation.rubric.passing_score }}</dd></div>
+                        <div><dt>Source</dt><dd>Completed simulated interview</dd></div>
+                        <div><dt>Mode</dt><dd>Human-authored review</dd></div>
+                    </dl>
+                </section>
+
+                {% if evaluation.is_final %}
+                    <section class="final-review-card" aria-labelledby="final-review-heading">
+                        <div class="final-review-heading-row">
+                            <div><span class="evaluation-eyebrow">Finalized by an authorized human</span><h2 id="final-review-heading">Review outcome</h2></div>
+                            <strong>{{ evaluation.get_review_outcome_display }}</strong>
+                        </div>
+                        <dl class="final-review-summary">
+                            <div><dt>Weighted score</dt><dd>{{ evaluation.overall_score }} / 100</dd></div>
+                            <div><dt>Overall confidence</dt><dd>{{ evaluation.overall_confidence }}</dd></div>
+                            <div><dt>Advisory recommendation</dt><dd>{{ evaluation.get_recommendation_display }}</dd></div>
+                            <div><dt>Reviewed</dt><dd>{{ evaluation.reviewed_at|date:"d M Y, H:i" }}</dd></div>
+                        </dl>
+                        {% if evaluation.summary %}<div class="review-prose"><h3>Summary</h3><p>{{ evaluation.summary }}</p></div>{% endif %}
+                        <div class="review-prose"><h3>Restricted review record</h3><p>Reviewer notes are retained as restricted human-review evidence and are not displayed in this interface.</p></div>
+                    </section>
+                    <section class="criterion-review-list" aria-labelledby="criterion-results-heading">
+                        <h2 id="criterion-results-heading">Criterion evidence</h2>
+                        {% for result in evaluation.criterion_scores.all %}
+                            <article class="criterion-result-card">
+                                <header><h3>{{ result.criterion.name }}</h3><strong>{{ result.score }} / 100</strong></header>
+                                <p><b>Confidence:</b> {{ result.confidence }}</p>
+                                <p><b>Evidence:</b> {{ result.evidence }}</p>
+                                {% if result.explanation %}<p><b>Explanation:</b> {{ result.explanation }}</p>{% endif %}
+                            </article>
+                        {% endfor %}
+                    </section>
+                {% else %}
+                    <form class="evaluation-form" method="post" novalidate>
+                        {% csrf_token %}
+                        {% if form.non_field_errors %}<div class="evaluation-form-errors" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+                        <section class="criterion-review-list" aria-labelledby="criterion-review-heading">
+                            <div class="section-heading"><div><span class="evaluation-eyebrow">Job-related evidence only</span><h2 id="criterion-review-heading">Score rubric criteria</h2></div><p>Required fields are marked with “required”.</p></div>
+                            {% for row in criterion_fields %}
+                                <fieldset class="criterion-form-card">
+                                    <legend>{{ row.criterion.order }}. {{ row.criterion.name }}{% if row.criterion.is_required %} <span>Required</span>{% endif %}</legend>
+                                    <p>{{ row.criterion.description }}</p>
+                                    <div class="criterion-number-fields">
+                                        <div class="evaluation-field">{{ row.score.label_tag }}{{ row.score }}{{ row.score.errors }}<small>{{ row.score.help_text }}</small></div>
+                                        <div class="evaluation-field">{{ row.confidence.label_tag }}{{ row.confidence }}{{ row.confidence.errors }}<small>{{ row.confidence.help_text }}</small></div>
+                                    </div>
+                                    <div class="evaluation-field">{{ row.evidence.label_tag }}{{ row.evidence }}{{ row.evidence.errors }}<small>{{ row.evidence.help_text }}</small></div>
+                                    <div class="evaluation-field">{{ row.explanation.label_tag }}{{ row.explanation }}{{ row.explanation.errors }}</div>
+                                </fieldset>
+                            {% endfor %}
+                        </section>
+
+                        <section class="human-decision-card" aria-labelledby="human-decision-heading">
+                            <span class="evaluation-eyebrow">Mandatory human control</span>
+                            <h2 id="human-decision-heading">Review summary and outcome</h2>
+                            <div class="evaluation-field">{{ form.summary.label_tag }}{{ form.summary }}{{ form.summary.errors }}<small>{{ form.summary.help_text }}</small></div>
+                            <div class="evaluation-field">{{ form.reviewer_notes.label_tag }}{{ form.reviewer_notes }}{{ form.reviewer_notes.errors }}<small>{{ form.reviewer_notes.help_text }}</small></div>
+                            <div class="evaluation-field">{{ form.review_outcome.label_tag }}{{ form.review_outcome }}{{ form.review_outcome.errors }}<small>{{ form.review_outcome.help_text }}</small></div>
+                            <aside>No automated score can finalize an employment outcome. “Advance” shortlists the application; “Decline” rejects it. Both require this explicit authorized human action.</aside>
+                            <div class="evaluation-form-actions">
+                                <button class="detail-secondary-action" name="action" value="save" type="submit">Save draft</button>
+                                <button class="detail-primary-action" name="action" value="finalize" type="submit">Finalize human outcome</button>
+                            </div>
+                        </section>
+                    </form>
+                {% endif %}
+
+                <aside class="evaluation-privacy-note">Keep evidence concise and job-related. Do not copy full resumes, transcripts, contact details, or sensitive personal information. Final employment decisions remain human-controlled.</aside>
+            </main>
+        </div>
+    </div>
+    {% include "includes/loading.html" %}
+</body>
+</html>

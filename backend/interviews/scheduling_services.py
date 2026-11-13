@@ -1,11 +1,9 @@
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, timedelta
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from django.conf import settings
 from django.core import signing
-from django.core.mail import send_mail
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 from django.utils.crypto import constant_time_compare, salted_hmac
@@ -79,10 +77,8 @@ def _candidate(actor, application):
 
 
 def _schedule_values(start, end, timezone_name):
-    try:
-        ZoneInfo(timezone_name)
-    except (ZoneInfoNotFoundError, TypeError, ValueError) as error:
-        raise SchedulingServiceError("A valid IANA timezone is required.") from error
+    if timezone_name != settings.TIME_ZONE:
+        raise SchedulingServiceError("Scheduling uses the fixed Pakistan timezone.")
     if timezone.is_naive(start) or timezone.is_naive(end):
         raise SchedulingServiceError("Timezone-aware schedule times are required.")
     start = start.astimezone(UTC)
@@ -117,8 +113,6 @@ def _token_digest(token):
 
 
 def _validate_current_consent(application, policy_version):
-    if not application.candidate.user.email_verified:
-        raise SchedulingServiceError("Verified candidate email is required.")
     if not has_effective_general_ai_processing_consent(
         candidate=application.candidate,
         policy_version=policy_version,
@@ -226,60 +220,59 @@ def create_interview_invitation(
         return IssuedInterviewInvitation(schedule=schedule, token=token)
 
 
-def deliver_interview_invitation(*, issued, confirmation_url):
-    schedule = issued.schedule
-    if schedule.invitation_delivery_status == InterviewSchedule.DeliveryStatus.SENT:
-        return True
-    try:
-        send_mail(
-            "Confirm your interview",
-            f"Confirm your interview using this link: {confirmation_url}",
-            getattr(settings, "DEFAULT_FROM_EMAIL", "webmaster@localhost"),
-            [schedule.application.candidate.user.email],
-            fail_silently=False,
-        )
-    except Exception:
-        with transaction.atomic():
-            locked = InterviewSchedule.objects.select_for_update().get(pk=schedule.pk)
-            locked.invitation_delivery_status = InterviewSchedule.DeliveryStatus.FAILED
-            locked.invitation_last_error_code = "email_delivery_failed"
-            locked.save(
-                update_fields=(
-                    "invitation_delivery_status",
-                    "invitation_last_error_code",
-                    "updated_at",
-                )
-            )
-            record_domain_event(
-                AuditCommand(
-                    category=AuditEvent.Category.INTERVIEW,
-                    event_type="interview.invitation_delivery_failed",
-                    outcome=AuditEvent.Outcome.FAILURE,
-                    severity=AuditEvent.Severity.MEDIUM,
-                    resource_type="interviews.InterviewSchedule",
-                    resource_id=locked.pk,
-                    actor=locked.scheduled_by,
-                    metadata={
-                        "application_id": locked.application_id,
-                        "failure_code": "email_delivery_failed",
-                    },
-                )
-            )
-        return False
+def create_confirmed_interview(**kwargs):
+    """Schedule and confirm in one transaction; no email or candidate click."""
     with transaction.atomic():
-        locked = InterviewSchedule.objects.select_for_update().get(pk=schedule.pk)
-        locked.invitation_delivery_status = InterviewSchedule.DeliveryStatus.SENT
-        locked.invitation_last_error_code = ""
-        locked.invitation_sent_at = timezone.now()
-        locked.save(
-            update_fields=(
-                "invitation_delivery_status",
-                "invitation_last_error_code",
-                "invitation_sent_at",
-                "updated_at",
+        issued = create_interview_invitation(**kwargs)
+        schedule = issued.schedule
+        if schedule.status == InterviewSchedule.Status.PENDING:
+            try:
+                schedule = transition_interview(
+                    schedule=schedule,
+                    target_status=InterviewSchedule.Status.CONFIRMED,
+                    actor=kwargs["actor"],
+                    reason_code="recruiter_scheduled",
+                )
+            except InterviewTransitionError as error:
+                raise SchedulingServiceError("The interview could not be confirmed.") from error
+        elif schedule.status != InterviewSchedule.Status.CONFIRMED:
+            raise SchedulingServiceError("The schedule is not available.")
+        return schedule
+
+
+def activate_pending_interview(*, schedule, actor, policy_version):
+    """Activate a legacy pending schedule without an email or token."""
+    with transaction.atomic():
+        try:
+            locked = (
+                InterviewSchedule.objects.select_for_update()
+                .select_related("application__candidate__user", "application__job")
+                .get(pk=schedule.pk, is_current=True)
             )
-        )
-    return True
+        except (AttributeError, InterviewSchedule.DoesNotExist) as error:
+            raise SchedulingServiceError("The schedule is not available.") from error
+        _recruiter(actor, locked.application)
+        if locked.status == InterviewSchedule.Status.CONFIRMED:
+            return locked
+        if (
+            locked.status != InterviewSchedule.Status.PENDING
+            or locked.scheduled_start <= timezone.now()
+        ):
+            raise SchedulingServiceError("The schedule is not available.")
+        _validate_current_consent(locked.application, policy_version)
+        try:
+            return transition_interview(
+                schedule=locked,
+                target_status=InterviewSchedule.Status.CONFIRMED,
+                actor=actor,
+                reason_code="recruiter_scheduled",
+            )
+        except InterviewTransitionError as error:
+            raise SchedulingServiceError("The interview could not be confirmed.") from error
+
+
+def deliver_interview_invitation(*, issued, confirmation_url):
+    raise SchedulingServiceError("Email invitations are disabled.")
 
 
 def reissue_interview_invitation(*, schedule, actor):
@@ -335,12 +328,21 @@ def confirm_interview_invitation(
         except InterviewSchedule.DoesNotExist as error:
             raise SchedulingServiceError("The invitation is not valid.") from error
         actor = _candidate(actor, schedule.application)
+        token_matches = constant_time_compare(
+            schedule.access_token_hash, _token_digest(token)
+        )
+        if (
+            schedule.status == InterviewSchedule.Status.CONFIRMED
+            and schedule.is_current
+            and token_matches
+        ):
+            return schedule
         if (
             schedule.status != InterviewSchedule.Status.PENDING
             or not schedule.is_current
             or schedule.invitation_expires_at is None
             or schedule.invitation_expires_at <= timezone.now()
-            or not constant_time_compare(schedule.access_token_hash, _token_digest(token))
+            or not token_matches
         ):
             raise SchedulingServiceError("The invitation is not valid.")
         _validate_current_consent(schedule.application, policy_version)
@@ -365,8 +367,8 @@ def confirm_interview_invitation(
 def request_interview_reschedule(
     *, schedule, actor, proposed_start, proposed_end, timezone_name, reason=""
 ):
-    proposed_start, proposed_end, timezone_name = _schedule_values(
-        proposed_start, proposed_end, timezone_name
+    raise SchedulingServiceError(
+        "Interview dates and times are locked after the invitation is created."
     )
     with transaction.atomic():
         try:
@@ -415,6 +417,9 @@ def request_interview_reschedule(
 def review_reschedule_request(
     *, reschedule_request, actor, approve, invitation_idempotency_key=None
 ):
+    raise SchedulingServiceError(
+        "Interview dates and times are locked after the invitation is created."
+    )
     with transaction.atomic():
         try:
             request = (

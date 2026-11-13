@@ -114,7 +114,7 @@ Implement the secure deterministic browser simulation, optional local speech ada
 - Safety and escalation scenarios are tested and auditable.
 - Failure recovery does not silently make or finalize decisions.
 
-## Week 4 — Evaluation, integration, and production readiness (0% complete)
+## Week 4 — Evaluation, integration, and production readiness (75% complete)
 
 ### Objectives
 
@@ -124,12 +124,13 @@ Deployment planning reference: [Render deployment plan](development/RENDER_DEPLO
 
 ### Tasks and deliverables
 
-- Rubric-based evidence, scoring, confidence, recommendations, and reviewer workflow.
-- Recruiter review UI with explicit human finalization.
-- End-to-end candidate, recruiter, interview, call, escalation, and audit scenarios.
-- ML quality, bias, safety, latency, and regression evaluation.
-- Retention/anonymization jobs, monitoring, protected backups, and incident procedures.
-- Production configuration validation, deployment guidance, API documentation, and operator runbooks.
+- Rubric-based evidence, deterministic weighted scoring, confidence, advisory recommendations, and reviewer workflow. **Implemented and validated.**
+- Recruiter review UI with explicit human-only shortlist/decline finalization. **Implemented and validated.**
+- End-to-end candidate, recruiter, interview, call, evaluation, explicit human outcome, and audit scenario. **The synthetic candidate-to-human-review path is implemented and validated; broader escalation/operational scenarios remain.**
+- ML quality, bias, safety, latency, and regression evaluation. **Deterministic scoring has synthetic repeatability, threshold, fairness, privacy, authorization, atomicity, and local query-budget coverage. Candidate-owned local Faster-Whisper transcription is integrated with transient audio, explicit text review, and injected regression coverage. Ignored local Faster-Whisper base, Silero VAD, and Piper Plus weights now pass a synthetic in-memory inference smoke check; real microphone and browser QA remain deferred. A detached Qwen3B shared proposal runtime, local permission-filtered RAG, and nine-agent contracts are implemented for evaluation only. Task 3's 100-case held-out Qwen run reached 99/100 contextual actions and 100/100 accepted schemas, but it remains detached and is not a release gate for live use.**
+- **QA-isolated model-action integration:** **Implemented but not yet execution-complete.** The dedicated database was verified before a process restart, and the QA-only three-turn adapter, strict model-action gate, real local speech/RAG sequence, deterministic persistence, advisory evaluation, and audit checks are implemented. Three fail-closed attempts persisted no answers; the corrected sequence still needs a fresh verified run after QA variables are restored to this process. Real candidate-facing AI remains disabled.
+- Retention/anonymization jobs, monitoring, protected backups, and incident procedures. **A dry-run-first bounded answer/transcript anonymization command, normalized audit-linked run evidence, incident runbook, and explicitly unverified backup/restore checklist are implemented; monitoring, provider backups, restore rehearsal, file retention, and broader legally reviewed policies remain.**
+- Production configuration validation, fixed liveness endpoint, lightweight Render build/start boundary, deployment guidance, operator preflight, and release-candidate handoff. **Repository-side hardening and validation are implemented; manual QA, infrastructure, external media/email, migration execution, smoke testing, monitoring, backups, and deployment remain.**
 
 ### Required tests
 
@@ -155,5 +156,5 @@ Deployment planning reference: [Render deployment plan](development/RENDER_DEPLO
 - Week 1: 100%
 - Week 2: 100%
 - Week 3: 100%
-- Week 4: 0%
-- Overall: 75%
+- Week 4: 75%
+- Overall: 94%

@@ -111,7 +111,7 @@
                             {% for entry in upcoming_interview_entries %}
                                 <article class="interview-item">
                                     <div class="interview-summary"><strong>{{ entry.candidate_name }}</strong><small>{{ entry.schedule.application.job.title }}</small></div>
-                                    <span class="interview-time">{{ entry.local_start|date:"d M Y" }}<br>{{ entry.local_start|time:"g:i A" }} {{ entry.schedule.timezone }}</span>
+                                    <span class="interview-time">{{ entry.local_start|date:"d M Y" }}<br>{{ entry.local_start|time:"g:i A" }} (Asia/Karachi)</span>
                                     <span class="status-badge {{ entry.schedule.status }}">{{ entry.schedule.get_status_display }}</span>
                                 </article>
                             {% empty %}
@@ -153,5 +153,6 @@
             </main>
         </div>
     </div>
+    {% include "includes/loading.html" %}
 </body>
 </html>

@@ -1,6 +1,7 @@
 import uuid
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import F, Q
@@ -228,6 +229,27 @@ class EvaluationRubric(models.Model):
 
     def __str__(self):
         return f"{self.job.title} — {self.name} v{self.version}"
+    def save(self, *args, **kwargs):
+        if self.pk and self.evaluations.exists():
+            prior = type(self).objects.get(pk=self.pk)
+            immutable_fields = (
+                "job_id",
+                "name",
+                "version",
+                "description",
+                "passing_score",
+            )
+            if any(
+                getattr(prior, field) != getattr(self, field)
+                for field in immutable_fields
+            ):
+                raise ValidationError("A used evaluation rubric cannot be changed.")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        if self.evaluations.exists():
+            raise ValidationError("A used evaluation rubric cannot be deleted.")
+        return super().delete(*args, **kwargs)
 
 
 class EvaluationCriterion(models.Model):
@@ -270,6 +292,23 @@ class EvaluationCriterion(models.Model):
 
     def __str__(self):
         return f"{self.rubric.name}: {self.name}"
+    def save(self, *args, **kwargs):
+        rubric_ids = {self.rubric_id}
+        if self.pk:
+            rubric_ids.update(
+                type(self).objects.filter(pk=self.pk).values_list(
+                    "rubric_id",
+                    flat=True,
+                )
+            )
+        if CandidateEvaluation.objects.filter(rubric_id__in=rubric_ids).exists():
+            raise ValidationError("Criteria for a used rubric cannot be changed.")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        if CandidateEvaluation.objects.filter(rubric_id=self.rubric_id).exists():
+            raise ValidationError("Criteria for a used rubric cannot be deleted.")
+        return super().delete(*args, **kwargs)
 
 
 class CandidateEvaluation(models.Model):
@@ -292,6 +331,10 @@ class CandidateEvaluation(models.Model):
         HUMAN = "human", "Human"
         HYBRID = "hybrid", "AI with human review"
 
+    class ReviewOutcome(models.TextChoices):
+        ADVANCE = "advance", "Advance to shortlist"
+        DECLINE = "decline", "Decline application"
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -306,6 +349,13 @@ class CandidateEvaluation(models.Model):
         EvaluationRubric,
         on_delete=models.PROTECT,
         related_name="evaluations",
+    )
+    source_session = models.ForeignKey(
+        "calling.CallSession",
+        on_delete=models.PROTECT,
+        related_name="candidate_evaluations",
+        null=True,
+        blank=True,
     )
     evaluator_type = models.CharField(
         max_length=20,
@@ -328,6 +378,16 @@ class CandidateEvaluation(models.Model):
             MaxValueValidator(100),
         ],
     )
+    overall_confidence = models.DecimalField(
+        max_digits=4,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1),
+        ],
+    )
     recommendation = models.CharField(
         max_length=20,
         choices=Recommendation.choices,
@@ -347,6 +407,11 @@ class CandidateEvaluation(models.Model):
         blank=True,
     )
     reviewer_notes = models.TextField(blank=True)
+    review_outcome = models.CharField(
+        max_length=20,
+        choices=ReviewOutcome.choices,
+        blank=True,
+    )
     is_final = models.BooleanField(default=False)
     started_at = models.DateTimeField(
         null=True,
@@ -356,7 +421,12 @@ class CandidateEvaluation(models.Model):
         null=True,
         blank=True,
     )
+    reviewed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ("-created_at",)
@@ -373,11 +443,44 @@ class CandidateEvaluation(models.Model):
                 ),
                 name="evaluation_score_0_to_100",
             ),
+            models.CheckConstraint(
+                condition=(
+                    Q(overall_confidence__isnull=True)
+                    | Q(overall_confidence__gte=0, overall_confidence__lte=1)
+                ),
+                name="evaluation_confidence_0_to_1",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(is_final=False)
+                    | Q(
+                        status="reviewed",
+                        evaluator_type__in=("human", "hybrid"),
+                        reviewed_by__isnull=False,
+                        reviewed_at__isnull=False,
+                        review_outcome__in=("advance", "decline"),
+                    )
+                ),
+                name="final_evaluation_requires_human_review",
+            ),
         ]
         indexes = [
             models.Index(fields=("application", "status")),
             models.Index(fields=("recommendation", "is_final")),
+            models.Index(fields=("review_outcome", "is_final")),
         ]
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            prior = type(self).objects.filter(pk=self.pk).values("is_final").first()
+            if prior and prior["is_final"]:
+                raise ValidationError("Final evaluations cannot be changed.")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        if self.is_final:
+            raise ValidationError("Final evaluations cannot be deleted.")
+        return super().delete(*args, **kwargs)
 
     def __str__(self):
         return f"Evaluation: {self.application}"
@@ -435,6 +538,22 @@ class CriterionScore(models.Model):
                 name="criterion_confidence_0_to_1",
             ),
         ]
+
+    def save(self, *args, **kwargs):
+        if self.evaluation_id and CandidateEvaluation.objects.filter(
+            pk=self.evaluation_id,
+            is_final=True,
+        ).exists():
+            raise ValidationError("Scores for a final evaluation cannot be changed.")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        if self.evaluation_id and CandidateEvaluation.objects.filter(
+            pk=self.evaluation_id,
+            is_final=True,
+        ).exists():
+            raise ValidationError("Scores for a final evaluation cannot be deleted.")
+        return super().delete(*args, **kwargs)
 
     def __str__(self):
         return f"{self.criterion.name}: {self.score}"

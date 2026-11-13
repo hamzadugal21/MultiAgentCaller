@@ -1,33 +1,46 @@
-{% extends "base.html" %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interviews — HireFlow AI</title>
+    <link rel="stylesheet" href="{% static 'accounts/css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'accounts/css/candidate-dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'calling/css/candidate-interviews.css' %}">
+</head>
+<body class="candidate-dashboard-page candidate-interviews-page">
+<a class="skip-link" href="#interviews-main">Skip to interviews</a>
+<div class="candidate-shell">
+    {% include "includes/candidate_sidebar.html" with active_candidate_nav="interviews" sidebar_help_target="interview-help" %}
+    <div class="candidate-workspace">
+        <header class="dashboard-header"><div><h1>Interviews</h1><p>Your scheduled interviews, preparation steps, and secure session access.</p></div><div class="header-account"><span class="candidate-avatar candidate-avatar-light" aria-hidden="true">{{ actor.get_full_name|default:"C"|slice:":2"|upper }}</span></div></header>
+        <main id="interviews-main" class="candidate-interviews-main">
+            {% if messages %}<div class="dashboard-messages" aria-live="polite">{% for message in messages %}<p class="dashboard-message {{ message.tags }}">{{ message }}</p>{% endfor %}</div>{% endif %}
+            <section class="interview-summary-grid" aria-label="Interview overview">
+                <article><span>Upcoming</span><strong>{{ upcoming_count }}</strong><small>Scheduled interviews</small></article>
+                <article><span>Pending activation</span><strong>{{ pending_count }}</strong><small>Contact the recruiter about older pending schedules</small></article>
+                <article><span>Completed</span><strong>{{ completed_count }}</strong><small>Interview history</small></article>
+                <article><span>Reschedule requests</span><strong>{{ reschedule_count }}</strong><small>Pending review</small></article>
+            </section>
 
-{% block title %}My interviews{% endblock %}
+            <section class="interview-panel" aria-labelledby="upcoming-heading">
+                <div class="interview-panel-heading"><div><h2 id="upcoming-heading">Upcoming interviews</h2><p>Times are shown in Asia/Karachi. Confirmed interviews can be prepared here.</p></div></div>
+                <div class="interview-list">
+                {% for entry in upcoming_entries %}
+                    <article class="interview-card">
+                        <div class="interview-card-main"><span class="interview-date">{{ entry.local_start|date:"d M" }}</span><div><h3>{{ entry.schedule.application.job.title }}</h3><p>{{ entry.schedule.application.job.company.name }} · {{ entry.duration_minutes }} minutes · Text interview</p><time datetime="{{ entry.schedule.scheduled_start|date:'c' }}">{{ entry.local_start|date:"l, d M Y · H:i" }}</time></div></div>
+                        <div class="interview-card-actions">
+                            <span class="interview-status status-{{ entry.schedule.status }}">{{ entry.schedule.get_status_display }}</span>
+                            {% if entry.schedule.status == "pending" %}<p class="interview-note">This older schedule needs recruiter activation. No email link is required.</p>{% elif entry.session %}<a class="dashboard-button dashboard-button-primary" href="{% url 'calling:candidate_session_detail' entry.session.id %}">{% if entry.session.status == "completed" %}View completed interview{% else %}Open interview{% endif %}</a>{% else %}<form method="post" action="{% url 'calling:prepare_session' entry.schedule.id %}">{% csrf_token %}{{ entry.form.idempotency_key }}<button class="dashboard-button dashboard-button-primary" type="submit">Prepare interview</button></form>{% endif %}
+                        </div>
+                    </article>
+                {% empty %}<p class="interview-empty">No upcoming interviews are scheduled yet.</p>{% endfor %}
+                </div>
+            </section>
 
-{% block content %}
-<section>
-    <h1>My interviews</h1>
-    <p>Week 3 uses a clearly labelled simulated interview. No audio is recorded.</p>
-    <ul>
-        {% for entry in schedule_entries %}
-            <li>
-                <strong>{{ entry.schedule.application.job.title }}</strong>
-                <span>{{ entry.schedule.scheduled_start }}</span>
-                {% with session=entry.schedule.call_sessions.first %}
-                    {% if session %}
-                        <a href="{% url 'calling:candidate_session_detail' session.id %}">
-                            Open simulated interview
-                        </a>
-                    {% else %}
-                        <form method="post" action="{% url 'calling:prepare_session' entry.schedule.id %}">
-                            {% csrf_token %}
-                            {{ entry.form.idempotency_key }}
-                            <button type="submit">Prepare simulated interview</button>
-                        </form>
-                    {% endif %}
-                {% endwith %}
-            </li>
-        {% empty %}
-            <li>No confirmed interviews are available.</li>
-        {% endfor %}
-    </ul>
-</section>
-{% endblock %}
+            <section class="interview-panel" aria-labelledby="history-heading"><div class="interview-panel-heading"><div><h2 id="history-heading">Interview history</h2><p>Only your interview status and permitted session actions are shown.</p></div></div><div class="interview-history-list">{% for entry in history_entries %}<article><div><h3>{{ entry.schedule.application.job.title }}</h3><p>{{ entry.schedule.application.job.company.name }} · {{ entry.local_start|date:"d M Y, H:i" }}</p></div><span class="interview-status status-{{ entry.schedule.status }}">{{ entry.schedule.get_status_display }}</span></article>{% empty %}<p class="interview-empty">Completed interviews will appear here.</p>{% endfor %}</div></section>
+            <aside id="interview-help" class="interview-help"><strong>Secure, human-reviewed interviews</strong><p>This environment uses a clearly labelled simulated text interview. Audio is off unless the configured speech feature is enabled, and final employment decisions always require authorized human review.</p></aside>
+        </main>
+    </div>
+</div>
+</body></html>

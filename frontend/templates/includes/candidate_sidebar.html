@@ -1,0 +1,39 @@
+<aside class="candidate-sidebar" aria-label="Candidate navigation">
+    <div class="sidebar-brand-row">
+        <a class="sidebar-brand" href="{% url 'accounts:candidate_dashboard' %}" aria-label="HireFlow AI candidate dashboard">
+            HireFlow <strong>AI</strong>
+        </a>
+        <details class="candidate-mobile-menu">
+            <summary>Menu</summary>
+            <nav aria-label="Candidate mobile navigation">
+                <a{% if active_candidate_nav == "dashboard" %} class="is-active" aria-current="page"{% endif %} href="{% url 'accounts:candidate_dashboard' %}">Dashboard</a>
+                <a{% if active_candidate_nav == "profile" %} class="is-active" aria-current="page"{% endif %} href="{% url 'candidates:profile_edit' %}">My Profile</a>
+                <a{% if active_candidate_nav == "resume" %} class="is-active" aria-current="page"{% endif %} href="{% url 'candidates:resume_list' %}">My Resume</a>
+                <a{% if active_candidate_nav == "jobs" %} class="is-active" aria-current="page"{% endif %} href="{% url 'recruitment:job_list' %}">Browse Jobs</a>
+                <a{% if active_candidate_nav == "applications" %} class="is-active" aria-current="page"{% endif %} href="{% url 'recruitment:application_list' %}">My Applications</a>
+                <a{% if active_candidate_nav == "interviews" %} class="is-active" aria-current="page"{% endif %} href="{% url 'calling:candidate_session_list' %}">Interviews</a>
+            </nav>
+        </details>
+    </div>
+
+    <nav class="sidebar-nav" aria-label="Candidate primary navigation">
+        <a{% if active_candidate_nav == "dashboard" %} class="is-active" aria-current="page"{% endif %} href="{% url 'accounts:candidate_dashboard' %}"><span aria-hidden="true">▦</span> Dashboard</a>
+        <a{% if active_candidate_nav == "profile" %} class="is-active" aria-current="page"{% endif %} href="{% url 'candidates:profile_edit' %}"><span aria-hidden="true">○</span> My Profile</a>
+        <a{% if active_candidate_nav == "resume" %} class="is-active" aria-current="page"{% endif %} href="{% url 'candidates:resume_list' %}"><span aria-hidden="true">▤</span> My Resume</a>
+        <a{% if active_candidate_nav == "jobs" %} class="is-active" aria-current="page"{% endif %} href="{% url 'recruitment:job_list' %}"><span aria-hidden="true">⌕</span> Browse Jobs</a>
+        <a{% if active_candidate_nav == "applications" %} class="is-active" aria-current="page"{% endif %} href="{% url 'recruitment:application_list' %}"><span aria-hidden="true">☷</span> My Applications</a>
+        <a{% if active_candidate_nav == "interviews" %} class="is-active" aria-current="page"{% endif %} href="{% url 'calling:candidate_session_list' %}"><span aria-hidden="true">▣</span> Interviews</a>
+    </nav>
+
+    <div class="sidebar-footer">
+        <a class="sidebar-help" href="{% url 'candidates:faq' %}"><span aria-hidden="true">?</span> Help &amp; Support</a>
+        <div class="sidebar-account">
+            <span class="candidate-avatar" aria-hidden="true">{{ initials }}</span>
+            <span><strong>{{ display_name }}</strong><small>Candidate</small></span>
+        </div>
+        <form method="post" action="{% url 'accounts:logout' %}">
+            {% csrf_token %}
+            <button class="sidebar-logout" type="submit"><span aria-hidden="true">↪</span> Log out</button>
+        </form>
+    </div>
+</aside>

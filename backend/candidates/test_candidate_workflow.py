@@ -18,6 +18,10 @@ def _candidate(email="candidate-workflow@example.com"):
     return user, CandidateProfile.objects.get(user=user)
 
 
+def _primary_candidate_navigation(content):
+    return content.split('<nav class="sidebar-nav"', 1)[1].split("</nav>", 1)[0]
+
+
 def _profile_payload(**overrides):
     data = {
         "phone_number": "+923001234567",
@@ -75,6 +79,99 @@ def test_candidate_profile_uses_allowlist_and_audits_changes(client):
     assert profile.ai_processing_consent is False
     event = AuditEvent.objects.get(event_type="profile.updated")
     assert "ai_processing_consent" not in event.metadata["changed_fields"]
+
+
+def test_ai_extraction_prefills_empty_profile_fields_without_overwriting_values(client):
+    user, profile = _candidate("candidate-ai-prefill@example.com")
+    profile.city = "Existing City"
+    profile.save(update_fields=("city",))
+    client.force_login(user)
+    session = client.session
+    session["profile_extraction_preview"] = {
+        "resume_id": "qa-resume",
+        "data": {
+            "full_name": "Test Candidate",
+            "phone_number": "+923001234567",
+            "city": "Resume City",
+            "professional_summary": "Resume summary",
+            "years_of_experience": 3,
+            "skills": ["Python", "Django"],
+            "education": ["BS Computer Science"],
+            "projects": [],
+            "certifications": [],
+        },
+    }
+    session.save()
+
+    response = client.get(reverse("candidates:profile_edit"))
+
+    assert response.status_code == 200
+    assert response.context["form"].initial["phone_number"] == "+923001234567"
+    assert response.context["form"].initial["professional_summary"] == "Resume summary"
+    assert response.context["form"].initial["skills"] == "Python, Django"
+    assert response.context["form"].initial["city"] == "Existing City"
+    assert b"AI resume information" not in response.content
+
+
+def test_profile_clear_all_controls_are_client_only_and_preserve_account_controls(client):
+    user, profile = _candidate("candidate-clear-all@example.com")
+    client.force_login(user)
+
+    response = client.get(reverse("candidates:profile_edit"))
+
+    assert response.status_code == 200
+    assert b"id=\"clear-profile\"" in response.content
+    assert b"Clear all editable profile information? Changes will only be saved when you click Save Changes." in response.content
+    assert b"id=\"id_skills\"" in response.content
+    assert b"name=\"action\" value=\"grant\"" in response.content or b"name=\"action\" value=\"revoke\"" in response.content
+
+
+def test_profile_timezone_is_not_exposed_or_client_controlled(client):
+    user, profile = _candidate("candidate-fixed-timezone@example.com")
+    profile.timezone = "UTC"
+    profile.save(update_fields=("timezone",))
+    client.force_login(user)
+
+    response = client.get(reverse("candidates:profile_edit"))
+
+    assert response.status_code == 200
+    assert "name=\"timezone\"" not in response.content.decode()
+
+    response = client.post(
+        reverse("candidates:profile_edit"),
+        _profile_payload(timezone="Europe/London"),
+    )
+
+    assert response.status_code == 302
+    profile.refresh_from_db()
+    assert profile.timezone == "Asia/Karachi"
+
+
+@pytest.mark.parametrize(
+    ("url_name", "expected_label", "expected_icon"),
+    (
+        ("accounts:candidate_dashboard", "Dashboard", "▦"),
+        ("candidates:profile_edit", "My Profile", "○"),
+        ("candidates:resume_list", "My Resume", "▤"),
+        ("recruitment:job_list", "Browse Jobs", "⌕"),
+    ),
+)
+def test_candidate_pages_keep_their_own_standard_sidebar_active_item(
+    client, url_name, expected_label, expected_icon
+):
+    user, _profile = _candidate(f"candidate-sidebar-{url_name.replace(':', '-')}@example.com")
+    client.force_login(user)
+
+    response = client.get(reverse(url_name))
+
+    assert response.status_code == 200
+    primary_nav = _primary_candidate_navigation(response.content.decode())
+    assert primary_nav.count('class="is-active"') == 1
+    assert (
+        f'<span aria-hidden="true">{expected_icon}</span> {expected_label}'
+    ) in primary_nav
+    active_item = primary_nav.split('class="is-active" aria-current="page"', 1)[1]
+    assert expected_label in active_item.split("</a>", 1)[0]
 
 
 def test_anonymous_user_is_redirected_from_candidate_profile(client):
@@ -135,7 +232,6 @@ def test_candidate_profile_page_shows_real_fields_skills_and_consent_control(cli
         "phone_number",
         "city",
         "country_code",
-        "timezone",
         "professional_summary",
         "years_of_experience",
         "availability",
@@ -191,6 +287,70 @@ def test_profile_consent_control_grants_and_revokes_append_only_history(client):
     ) == ["revoked", "granted"]
 
 
+def test_profile_consent_accepts_legacy_consent_action_and_rejects_conflicts(client):
+    user, profile = _candidate("profile-consent-legacy@example.com")
+    client.force_login(user)
+
+    response = client.post(
+        reverse("candidates:general_consent"),
+        {"consent_action": "grant", "return_to": "profile"},
+    )
+
+    assert response.status_code == 302
+    profile.refresh_from_db()
+    assert profile.ai_processing_consent is True
+    assert ConsentRecord.objects.filter(candidate=profile, action="granted").count() == 1
+
+    conflict = client.post(
+        reverse("candidates:general_consent"),
+        {"action": "grant", "consent_action": "revoke", "return_to": "profile"},
+    )
+    assert conflict.status_code == 302
+    assert ConsentRecord.objects.filter(candidate=profile).count() == 1
+
+
+def test_missing_consent_action_is_rejected_without_creating_history(client):
+    user, profile = _candidate("profile-consent-missing@example.com")
+    client.force_login(user)
+
+    response = client.post(
+        reverse("candidates:general_consent"),
+        {"return_to": "profile"},
+    )
+
+    assert response.status_code == 302
+    assert ConsentRecord.objects.filter(candidate=profile).count() == 0
+    profile.refresh_from_db()
+    assert profile.ai_processing_consent is False
+
+
+def test_candidate_can_add_skills_from_profile_and_duplicates_are_rejected(client):
+    user, profile = _candidate("profile-skills@example.com")
+    client.force_login(user)
+
+    response = client.post(
+        reverse("candidates:profile_edit"),
+        _profile_payload(skills="Python, Django"),
+    )
+    assert response.status_code == 302
+    assert set(profile.candidate_skills.values_list("skill__name", flat=True)) == {
+        "Python",
+        "Django",
+    }
+
+    refreshed = client.get(reverse("candidates:profile_edit"))
+    assert refreshed.context["profile_completion"] == 50
+    assert b"Python" in refreshed.content and b"Django" in refreshed.content
+
+    duplicate = client.post(
+        reverse("candidates:profile_edit"),
+        _profile_payload(skills="Python, python"),
+    )
+    assert duplicate.status_code == 200
+    assert b"Each skill may be listed only once." in duplicate.content
+    assert profile.candidate_skills.count() == 2
+
+
 def test_anonymous_user_is_redirected_from_resume_page(client):
     response = client.get(reverse("candidates:resume_list"))
 
@@ -220,7 +380,7 @@ def test_resume_page_has_safe_empty_state_and_secure_upload_form(client):
     assert response.status_code == 200
     assert response.templates[0].name == "candidates/resume_list.html"
     content = response.content.decode()
-    assert "No active résumé" in content
+    assert "No active resume" in content
     assert "No previous uploads" in content
     assert reverse("candidates:resume_upload") in content
     assert 'enctype="multipart/form-data"' in content

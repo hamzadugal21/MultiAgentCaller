@@ -4,8 +4,8 @@
 
 {% block content %}
 <section>
-    <h1>Invite candidate to interview</h1>
-    <p>Times are stored in UTC and displayed using the supplied IANA timezone.</p>
-    <form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">Create and send invitation</button></form>
+    <h1>Schedule candidate interview</h1>
+    <p>Times are entered and displayed in Pakistan Standard Time (Asia/Karachi). They are stored as timezone-aware UTC timestamps.</p>
+    <form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit" name="action" value="check_ai">Check availability with AI</button><button type="submit" name="action" value="confirm_schedule" onclick="return confirm('Confirm this fixed interview date and time?');">Confirm scheduling</button></form>
 </section>
 {% endblock %}
